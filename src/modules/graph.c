@@ -1,4 +1,5 @@
 #include "graph.h"
+#include "platform_compat.h"
 #include "weather_background.h"
 #include <string.h>
 
@@ -37,6 +38,14 @@ void graph_set_predictions(int16_t *values, int count) {
     memcpy(s_predictions, values, count * sizeof(int16_t));
 }
 
+void graph_restore_from_state(const GraphData *gd) {
+    if (!gd || gd->count <= 0) return;
+    graph_set_data((int16_t *)gd->values, gd->count);
+    if (gd->prediction_count > 0) {
+        graph_set_predictions((int16_t *)gd->predictions, gd->prediction_count);
+    }
+}
+
 static int map_y(int glucose, int height) {
     int clamped = glucose;
     if (clamped < GRAPH_MIN) clamped = GRAPH_MIN;
@@ -52,10 +61,35 @@ static GColor glucose_color(int glucose, TrioConfig *config) {
     if (glucose >= config->high_threshold) return GColorOrange;
     return GColorGreen;
 #else
-    (void)glucose; (void)config;
-    return GColorWhite;
+    (void)glucose;
+    return (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
 #endif
 }
+
+#ifndef PBL_COLOR
+typedef enum { TRIO_BW_LINE_OK = 0, TRIO_BW_LINE_HIGH = 1, TRIO_BW_LINE_LOW = 2 } TrioBwLineKind;
+
+static TrioBwLineKind glucose_bw_line_kind(int glucose, TrioConfig *config) {
+    if (glucose <= 0) {
+        return TRIO_BW_LINE_OK;
+    }
+    if (glucose <= config->urgent_low || glucose <= config->low_threshold) {
+        return TRIO_BW_LINE_LOW;
+    }
+    if (glucose >= config->high_threshold + 60 || glucose >= config->high_threshold) {
+        return TRIO_BW_LINE_HIGH;
+    }
+    return TRIO_BW_LINE_OK;
+}
+
+static int glucose_bw_stroke(TrioBwLineKind k) {
+    switch (k) {
+        case TRIO_BW_LINE_LOW: return 2;
+        case TRIO_BW_LINE_HIGH: return 1;
+        default: return 1;
+    }
+}
+#endif
 
 static GColor bg_color(TrioConfig *config) {
     switch (config->color_scheme) {
@@ -73,8 +107,7 @@ static GColor grid_color(TrioConfig *config) {
         default: return GColorDarkGray;
     }
 #else
-    (void)config;
-    return GColorDarkGray;
+    return (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
 #endif
 }
 
@@ -110,8 +143,11 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     int h = bounds.size.h;
 
     AppState *app = app_state_get();
-    bool use_weather_bg = config->weather_enabled && app->comp.weather_icon[0] != '\0'
+    bool use_weather_bg = false;
+#if TRIO_DISPLAY_COLOR
+    use_weather_bg = config->weather_enabled && app->comp.weather_icon[0] != '\0'
         && strcmp(app->comp.weather_icon, "off") != 0;
+#endif
 
     if (use_weather_bg) {
         weather_background_draw(ctx, bounds, &app->comp, config);
@@ -140,10 +176,14 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         } else {
             graphics_context_set_fill_color(ctx, range_color);
         }
-#else
-        graphics_context_set_fill_color(ctx, GColorDarkGray);
-#endif
         graphics_fill_rect(ctx, GRect(0, y_high, w, band_h), 0, GCornerNone);
+#else
+        /* Original Pebble: avoid gray fills (1-bit dither); outline target band. */
+        GColor ink = (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
+        graphics_context_set_stroke_color(ctx, ink);
+        graphics_context_set_stroke_width(ctx, 1);
+        graphics_draw_rect(ctx, GRect(0, y_high, w, band_h));
+#endif
     }
 
     draw_horizontal_value_grid(ctx, w, h, config, use_weather_bg);
@@ -160,7 +200,8 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
 #ifdef PBL_COLOR
     graphics_context_set_stroke_color(ctx, GColorRed);
 #else
-    graphics_context_set_stroke_color(ctx, GColorWhite);
+    graphics_context_set_stroke_color(ctx,
+        (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite);
 #endif
     for (int x = 0; x < w; x += 4) {
         graphics_draw_line(ctx, GPoint(x, y_urgent), GPoint(x + 2, y_urgent));
@@ -196,29 +237,43 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
 #ifdef PBL_COLOR
         if (use_weather_bg) {
             graphics_context_set_stroke_color(ctx, GColorBlack);
-            /* Pebble max stroke width is 3 on color platforms. */
-            graphics_context_set_stroke_width(ctx, 3);
+            graphics_context_set_stroke_width(ctx, 2);
+            graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
+        }
+        graphics_context_set_stroke_color(ctx, seg);
+        graphics_context_set_stroke_width(ctx, 1);
+        graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
+#else
+        {
+            TrioBwLineKind k0 = glucose_bw_line_kind(s_values[i - 1], config);
+            TrioBwLineKind k1 = glucose_bw_line_kind(s_values[i], config);
+            TrioBwLineKind k = (k0 > k1) ? k0 : k1;
+            graphics_context_set_stroke_color(ctx, seg);
+            graphics_context_set_stroke_width(ctx, glucose_bw_stroke(k));
             graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
         }
 #endif
-        graphics_context_set_stroke_color(ctx, seg);
-        graphics_context_set_stroke_width(ctx, 2);
-        graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
     }
 
-    // Draw data points
+    /* Dots at every sample made the trace look like a thick ribbon; draw current reading only. */
     for (int i = 0; i < s_count; i++) {
+        if (s_count > 1 && i != s_count - 1) {
+            continue;
+        }
         int x = i * spacing;
         int y = map_y(s_values[i], h);
         GColor dot = glucose_color(s_values[i], config);
 #ifdef PBL_COLOR
         if (use_weather_bg) {
             graphics_context_set_fill_color(ctx, GColorBlack);
-            graphics_fill_circle(ctx, GPoint(x, y), 4);
+            graphics_fill_circle(ctx, GPoint(x, y), 3);
         }
-#endif
         graphics_context_set_fill_color(ctx, dot);
-        graphics_fill_circle(ctx, GPoint(x, y), 3);
+        graphics_fill_circle(ctx, GPoint(x, y), 2);
+#else
+        graphics_context_set_fill_color(ctx, dot);
+        graphics_fill_circle(ctx, GPoint(x, y), 2);
+#endif
     }
 
     // Draw predictions (dashed, different style)
@@ -230,7 +285,8 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
 #ifdef PBL_COLOR
         graphics_context_set_stroke_color(ctx, GColorCyan);
 #else
-        graphics_context_set_stroke_color(ctx, GColorLightGray);
+        graphics_context_set_stroke_color(ctx,
+            (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite);
 #endif
         graphics_context_set_stroke_width(ctx, 1);
 

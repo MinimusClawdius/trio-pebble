@@ -7,6 +7,7 @@
 #include "../modules/graph.h"
 #include "../modules/complications.h"
 #include "../modules/glucose_format.h"
+#include "../modules/platform_compat.h"
 
 static TextLayer *s_glucose, *s_trend, *s_delta, *s_time, *s_date;
 static TextLayer *s_iob, *s_cob, *s_loop, *s_pump;
@@ -53,33 +54,34 @@ void face_dashboard_load(Window *window, Layer *root, GRect bounds) {
     int h = bounds.size.h;
     bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
     GColor fg = light ? GColorBlack : GColorWhite;
-    GColor fg2 = light ? GColorDarkGray : GColorLightGray;
+    GColor fg2 = trio_secondary_fg(config_get());
 
-    // Top-left: Glucose
-    s_glucose = make_text(root, GRect(2, -4, w / 2, 38), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentLeft, fg);
+    // Top-left: Glucose (right-aligned) + large trend on same row
+    s_glucose = make_text(root, GRect(2, -4, w / 2 - 38, 40), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentRight, fg);
     text_layer_set_text(s_glucose, "--");
+    s_trend = make_text(root, GRect(w / 2 - 36, 0, 40, 42), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
 
-    s_trend = make_text(root, GRect(2, 28, w / 4, 16), FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentLeft, fg2);
-    s_delta = make_text(root, GRect(w / 4, 28, w / 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
+    s_delta = make_text(root, GRect(2, 30, w / 2 - 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
 
     // Top-right: Time & Date
     s_time = make_text(root, GRect(w / 2, 0, w / 2 - 4, 24), FONT_KEY_GOTHIC_24_BOLD, GTextAlignmentRight, fg);
     s_date = make_text(root, GRect(w / 2, 24, w / 2 - 4, 18), FONT_KEY_GOTHIC_14, GTextAlignmentRight, fg2);
 
     // Divider
-    s_divider_layer = layer_create(GRect(0, 44, w, 1));
+    s_divider_layer = layer_create(GRect(0, 48, w, 1));
     layer_set_update_proc(s_divider_layer, divider_proc);
     layer_add_child(root, s_divider_layer);
 
-    // Graph - center
-    int graph_top = 46;
-    int graph_h = h - graph_top - 50;
-    s_graph_layer = layer_create(GRect(2, graph_top, w - 4, graph_h));
+    // Graph - center (room for IOB/loop rows + taller complications bar)
+    int graph_top = 50;
+    int bottom_stack = 14 + 16 + COMPLICATIONS_BAR_HEIGHT;
+    int graph_h = h - graph_top - bottom_stack;
+    s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, graph_top, graph_h));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
 
     // Bottom data row
-    int data_y = h - 50;
+    int data_y = h - bottom_stack;
 #ifdef PBL_COLOR
     s_iob = make_text(root, GRect(0, data_y, w / 2, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, GColorCyan);
     s_cob = make_text(root, GRect(w / 2, data_y, w / 2, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, GColorOrange);
@@ -91,7 +93,8 @@ void face_dashboard_load(Window *window, Layer *root, GRect bounds) {
     s_pump = make_text(root, GRect(w / 2, data_y + 14, w / 2, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
 
     // Complications bar at very bottom
-    s_comp_layer = layer_create(GRect(0, h - 18, w, 18));
+    s_comp_layer = layer_create(
+        GRect(TRIO_GRAPH_SIDE_INSET, h - COMPLICATIONS_BAR_HEIGHT, w - 2 * TRIO_GRAPH_SIDE_INSET, COMPLICATIONS_BAR_HEIGHT));
     layer_set_update_proc(s_comp_layer, comp_proc);
     layer_add_child(root, s_comp_layer);
 }
@@ -131,6 +134,7 @@ void face_dashboard_update(AppState *state) {
         else if (state->cgm.glucose >= cfg->high_threshold) gc = GColorOrange;
         else gc = GColorGreen;
         text_layer_set_text_color(s_glucose, gc);
+        text_layer_set_text_color(s_trend, gc);
     }
 #endif
 

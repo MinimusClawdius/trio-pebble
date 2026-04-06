@@ -11,11 +11,13 @@
 #include "modules/alerts.h"
 #include "modules/complications.h"
 #include "modules/tap_framework.h"
+#include "modules/state_persist.h"
 #include "faces/face_classic.h"
 #include "faces/face_graph_focus.h"
 #include "faces/face_compact.h"
 #include "faces/face_dashboard.h"
 #include "faces/face_minimal.h"
+#include "faces/face_retro.h"
 
 // ---------- Forward Declarations ----------
 static void click_config(void *context);
@@ -35,7 +37,8 @@ static FaceDefinition s_faces[FACE_COUNT] = {
     [FACE_GRAPH_FOCUS] = { "Graph Focus", face_graph_focus_load, face_graph_focus_unload, face_graph_focus_update },
     [FACE_COMPACT]     = { "Compact",     face_compact_load,     face_compact_unload,     face_compact_update },
     [FACE_DASHBOARD]   = { "Dashboard",   face_dashboard_load,   face_dashboard_unload,   face_dashboard_update },
-    [FACE_MINIMAL]     = { "Minimal",     face_minimal_load,     face_minimal_unload,     face_minimal_update },
+    [FACE_MINIMAL]       = { "Minimal",       face_minimal_load,       face_minimal_unload,       face_minimal_update },
+    [FACE_RETRO_DIGITAL] = { "Retro digital", face_retro_load,       face_retro_unload,       face_retro_update },
 };
 
 // ---------- Face Management ----------
@@ -184,8 +187,12 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     // Command status feedback
     t = dict_find(iter, KEY_CMD_STATUS);
     if (t) {
-        // Could display a brief notification
         APP_LOG(APP_LOG_LEVEL_INFO, "Cmd status: %s", t->value->cstring);
+    }
+
+    // Persist state so data survives watchface restart / BLE disconnection
+    if (dict_find(iter, KEY_GLUCOSE) || dict_find(iter, KEY_GRAPH_DATA)) {
+        state_persist_save(&s_state);
     }
 
     // Update display
@@ -293,6 +300,15 @@ static void init(void) {
 
     config_init();
     s_state.config = *config_get();
+
+    // Restore last-known CGM/loop/graph data from flash.
+    // Shows stale-but-useful data immediately instead of a blank screen.
+    if (state_persist_load(&s_state)) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Restored persisted state (glucose=%d, graph=%d pts)",
+                s_state.cgm.glucose, s_state.graph.count);
+        graph_restore_from_state(&s_state.graph);
+    }
+
     alerts_init();
     complications_init();
     tap_framework_init();
@@ -317,6 +333,8 @@ static void init(void) {
 }
 
 static void deinit(void) {
+    state_persist_save(&s_state);
+
     accel_tap_service_unsubscribe();
     battery_state_service_unsubscribe();
     tick_timer_service_unsubscribe();

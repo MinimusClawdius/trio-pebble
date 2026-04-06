@@ -1,4 +1,5 @@
 #include "config.h"
+#include "platform_compat.h"
 
 #define CONFIG_KEY 0x54726171u  // "Tq" — v3 (weather_enabled; invalidate old persist blob)
 
@@ -17,6 +18,10 @@ static void set_defaults(void) {
     s_config.show_complications = true;
     s_config.is_mmol = false;
     s_config.weather_enabled = true;
+#if !TRIO_DISPLAY_COLOR
+    /* Sky/gradient art is color-first; B&W keeps a clean graph. Temp still available if user enables weather. */
+    s_config.color_scheme = COLOR_SCHEME_HIGH_CONTRAST;
+#endif
 }
 
 void config_init(void) {

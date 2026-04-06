@@ -1,0 +1,138 @@
+// Face: Retro digital — Casio / classic LCD vibe inspired by fairly classic digital faces
+// (e.g. 91 Dub style: https://github.com/orviwan/91-Dub-v2.0 — layout only, no shared assets).
+
+#include "face_retro.h"
+#include "../modules/complications.h"
+#include "../modules/glucose_format.h"
+#include "../modules/graph.h"
+#include "../modules/platform_compat.h"
+
+static TextLayer *s_glucose, *s_trend, *s_delta, *s_clock, *s_date, *s_sub, *s_loop;
+static Layer *s_lcd_frame_layer, *s_graph_layer, *s_comp_layer;
+static char s_glucose_buf[16], s_clock_buf[8], s_date_buf[14], s_sub_buf[40];
+
+static void graph_proc(Layer *layer, GContext *ctx) {
+    graph_draw(layer, ctx, config_get());
+}
+
+static void comp_proc(Layer *layer, GContext *ctx) {
+    complications_draw_bar(ctx, layer_get_bounds(layer), app_state_get(), config_get());
+}
+
+static void lcd_frame_proc(Layer *layer, GContext *ctx) {
+    GRect b = layer_get_bounds(layer);
+    bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
+    GColor ink = light ? GColorBlack : GColorWhite;
+    graphics_context_set_stroke_color(ctx, ink);
+    graphics_context_set_stroke_width(ctx, 1);
+    graphics_draw_rect(ctx, GRect(0, 0, b.size.w, b.size.h));
+    graphics_draw_rect(ctx, GRect(2, 2, b.size.w - 4, b.size.h - 4));
+}
+
+static TextLayer *make_text(Layer *root, GRect frame, const char *font_key, GTextAlignment align, GColor fg) {
+    TextLayer *tl = text_layer_create(frame);
+    text_layer_set_background_color(tl, GColorClear);
+    text_layer_set_text_color(tl, fg);
+    text_layer_set_font(tl, fonts_get_system_font(font_key));
+    text_layer_set_text_alignment(tl, align);
+    layer_add_child(root, text_layer_get_layer(tl));
+    return tl;
+}
+
+void face_retro_load(Window *window, Layer *root, GRect bounds) {
+    (void)window;
+    int w = bounds.size.w;
+    int h = bounds.size.h;
+    bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
+    GColor fg = light ? GColorBlack : GColorWhite;
+    GColor fg2 = trio_secondary_fg(config_get());
+
+    /* Status row — date + clock like classic digital faces */
+    s_date = make_text(root, GRect(6, 2, w / 2 + 20, 18), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
+    s_clock = make_text(root, GRect(w / 2 - 10, 0, w / 2 + 4, 26), FONT_KEY_GOTHIC_24_BOLD, GTextAlignmentRight, fg);
+
+    int lcd_y = 24;
+    int lcd_h = 44;
+    s_lcd_frame_layer = layer_create(GRect(4, lcd_y, w - 8, lcd_h));
+    layer_set_update_proc(s_lcd_frame_layer, lcd_frame_proc);
+    layer_add_child(root, s_lcd_frame_layer);
+
+    /* Main readout inside the “LCD” */
+    int inner_pad = 8;
+    s_glucose = make_text(root, GRect(inner_pad, lcd_y + 2, w - 72 - inner_pad, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS,
+                          GTextAlignmentRight, fg);
+    text_layer_set_text(s_glucose, "--");
+    s_trend = make_text(root, GRect(w - 68, lcd_y + 6, 60, 36), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+
+    s_delta = make_text(root, GRect(4, lcd_y + lcd_h + 2, w - 8, 14), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+    s_sub = make_text(root, GRect(4, lcd_y + lcd_h + 16, w - 8, 14), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+
+    int graph_top = lcd_y + lcd_h + 32;
+    int graph_h = h - graph_top - 16 - COMPLICATIONS_BAR_HEIGHT;
+    if (graph_h < 28) {
+        graph_h = 28;
+    }
+    s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, graph_top, graph_h));
+    layer_set_update_proc(s_graph_layer, graph_proc);
+    layer_add_child(root, s_graph_layer);
+
+    s_loop = make_text(root, GRect(0, h - 16 - COMPLICATIONS_BAR_HEIGHT, w, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+
+    s_comp_layer = layer_create(
+        GRect(TRIO_GRAPH_SIDE_INSET, h - COMPLICATIONS_BAR_HEIGHT, w - 2 * TRIO_GRAPH_SIDE_INSET, COMPLICATIONS_BAR_HEIGHT));
+    layer_set_update_proc(s_comp_layer, comp_proc);
+    layer_add_child(root, s_comp_layer);
+}
+
+void face_retro_unload(void) {
+    text_layer_destroy(s_glucose);
+    text_layer_destroy(s_trend);
+    text_layer_destroy(s_delta);
+    text_layer_destroy(s_clock);
+    text_layer_destroy(s_date);
+    text_layer_destroy(s_sub);
+    text_layer_destroy(s_loop);
+    layer_destroy(s_lcd_frame_layer);
+    layer_destroy(s_graph_layer);
+    layer_destroy(s_comp_layer);
+}
+
+void face_retro_update(AppState *state) {
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    strftime(s_clock_buf, sizeof(s_clock_buf), "%H:%M", t);
+    strftime(s_date_buf, sizeof(s_date_buf), "%a %d %b", t);
+    text_layer_set_text(s_clock, s_clock_buf);
+    text_layer_set_text(s_date, s_date_buf);
+
+    format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose, state->config.is_mmol);
+    text_layer_set_text(s_glucose, s_glucose_buf);
+
+#ifdef PBL_COLOR
+    if (state->cgm.glucose > 0) {
+        TrioConfig *cfg = &state->config;
+        GColor gc;
+        if (state->cgm.glucose <= cfg->urgent_low) {
+            gc = GColorRed;
+        } else if (state->cgm.glucose <= cfg->low_threshold) {
+            gc = GColorRed;
+        } else if (state->cgm.glucose >= cfg->high_threshold) {
+            gc = GColorOrange;
+        } else {
+            gc = GColorGreen;
+        }
+        text_layer_set_text_color(s_glucose, gc);
+        text_layer_set_text_color(s_trend, gc);
+    }
+#endif
+
+    text_layer_set_text(s_trend, state->cgm.trend_str);
+    text_layer_set_text(s_delta, state->cgm.delta_str);
+    snprintf(s_sub_buf, sizeof(s_sub_buf), "%s  |  %s", state->loop.iob, state->loop.cob);
+    text_layer_set_text(s_sub, s_sub_buf);
+    text_layer_set_text(s_loop, state->loop.last_loop_time);
+
+    layer_mark_dirty(s_lcd_frame_layer);
+    layer_mark_dirty(s_graph_layer);
+    layer_mark_dirty(s_comp_layer);
+}

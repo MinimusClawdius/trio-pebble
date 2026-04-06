@@ -6,6 +6,7 @@
 #include "../modules/graph.h"
 #include "../modules/glucose_format.h"
 #include "../modules/complications.h"
+#include "../modules/platform_compat.h"
 
 static TextLayer *s_glucose, *s_trend, *s_delta, *s_time;
 static TextLayer *s_iob_cob;
@@ -32,27 +33,26 @@ void face_graph_focus_load(Window *window, Layer *root, GRect bounds) {
     int h = bounds.size.h;
     bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
     GColor fg = light ? GColorBlack : GColorWhite;
+    GColor fg2 = trio_secondary_fg(config_get());
 
-    // Full-height graph behind everything
-    s_graph_layer = layer_create(GRect(0, 0, w, h));
+    // Full-height graph behind everything (inset on round watches)
+    s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, 0, h));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
 
-    // Overlaid glucose - large, top-left
-    s_glucose = make_text(root, GRect(4, -2, w / 2, 40), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentLeft, fg);
+    // Glucose + trend on one row (trend large, immediately after number)
+    s_glucose = make_text(root, GRect(4, -2, w / 2 - 6, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentRight, fg);
     text_layer_set_text(s_glucose, "--");
-
-    // Trend arrow next to glucose
-    s_trend = make_text(root, GRect(w / 2, 6, 40, 24), FONT_KEY_GOTHIC_24_BOLD, GTextAlignmentLeft, fg);
+    s_trend = make_text(root, GRect(w / 2 - 12, 2, w / 2 - 8, 40), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
 
     // Delta below glucose
-    s_delta = make_text(root, GRect(4, 34, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, GColorLightGray);
+    s_delta = make_text(root, GRect(4, 34, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
 
     // Time - top right
-    s_time = make_text(root, GRect(w - 52, 2, 48, 20), FONT_KEY_GOTHIC_18, GTextAlignmentRight, GColorLightGray);
+    s_time = make_text(root, GRect(w - 52, 2, 48, 20), FONT_KEY_GOTHIC_18, GTextAlignmentRight, fg2);
 
     // IOB + COB combined - bottom left
-    s_iob_cob = make_text(root, GRect(4, h - 18, w - 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, GColorLightGray);
+    s_iob_cob = make_text(root, GRect(4, h - 18, w - 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
 }
 
 void face_graph_focus_unload(void) {

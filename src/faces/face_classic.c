@@ -6,6 +6,7 @@
 #include "../modules/graph.h"
 #include "../modules/complications.h"
 #include "../modules/glucose_format.h"
+#include "../modules/platform_compat.h"
 
 static TextLayer *s_time, *s_glucose, *s_trend, *s_delta;
 static TextLayer *s_iob, *s_cob, *s_loop;
@@ -37,42 +38,44 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     int h = bounds.size.h;
     bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
     GColor fg = light ? GColorBlack : GColorWhite;
-    GColor fg2 = light ? GColorDarkGray : GColorLightGray;
+    GColor fg2 = trio_secondary_fg(config_get());
 
     // Row 0: Time (top-right)
-    s_time = make_text(root, GRect(w - 58, 0, 56, 20), FONT_KEY_GOTHIC_18_BOLD, GTextAlignmentRight, fg2);
+    s_time = make_text(root, GRect(w - 56, 0, 52, 20), FONT_KEY_GOTHIC_18_BOLD, GTextAlignmentRight, fg2);
 
-    // Row 0: Glucose (large, top-left)
-    s_glucose = make_text(root, GRect(0, -4, w - 60, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentCenter, fg);
-    text_layer_set_text(s_glucose, "--");
+    // Row 1: Glucose (right-aligned) + large trend arrow immediately to the right (not under the clock)
+    {
+        int glucose_w = w * 58 / 100;
+        s_glucose = make_text(root, GRect(4, -4, glucose_w, 44), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentRight, fg);
+        text_layer_set_text(s_glucose, "--");
+        int trend_x = 4 + glucose_w - 2;
+        s_trend = make_text(root, GRect(trend_x, 2, w - trend_x - 54, 42), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+    }
 
-    // Row 0: Trend (next to time)
-    s_trend = make_text(root, GRect(w - 58, 18, 56, 22), FONT_KEY_GOTHIC_18, GTextAlignmentRight, fg2);
+    // Row 2: Delta + IOB + COB
+    s_delta = make_text(root, GRect(0, 42, w / 2, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
 
-    // Row 1: Delta
-    s_delta = make_text(root, GRect(0, 36, w / 2, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
-
-    // Row 1: IOB & COB
 #ifdef PBL_COLOR
-    s_iob = make_text(root, GRect(w / 2, 36, w / 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, GColorCyan);
-    s_cob = make_text(root, GRect(3 * w / 4, 36, w / 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, GColorOrange);
+    s_iob = make_text(root, GRect(w / 2, 42, w / 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, GColorCyan);
+    s_cob = make_text(root, GRect(3 * w / 4, 42, w / 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, GColorOrange);
 #else
-    s_iob = make_text(root, GRect(w / 2, 36, w / 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg);
-    s_cob = make_text(root, GRect(3 * w / 4, 36, w / 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg);
+    s_iob = make_text(root, GRect(w / 2, 42, w / 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg);
+    s_cob = make_text(root, GRect(3 * w / 4, 42, w / 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg);
 #endif
 
-    // Graph
-    int graph_top = 54;
-    int graph_h = h - graph_top - 34;
-    s_graph_layer = layer_create(GRect(2, graph_top, w - 4, graph_h));
+    // Graph (shorter bottom margin for taller battery/weather bar)
+    int graph_top = 60;
+    int graph_h = h - graph_top - 16 - COMPLICATIONS_BAR_HEIGHT;
+    s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, graph_top, graph_h));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
 
     // Loop status
-    s_loop = make_text(root, GRect(0, h - 34, w, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+    s_loop = make_text(root, GRect(0, h - 16 - COMPLICATIONS_BAR_HEIGHT, w, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
 
-    // Complications bar
-    s_comp_layer = layer_create(GRect(0, h - 18, w, 18));
+    // Complications bar (large battery & temperature)
+    s_comp_layer = layer_create(
+        GRect(TRIO_GRAPH_SIDE_INSET, h - COMPLICATIONS_BAR_HEIGHT, w - 2 * TRIO_GRAPH_SIDE_INSET, COMPLICATIONS_BAR_HEIGHT));
     layer_set_update_proc(s_comp_layer, comp_proc);
     layer_add_child(root, s_comp_layer);
 }
@@ -109,6 +112,7 @@ void face_classic_update(AppState *state) {
         else if (state->cgm.glucose >= cfg->high_threshold) gc = GColorOrange;
         else gc = GColorGreen;
         text_layer_set_text_color(s_glucose, gc);
+        text_layer_set_text_color(s_trend, gc);
     }
 #endif
 

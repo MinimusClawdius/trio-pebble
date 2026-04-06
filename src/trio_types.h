@@ -69,6 +69,8 @@ typedef enum {
     FACE_COMPACT,
     FACE_DASHBOARD,
     FACE_MINIMAL,
+    /** Retro digital / LCD bezel — inspired by classic faces like 91 Dub */
+    FACE_RETRO_DIGITAL,
     FACE_COUNT
 } FaceType;
 

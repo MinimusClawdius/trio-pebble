@@ -1,6 +1,9 @@
 #pragma once
 #include "../trio_types.h"
 
+/** Height of the bottom complications strip (large battery & weather text). */
+#define COMPLICATIONS_BAR_HEIGHT 28
+
 void complications_init(void);
 void complications_update_battery(void);
 void complications_update_health(void);

@@ -7,6 +7,7 @@
 #include "face_compact.h"
 #include "../modules/graph.h"
 #include "../modules/glucose_format.h"
+#include "../modules/platform_compat.h"
 
 static TextLayer *s_glucose, *s_trend, *s_delta, *s_age, *s_time;
 static Layer *s_graph_layer;
@@ -32,21 +33,24 @@ void face_compact_load(Window *window, Layer *root, GRect bounds) {
     int h = bounds.size.h;
     bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
     GColor fg = light ? GColorBlack : GColorWhite;
-    GColor fg2 = light ? GColorDarkGray : GColorLightGray;
+    GColor fg2 = trio_secondary_fg(config_get());
 
-    // Row 1: Glucose (large) + trend
-    s_glucose = make_text(root, GRect(0, -4, w - 40, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentCenter, fg);
-    text_layer_set_text(s_glucose, "--");
-    s_trend = make_text(root, GRect(w - 40, 4, 38, 30), FONT_KEY_GOTHIC_24_BOLD, GTextAlignmentLeft, fg2);
+    // Row 1: Glucose (right-aligned) + large trend beside it
+    {
+        int gw = w * 62 / 100;
+        s_glucose = make_text(root, GRect(0, -4, gw, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentRight, fg);
+        text_layer_set_text(s_glucose, "--");
+        s_trend = make_text(root, GRect(gw - 6, 0, w - gw + 6, 44), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+    }
 
     // Row 2: Delta + reading age + time
-    s_delta = make_text(root, GRect(0, 36, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
-    s_age = make_text(root, GRect(w / 3, 36, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
-    s_time = make_text(root, GRect(2 * w / 3, 36, w / 3, 16), FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentCenter, fg2);
+    s_delta = make_text(root, GRect(0, 40, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+    s_age = make_text(root, GRect(w / 3, 40, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+    s_time = make_text(root, GRect(2 * w / 3, 40, w / 3, 16), FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentCenter, fg2);
 
     // Graph - fill the rest
-    int graph_top = 54;
-    s_graph_layer = layer_create(GRect(2, graph_top, w - 4, h - graph_top - 2));
+    int graph_top = 58;
+    s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, graph_top, h - graph_top - 2));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
 }
@@ -78,6 +82,7 @@ void face_compact_update(AppState *state) {
         else if (state->cgm.glucose >= cfg->high_threshold) gc = GColorOrange;
         else gc = GColorGreen;
         text_layer_set_text_color(s_glucose, gc);
+        text_layer_set_text_color(s_trend, gc);
     }
 #endif
 

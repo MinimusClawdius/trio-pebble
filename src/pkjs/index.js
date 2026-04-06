@@ -4,7 +4,13 @@
 // ============================================================
 
 var POLL_INTERVAL_MS = 30000;
+var POLL_INTERVAL_BLE_MS = 300000; // 5 min — backoff when native BLE push is active
 var WEATHER_INTERVAL_MS = 1800000; // 30 min
+
+// When the Trio iOS app has an active BLE connection to the watch (PebbleKit iOS),
+// data is pushed directly over Bluetooth. JS polling becomes a low-frequency backup.
+var blePushActive = false;
+var pollTimer = null;
 
 // AppMessage keys (must match C enums)
 var K = {
@@ -71,6 +77,12 @@ function fetchTrio(callback) {
         if (!data) return callback(null);
         try {
             var parsed = JSON.parse(data);
+            var wasActive = blePushActive;
+            blePushActive = parsed.blePushActive === true;
+            if (blePushActive !== wasActive) {
+                console.log('Trio: BLE push ' + (blePushActive ? 'active — slowing JS poll' : 'inactive — resuming normal poll'));
+                reschedulePolling();
+            }
             callback(normalizeTrio(parsed));
         } catch (e) {
             console.log('Trio: parse error: ' + e);
@@ -82,8 +94,18 @@ function fetchTrio(callback) {
 function normalizeTrio(data) {
     var cgm = data.cgm || {};
     var loop = data.loop || {};
+    var u = cgm.units || '';
+    var isMmol = u.indexOf('mmol') >= 0;
+    var gRaw = cgm.glucose;
+    var glucoseNum = 0;
+    if (typeof gRaw === 'number') {
+        glucoseNum = gRaw;
+    } else if (gRaw != null && String(gRaw).length) {
+        glucoseNum = isMmol ? parseFloat(String(gRaw)) : (parseInt(String(gRaw), 10) || 0);
+        if (isNaN(glucoseNum)) glucoseNum = 0;
+    }
     return {
-        glucose: parseInt(cgm.glucose, 10) || 0,
+        glucose: glucoseNum,
         trend: cgm.trend || '--',
         delta: cgm.delta || '',
         isStale: cgm.isStale || false,
@@ -492,11 +514,17 @@ Pebble.addEventListener('ready', function () {
         w[K.WEATHER_ICON] = 'off';
         Pebble.sendAppMessage(w);
     }
-    setInterval(fetchData, POLL_INTERVAL_MS);
+    reschedulePolling();
     setInterval(function () {
         if (settings.weatherEnabled) fetchWeather();
     }, WEATHER_INTERVAL_MS);
 });
+
+function reschedulePolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    var interval = blePushActive ? POLL_INTERVAL_BLE_MS : POLL_INTERVAL_MS;
+    pollTimer = setInterval(fetchData, interval);
+}
 
 // ---------- HTTP Helpers ----------
 function httpGet(url, callback) {

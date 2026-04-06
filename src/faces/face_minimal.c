@@ -6,6 +6,7 @@
 #include "face_minimal.h"
 #include "../modules/graph.h"
 #include "../modules/glucose_format.h"
+#include "../modules/platform_compat.h"
 
 static TextLayer *s_time, *s_glucose, *s_trend, *s_delta;
 static Layer *s_sparkline_layer;
@@ -46,7 +47,7 @@ void face_minimal_load(Window *window, Layer *root, GRect bounds) {
     s_delta = make_text(root, GRect(w / 2, h / 2 + 10, w / 2, 20), FONT_KEY_GOTHIC_18, GTextAlignmentLeft, fg2);
 
     // Thin sparkline at bottom
-    s_sparkline_layer = layer_create(GRect(10, h - 30, w - 20, 24));
+    s_sparkline_layer = layer_create(trio_graph_layer_bounds(bounds, h - 30, 24));
     layer_set_update_proc(s_sparkline_layer, sparkline_proc);
     layer_add_child(root, s_sparkline_layer);
 }
