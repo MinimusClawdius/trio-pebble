@@ -73,7 +73,7 @@ pebble install --phone <your-phone-ip>
 3. Tap **Settings** to open the configuration page (hosted URL; see below if you see **404**)
 4. Select your data source, thresholds, alerts, and face type
 
-**If Settings shows 404:** the phone loads `config/index.html` from the URL in `src/pkjs/index.js` (`TRIO_CONFIG_PAGE_URL`). The default uses **jsDelivr** so it works without GitHub Pages. If you forked the repo, update that constant to your `user/repo`. Full steps: [docs/CLOUDPEBBLE_AND_DEPLOY.md](docs/CLOUDPEBBLE_AND_DEPLOY.md).
+**If Settings shows raw HTML or 404:** CDNs like jsDelivr serve `.html` as `text/plain`, so Rebble shows source instead of a UI. Enable **GitHub Pages** on this repo and use the default `TRIO_CONFIG_PAGE_URL` (see [docs/CLOUDPEBBLE_AND_DEPLOY.md](docs/CLOUDPEBBLE_AND_DEPLOY.md)). Forks should point the constant at `https://<you>.github.io/<repo>/config/index.html`.
 
 ### CloudPebble: capability checkboxes
 In CloudPebble project **Settings**, enable **Configurable**, **Uses health**, and **Uses location** so they match this project (config page, `health_service_*` on the watch, `navigator.geolocation` for weather). Details: [docs/CLOUDPEBBLE_AND_DEPLOY.md](docs/CLOUDPEBBLE_AND_DEPLOY.md).

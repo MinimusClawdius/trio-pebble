@@ -16,27 +16,71 @@ If a build ever complains about an unknown capability, remove **Uses location** 
 
 ---
 
-## Why Settings showed 404
+## Settings page: 404, raw HTML, or blank
 
-**Settings** opens a normal browser/WebView URL. The companion runs `showConfiguration` in `src/pkjs/index.js`, which calls `Pebble.openURL(...)` with that URL.
+**Settings** uses `Pebble.openURL(...)` in `src/pkjs/index.js` (`TRIO_CONFIG_PAGE_URL`).
 
-Previously the URL pointed at **GitHub Pages** (`minimusclawdius.github.io/...`). That returns **404** until you enable GitHub Pages on the repo and publish the `config/` folder.
+### Raw HTML / “source code” instead of a form
 
-The default URL is now **jsDelivr**, which serves the public GitHub file with a correct `text/html` MIME type, so Settings works **without** enabling Pages:
+CDNs such as **jsDelivr** and **raw.githubusercontent.com** often respond with:
 
-`https://cdn.jsdelivr.net/gh/MinimusClawdius/trio-pebble@main/config/index.html`
+- `Content-Type: text/plain; charset=utf-8`
+- `X-Content-Type-Options: nosniff`
 
-**If you fork the repo**, change `TRIO_CONFIG_PAGE_URL` in `src/pkjs/index.js` to your fork:
+Rebble’s WebView then **does not render** the page; you see the HTML as plain text.
 
-`https://cdn.jsdelivr.net/gh/<YOUR_USER>/<YOUR_REPO>@main/config/index.html`
+**Fix:** host `config/index.html` somewhere that serves it as **`text/html`**. The default URL is **GitHub Pages**:
 
-**Alternatives:**
+`https://minimusclawdius.github.io/trio-pebble/config/index.html`
 
-1. **GitHub Pages** – Repo → Settings → Pages → Branch `main`, folder `/ (root)`. Then you can set the URL to  
-   `https://<user>.github.io/<repo>/config/index.html`
-2. **Private repo** – jsDelivr/GitHub raw CDN won’t serve your config; host `config/index.html` on any HTTPS host you control and point `TRIO_CONFIG_PAGE_URL` there.
+Enable it once per repo:
 
-Rebuild the `.pbw` after changing the URL.
+1. GitHub → **trio-pebble** → **Settings** → **Pages**
+2. **Build and deployment** → Source: **Deploy from a branch**
+3. Branch: **`main`**, folder: **`/ (root)`** → Save  
+4. Wait a minute, then open that URL in **Safari/Chrome**; you should see the styled form (not angle-bracket soup).
+
+**If you fork the repo**, change `TRIO_CONFIG_PAGE_URL` in `src/pkjs/index.js` to:
+
+`https://<your-username>.github.io/<your-repo>/config/index.html`
+
+(and enable Pages on that fork).
+
+### 404 on the Pages URL
+
+Pages is not enabled yet, or the site is still building. Confirm the **Pages** section shows a green check and the published URL.
+
+### Private repo / custom host
+
+Host `config/index.html` on any HTTPS server that returns **`Content-Type: text/html`** and set `TRIO_CONFIG_PAGE_URL` accordingly.
+
+Rebuild / reinstall the `.pbw` after changing the URL.
+
+---
+
+## Trio `http://127.0.0.1:8080` — Safari shows nothing / connection failed
+
+The Pebble API runs **inside the Trio iOS app**, bound to **loopback on that iPhone only**.
+
+### iOS suspends Trio when you leave the app
+
+If you open **Safari** (or **Rebble**) as the frontmost app, **Trio moves to the background**. iOS soon **suspends** it; the socket server **stops accepting connections**. Hitting `http://127.0.0.1:8080` from Safari then often shows **nothing**, **connection refused**, or a spinner.
+
+**How to sanity-check the server**
+
+1. **Trio** in **foreground** (don’t switch away yet).
+2. **Watch → Pebble** → enable Pebble; confirm status shows **Running** (or check Trio logs for `Pebble: API server started`).
+3. On **iPad**: open **Split View** / Slide Over with **Safari** + **Trio** so Trio stays eligible to run while you load `http://127.0.0.1:8080/api/health` or `/api/all`.
+4. On **iPhone** (no split screen): you usually **cannot** keep both Safari and Trio fully active; expect localhost checks from Safari to **fail** unless you switch back to Trio quickly.
+
+### Rebble + Trio local API
+
+PebbleKit JS also runs in the **Rebble** app. When Rebble is foreground, Trio is typically **background** → local HTTP to `127.0.0.1` is **unreliable** on iOS. For day-to-day use, prefer **Nightscout** or **Dexcom Share** in the watchface settings when the phone won’t keep Trio alive, or open Trio briefly so a fetch can succeed.
+
+### Requirements
+
+- **Pebble integration** enabled in Trio; Trio has pushed at least one watch state (so the bridge has data).
+- Port matches Trio (default **8080**).
 
 ---
 
