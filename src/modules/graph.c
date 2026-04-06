@@ -1,4 +1,6 @@
 #include "graph.h"
+#include "weather_background.h"
+#include <string.h>
 
 static int16_t s_values[MAX_GRAPH_POINTS];
 static int s_count = 0;
@@ -37,6 +39,30 @@ static int map_y(int glucose, int height) {
     if (clamped < GRAPH_MIN) clamped = GRAPH_MIN;
     if (clamped > GRAPH_MAX) clamped = GRAPH_MAX;
     return height - ((clamped - GRAPH_MIN) * height / (GRAPH_MAX - GRAPH_MIN));
+}
+
+static void draw_horizontal_value_grid(GContext *ctx, int w, int h, TrioConfig *config, bool dim_on_sky) {
+    static const int16_t levels[] = { 100, 150, 200, 250, 300 };
+    GColor gc = grid_color(config);
+#ifdef PBL_COLOR
+    if (dim_on_sky) {
+        gc = GColorBlack;
+    }
+#else
+    (void)dim_on_sky;
+#endif
+    graphics_context_set_stroke_color(ctx, gc);
+    for (size_t i = 0; i < sizeof(levels) / sizeof(levels[0]); i++) {
+        int g = levels[i];
+        if (g < GRAPH_MIN || g > GRAPH_MAX) continue;
+        int y = map_y(g, h);
+        for (int x = 0; x < w; x += 5) {
+            graphics_draw_pixel(ctx, GPoint(x, y));
+            if (x + 2 < w) {
+                graphics_draw_pixel(ctx, GPoint(x + 1, y));
+            }
+        }
+    }
 }
 
 static GColor glucose_color(int glucose, TrioConfig *config) {
@@ -78,9 +104,16 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     int w = bounds.size.w;
     int h = bounds.size.h;
 
-    // Background
-    graphics_context_set_fill_color(ctx, bg_color(config));
-    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    AppState *app = app_state_get();
+    bool use_weather_bg = config->weather_enabled && app->comp.weather_icon[0] != '\0'
+        && strcmp(app->comp.weather_icon, "off") != 0;
+
+    if (use_weather_bg) {
+        weather_background_draw(ctx, bounds, &app->comp, config);
+    } else {
+        graphics_context_set_fill_color(ctx, bg_color(config));
+        graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    }
 
     // Target range band
     int y_high = map_y(config->high_threshold, h);
@@ -93,14 +126,22 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         case COLOR_SCHEME_HIGH_CONTRAST: range_color = GColorDarkGreen; break;
         default: range_color = GColorIslamicGreen; break;
     }
-    graphics_context_set_fill_color(ctx, range_color);
-#else
-    graphics_context_set_fill_color(ctx, GColorDarkGray);
 #endif
     int band_h = y_low - y_high;
     if (band_h > 0) {
+#ifdef PBL_COLOR
+        if (use_weather_bg) {
+            graphics_context_set_fill_color(ctx, GColorIslamicGreen);
+        } else {
+            graphics_context_set_fill_color(ctx, range_color);
+        }
+#else
+        graphics_context_set_fill_color(ctx, GColorDarkGray);
+#endif
         graphics_fill_rect(ctx, GRect(0, y_high, w, band_h), 0, GCornerNone);
     }
+
+    draw_horizontal_value_grid(ctx, w, h, config, use_weather_bg);
 
     // Threshold lines (dashed effect via short segments)
     graphics_context_set_stroke_color(ctx, grid_color(config));
@@ -125,8 +166,11 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     if (s_count > 12) {
         for (int hr = 12; hr < s_count; hr += 12) {
             int x = (hr * w) / (s_count > 1 ? s_count - 1 : 1);
-            for (int y = 0; y < h; y += 6) {
+            for (int y = 0; y < h; y += 4) {
                 graphics_draw_pixel(ctx, GPoint(x, y));
+                if (y + 1 < h) {
+                    graphics_draw_pixel(ctx, GPoint(x, y + 1));
+                }
             }
         }
     }
@@ -136,7 +180,7 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     int spacing = (s_count > 1) ? w / (s_count - 1) : w;
     if (spacing < 1) spacing = 1;
 
-    // Draw glucose line segments with color coding
+    // Draw glucose line segments (outline + fill for CGM-style readability on busy backgrounds)
     for (int i = 1; i < s_count; i++) {
         int x0 = (i - 1) * spacing;
         int y0 = map_y(s_values[i - 1], h);
@@ -144,6 +188,13 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         int y1 = map_y(s_values[i], h);
 
         GColor seg = glucose_color(s_values[i], config);
+#ifdef PBL_COLOR
+        if (use_weather_bg) {
+            graphics_context_set_stroke_color(ctx, GColorBlack);
+            graphics_context_set_stroke_width(ctx, 4);
+            graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
+        }
+#endif
         graphics_context_set_stroke_color(ctx, seg);
         graphics_context_set_stroke_width(ctx, 2);
         graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
@@ -154,8 +205,14 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         int x = i * spacing;
         int y = map_y(s_values[i], h);
         GColor dot = glucose_color(s_values[i], config);
+#ifdef PBL_COLOR
+        if (use_weather_bg) {
+            graphics_context_set_fill_color(ctx, GColorBlack);
+            graphics_fill_circle(ctx, GPoint(x, y), 4);
+        }
+#endif
         graphics_context_set_fill_color(ctx, dot);
-        graphics_fill_circle(ctx, GPoint(x, y), 2);
+        graphics_fill_circle(ctx, GPoint(x, y), 3);
     }
 
     // Draw predictions (dashed, different style)

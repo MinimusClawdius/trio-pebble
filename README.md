@@ -1,4 +1,4 @@
-# Trio Pebble v2.1
+# Trio Pebble v2.2
 
 A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**, **Dexcom Share**, and **Nightscout** data sources.
 
@@ -26,8 +26,13 @@ Switch between 5 distinct face designs via buttons or the config page:
 - Red when below low threshold or above high+60
 - Target range band with dashed threshold lines
 - Urgent low line in red
+- Horizontal “iso-BG” grid (100–300 mg/dL) and stronger vertical hour ticks (Dexcom/T1000-style readability)
+- Black outline on the glucose trace when a weather sky background is active
 - Prediction line overlay (when available from Trio/Nightscout)
 - Configurable thresholds via settings page
+
+### Weather sky background (behind the graph)
+When **weather** is enabled in settings, the graph area draws a simple sky scene from Open-Meteo’s WMO code: **clear** (sun by day, moon + stars at night), **mainly clear / partly cloudy / overcast**, **fog**, **rain**, **snow**, **storm** (rain + lightning). Day vs night follows the **watch’s local time** (~6:00–20:59 day). Temperature still appears in the complications bar.
 
 ### Configurable Alerts
 - **High glucose alert** - vibration when above threshold

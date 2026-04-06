@@ -146,7 +146,7 @@ typedef struct {
 typedef struct {
     int8_t phone_battery;       // 0-100
     int16_t weather_temp;       // degrees
-    char weather_icon[8];       // icon code
+    char weather_icon[16];      // condition code from phone (clear, partly, rain, …)
     int32_t steps;
     int16_t heart_rate;
     uint8_t watch_battery;      // 0-100

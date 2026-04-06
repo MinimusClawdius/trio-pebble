@@ -355,9 +355,12 @@ function fetchWeather() {
     }, { timeout: 15000, maximumAge: 600000 });
 }
 
+/** WMO weather codes → short tags for watch (see weather_background.c). Max 15 chars. */
 function weatherCodeToIcon(code) {
-    if (code <= 1) return 'clear';
-    if (code <= 3) return 'cloudy';
+    if (code === 0) return 'clear';
+    if (code === 1) return 'mainly_clr';
+    if (code === 2) return 'partly';
+    if (code === 3) return 'overcast';
     if (code <= 48) return 'fog';
     if (code <= 67) return 'rain';
     if (code <= 77) return 'snow';
