@@ -17,6 +17,11 @@
 #include "faces/face_dashboard.h"
 #include "faces/face_minimal.h"
 
+// ---------- Forward Declarations ----------
+static void click_config(void *context);
+static void window_load(Window *window);
+static void window_unload(Window *window);
+
 // ---------- Global State ----------
 static AppState s_state;
 static Window *s_main_window;
