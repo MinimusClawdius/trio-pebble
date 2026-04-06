@@ -2,6 +2,9 @@
 #include "weather_background.h"
 #include <string.h>
 
+/* CloudPebble / strict C: callers must not see grid_color before its prototype. */
+static GColor grid_color(TrioConfig *config);
+
 static int16_t s_values[MAX_GRAPH_POINTS];
 static int s_count = 0;
 static int16_t s_predictions[MAX_PREDICTIONS];
