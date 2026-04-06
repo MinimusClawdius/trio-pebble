@@ -1,11 +1,12 @@
 #include "weather_background.h"
 #include <string.h>
+#include <time.h>
 
 static bool is_local_nighttime(void) {
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
     int h = t->tm_hour;
-    /* ~6:00–20:59 treated as day (tunable). */
+    /* ~6:00-20:59 treated as day (tunable). */
     return (h < 6 || h >= 21);
 }
 
@@ -15,10 +16,11 @@ static bool icon_is(const char *icon, const char *tag) {
 
 static void sky_base(GContext *ctx, GRect b, bool night, bool light_scheme) {
 #ifdef PBL_COLOR
+    /* Core palette only (Basalt/Chalk/Aplite+ color builds). */
     if (night) {
-        graphics_context_set_fill_color(ctx, light_scheme ? GColorLiberty : GColorDukeBlue);
+        graphics_context_set_fill_color(ctx, light_scheme ? GColorBlue : GColorDukeBlue);
     } else {
-        graphics_context_set_fill_color(ctx, light_scheme ? GColorPictonBlue : GColorVividCerulean);
+        graphics_context_set_fill_color(ctx, light_scheme ? GColorCyan : GColorBlue);
     }
 #else
     (void)night;
@@ -31,9 +33,9 @@ static void sky_base(GContext *ctx, GRect b, bool night, bool light_scheme) {
     int gh = b.size.h / 5;
     GRect ground = GRect(b.origin.x, b.origin.y + b.size.h - gh, b.size.w, gh);
     if (night) {
-        graphics_context_set_fill_color(ctx, light_scheme ? GColorDarkGray : GColorOxfordBlue);
+        graphics_context_set_fill_color(ctx, light_scheme ? GColorDarkGray : GColorDukeBlue);
     } else {
-        graphics_context_set_fill_color(ctx, light_scheme ? GColorMintGreen : GColorIslamicGreen);
+        graphics_context_set_fill_color(ctx, light_scheme ? GColorGreen : GColorIslamicGreen);
     }
     graphics_fill_rect(ctx, ground, 0, GCornerNone);
 #endif
@@ -54,8 +56,9 @@ static void draw_stars_field(GContext *ctx, GRect b) {
         { 8, 10 }, { 22, 6 }, { 40, 14 }, { 58, 8 }, { 72, 12 },
         { 90, 5 }, { 104, 16 }, { 120, 9 }, { 12, 22 }, { 100, 24 }
     };
-    for (size_t i = 0; i < sizeof(stars) / sizeof(stars[0]); i++) {
-        GPoint p = stars[i];
+    unsigned int si;
+    for (si = 0; si < sizeof(stars) / sizeof(stars[0]); si++) {
+        GPoint p = stars[si];
         if (p.x < b.size.w && p.y < b.size.h) {
             draw_star(ctx, GPoint(b.origin.x + p.x, b.origin.y + p.y), b.origin.x + b.size.w);
         }
@@ -93,7 +96,7 @@ static void draw_cloud_blob(GContext *ctx, int ax, int ay, GColor c) {
 }
 
 static void draw_rain(GContext *ctx, GRect b) {
-    graphics_context_set_stroke_color(ctx, GColorVividCerulean);
+    graphics_context_set_stroke_color(ctx, GColorCyan);
     graphics_context_set_stroke_width(ctx, 1);
     for (int x = 4; x < b.size.w; x += 7) {
         int y0 = b.origin.y + b.size.h / 3;
@@ -164,7 +167,7 @@ void weather_background_draw(GContext *ctx, GRect bounds, const Complications *c
     int w = bounds.size.w;
     int cx = bounds.origin.x + w - 22;
     int cy = bounds.origin.y + 22;
-    GColor moon_sky = light ? GColorLiberty : GColorDukeBlue;
+    GColor moon_sky = light ? GColorBlue : GColorDukeBlue;
 
     if (icon_is(icon, "rain") || icon_is(icon, "storm")) {
         draw_cloud_blob(ctx, bounds.origin.x + w / 2 - 22, bounds.origin.y + 8,

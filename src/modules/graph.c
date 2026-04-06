@@ -44,6 +44,8 @@ static int map_y(int glucose, int height) {
 static void draw_horizontal_value_grid(GContext *ctx, int w, int h, TrioConfig *config, bool dim_on_sky) {
     static const int16_t levels[] = { 100, 150, 200, 250, 300 };
     GColor gc = grid_color(config);
+    unsigned int gi;
+    int g, y, x;
 #ifdef PBL_COLOR
     if (dim_on_sky) {
         gc = GColorBlack;
@@ -52,11 +54,11 @@ static void draw_horizontal_value_grid(GContext *ctx, int w, int h, TrioConfig *
     (void)dim_on_sky;
 #endif
     graphics_context_set_stroke_color(ctx, gc);
-    for (size_t i = 0; i < sizeof(levels) / sizeof(levels[0]); i++) {
-        int g = levels[i];
+    for (gi = 0; gi < sizeof(levels) / sizeof(levels[0]); gi++) {
+        g = levels[gi];
         if (g < GRAPH_MIN || g > GRAPH_MAX) continue;
-        int y = map_y(g, h);
-        for (int x = 0; x < w; x += 5) {
+        y = map_y(g, h);
+        for (x = 0; x < w; x += 5) {
             graphics_draw_pixel(ctx, GPoint(x, y));
             if (x + 2 < w) {
                 graphics_draw_pixel(ctx, GPoint(x + 1, y));
@@ -191,7 +193,8 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
 #ifdef PBL_COLOR
         if (use_weather_bg) {
             graphics_context_set_stroke_color(ctx, GColorBlack);
-            graphics_context_set_stroke_width(ctx, 4);
+            /* Pebble max stroke width is 3 on color platforms. */
+            graphics_context_set_stroke_width(ctx, 3);
             graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
         }
 #endif
