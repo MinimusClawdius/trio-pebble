@@ -1,96 +1,145 @@
-# Trio Pebble Watchface
+# Trio Pebble v2.0
 
-A Pebble smartwatch companion watchface for the [Trio](https://github.com/MinimusClawdius/Trio) diabetes management iOS app.
+A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**, **Dexcom Share**, and **Nightscout** data sources.
 
 ## Features
 
-- **Real-time glucose display** with large, readable numbers
-- **Glucose trend graph** with color-coded ranges (low=red, in-range=green, high=orange)
-- **Trend arrow** showing glucose direction
-- **Delta** showing rate of change
-- **IOB** (Insulin on Board) display
-- **COB** (Carbs on Board) display
-- **Loop status** with last loop time
-- **Bolus commands** with iPhone confirmation safety
-- **Carb entry** with iPhone confirmation safety
-- Compatible with all Pebble models (Aplite, Basalt, Chalk, Diorite, Emery)
+### Multiple Watchface Layouts
+Switch between 5 distinct face designs via buttons or the config page:
+
+| Face | Description |
+|------|-------------|
+| **Classic** | Glucose + graph + IOB/COB/loop + complications bar |
+| **Graph Focus** | Full-screen graph with overlaid glucose and minimal text |
+| **Compact** | T1000-inspired: large glucose + trend, reading age, full graph |
+| **Dashboard** | Information-dense quadrant layout with date, pump, sensor data |
+| **Minimal** | Elegant time-forward design with sparkline - for everyday wear |
+
+### Data Sources (Configurable)
+- **Trio** - Polls local HTTP API on `127.0.0.1:8080` (requires Trio iOS app with Pebble integration enabled)
+- **Dexcom Share** - Direct connection to Dexcom Share servers (US and international)
+- **Nightscout** - Connects to any Nightscout instance with optional API token auth
+
+### Dynamic Color-Coded Graph
+- Green line segments when glucose is in range
+- Orange when above high threshold
+- Red when below low threshold or above high+60
+- Target range band with dashed threshold lines
+- Urgent low line in red
+- Prediction line overlay (when available from Trio/Nightscout)
+- Configurable thresholds via settings page
+
+### Configurable Alerts
+- **High glucose alert** - vibration when above threshold
+- **Low glucose alert** - distinct vibration pattern when below threshold
+- **Urgent low alert** - aggressive vibration, always active regardless of settings
+- **Snooze** - press SELECT to snooze all alerts (configurable duration: 5-60 min)
+- Minimum 60-second re-alert interval to prevent vibration spam
+
+### Complications
+- Watch battery percentage (with charging indicator)
+- Steps (from Pebble Health)
+- Heart rate (from Pebble Health, when available)
+- Weather temperature (via Open-Meteo API, no API key needed)
+
+### Color Schemes
+- **Dark** - Black background, green/red/orange glucose colors
+- **Light** - White background, adapted colors for readability
+- **High Contrast** - Maximum visibility for outdoor use
+
+### Touch/Tap Framework
+Built-in framework for future touch screen support. When Pebble touch capabilities become available:
+- Tap graph area to open carbs entry
+- Tap data area to request bolus
+- Tap and hold for temp basal adjustment
+- Currently uses accelerometer tap for data refresh
+
+## Quick Start
+
+### Option A: CloudPebble (Recommended)
+1. Go to [CloudPebble](https://cloudpebble.net/)
+2. Import from GitHub: `https://github.com/MinimusClawdius/trio-pebble`
+3. Build and install to your Pebble
+
+### Option B: Local Build
+```bash
+pebble build
+pebble install --phone <your-phone-ip>
+```
+
+### Configuration
+1. Open the Pebble/Rebble app on your phone
+2. Find "Trio Pebble" in your watchfaces
+3. Tap "Settings" to open the configuration page
+4. Select your data source, thresholds, alerts, and face type
 
 ## Architecture
 
 ```
-Pebble Watch <-- AppMessage --> Rebble App (PebbleKit JS)
-                                     |
-                                HTTP (127.0.0.1:8080)
-                                     |
-                                Trio iOS App (PebbleLocalAPIServer)
+Pebble Watch (C)
+├── main.c              - App lifecycle, face management, message routing
+├── trio_types.h        - Shared types, enums, state structures
+├── modules/
+│   ├── config.c/.h     - Persistent configuration (persist API)
+│   ├── graph.c/.h      - Color-coded graph with thresholds & predictions
+│   ├── alerts.c/.h     - BG alerts with vibration patterns & snooze
+│   ├── complications.c/.h - Battery, weather, steps, heart rate
+│   └── tap_framework.c/.h - Future touch action zone system
+├── faces/
+│   ├── face_classic.c/.h
+│   ├── face_graph_focus.c/.h
+│   ├── face_compact.c/.h
+│   ├── face_dashboard.c/.h
+│   └── face_minimal.c/.h
+└── pkjs/
+    └── index.js        - Multi-source data fetching, weather, config bridge
+
+Phone (HTML)
+└── config/
+    └── index.html      - Settings page (dark theme, mobile-optimized)
 ```
 
-The watchface communicates with Trio via:
-1. **PebbleKit JS** bridge running inside the Rebble companion app
-2. JS bridge polls a **local HTTP server** running inside the Trio iOS app
-3. Data is formatted and sent to the watch via **AppMessage**
-
-## Building with CloudPebble
-
-1. Go to [CloudPebble](https://cloudpebble.net/) (Rebble-maintained)
-2. Click "Import" and select "Import from GitHub"
-3. Enter this repository URL: `https://github.com/MinimusClawdius/trio-pebble`
-4. CloudPebble will import all source files
-5. Click "Compilation" > "Run Build"
-6. Install the resulting `.pbw` to your Pebble via the Rebble app
-
-## Building Locally
-
-Requires the [Pebble SDK](https://developer.rebble.io/developer.pebble.com/sdk/install/index.html).
-
-```bash
-pebble build
+### Data Flow
+```
+[CGM Sensor] → [Trio App / Dexcom / Nightscout]
+                           ↓
+                  PebbleKit JS (index.js)
+                  - Fetches from selected source
+                  - Normalizes to common format
+                  - Fetches weather from Open-Meteo
+                           ↓
+                     AppMessage
+                           ↓
+                  Pebble Watch (main.c)
+                  - Routes to active face
+                  - Updates graph, text, complications
+                  - Checks alert thresholds
 ```
 
-The output `.pbw` file will be in the `build/` directory.
+## Button Controls
 
-## Setup in Trio
-
-1. Open Trio on your iPhone
-2. Go to **Settings** > **Watch** > **Pebble**
-3. Toggle **Enable Pebble** on
-4. Verify the status shows "Running"
-5. Install this watchface on your Pebble
-6. The watchface will automatically connect and display data
+| Button | Watchface Mode | Alert Active |
+|--------|---------------|--------------|
+| **UP** | Previous face layout | Previous face layout |
+| **DOWN** | Next face layout | Next face layout |
+| **SELECT** | (reserved) | Snooze alerts |
+| **BACK** | Exit watchface | Exit watchface |
 
 ## Safety
 
-- All bolus and carb commands from the Pebble **require confirmation on the iPhone**
-- Commands expire after 5 minutes if not confirmed
-- Maximum bolus and carb amounts are enforced by Trio's safety limits
+- All bolus/carb commands (Trio source only) require iPhone confirmation
+- Commands are not available when using Dexcom Share or Nightscout sources
+- Urgent low alerts cannot be disabled
+- This watchface is not FDA approved and should not be used for medical decisions
 
-## API Endpoints
+## Requirements
 
-The local HTTP server exposes these endpoints:
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/cgm` | GET | Current glucose, trend, delta |
-| `/api/loop` | GET | IOB, COB, loop status, glucose history |
-| `/api/pump` | GET | Pump status |
-| `/api/all` | GET | All data combined |
-| `/api/bolus` | POST | Request bolus (requires iPhone confirm) |
-| `/api/carbs` | POST | Request carb entry (requires iPhone confirm) |
-| `/health` | GET | Server health check |
-
-## File Structure
-
-```
-src/
-  main.c              - Main watchapp: UI, menus, AppMessage handling
-  glucose_graph.c     - Glucose trend graph rendering
-  glucose_graph.h     - Graph header
-  js/
-    pebble-js-app.js  - PebbleKit JS bridge (polls Trio HTTP server)
-appinfo.json          - Pebble project metadata
-package.json          - NPM metadata with AppMessage key definitions
-wscript               - Pebble build script
-```
+- Pebble / Pebble 2 (Aplite)
+- Pebble Time / Time Steel (Basalt) - color support
+- Pebble Time Round (Chalk)
+- Pebble 2 HR (Diorite)
+- Pebble Time 2 (Emery)
+- Rebble app on iOS or Android
 
 ## License
 
