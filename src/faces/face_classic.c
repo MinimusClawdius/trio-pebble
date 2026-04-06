@@ -5,6 +5,7 @@
 #include "face_classic.h"
 #include "../modules/graph.h"
 #include "../modules/complications.h"
+#include "../modules/glucose_format.h"
 
 static TextLayer *s_time, *s_glucose, *s_trend, *s_delta;
 static TextLayer *s_iob, *s_cob, *s_loop;
@@ -94,11 +95,8 @@ void face_classic_update(AppState *state) {
     strftime(s_time_buf, sizeof(s_time_buf), "%H:%M", t);
     text_layer_set_text(s_time, s_time_buf);
 
-    if (state->cgm.glucose > 0) {
-        snprintf(s_glucose_buf, sizeof(s_glucose_buf), "%d", state->cgm.glucose);
-    } else {
-        snprintf(s_glucose_buf, sizeof(s_glucose_buf), "--");
-    }
+    format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose,
+                           state->config.is_mmol);
     text_layer_set_text(s_glucose, s_glucose_buf);
 
     // Color glucose based on range

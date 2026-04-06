@@ -21,12 +21,13 @@ var K = {
     STEPS: 28, HEART_RATE: 29,
     PREDICTIONS_DATA: 30, PREDICTIONS_COUNT: 31,
     PUMP_BATTERY: 32, SENSOR_AGE: 33,
-    CONFIG_CHANGED: 34, TAP_ACTION: 35
+    CONFIG_CHANGED: 34, TAP_ACTION: 35,
+    CONFIG_WEATHER_ENABLED: 36
 };
 
 // ---------- Settings ----------
 var settings = {
-    dataSource: 0,        // 0=Trio, 1=Dexcom, 2=Nightscout
+    dataSource: 0,        // 0=Trio, 1=Dexcom, 2=Nightscout, 3=Health/CGM via Trio (same HTTP)
     trioHost: 'http://127.0.0.1:8080',
     nightscoutUrl: '',
     nightscoutToken: '',
@@ -42,7 +43,8 @@ var settings = {
     alertLowEnabled: true,
     alertSnoozeMin: 15,
     weatherEnabled: true,
-    weatherUnits: 'f'     // 'f' or 'c'
+    weatherUnits: 'f',    // 'f' or 'c'
+    glucoseUnits: 'mgdl'  // 'mgdl' | 'mmol' — watchface display + threshold entry
 };
 
 function loadSettings() {
@@ -264,6 +266,7 @@ function fetchData() {
     switch (settings.dataSource) {
         case 1:  fetcher = fetchDexcom; break;
         case 2:  fetcher = fetchNightscout; break;
+        case 3:  fetcher = fetchTrio; break; // Apple Health / CGM via Trio — same local API
         default: fetcher = fetchTrio; break;
     }
 
@@ -276,13 +279,22 @@ function fetchData() {
 function sendToWatch(data) {
     var msg = {};
 
-    if (data.glucose) msg[K.GLUCOSE] = data.glucose;
+    if (typeof data.glucose === 'number' && !isNaN(data.glucose) && data.glucose > 0) {
+        msg[K.GLUCOSE] = data.glucose;
+    }
     if (data.trend) msg[K.TREND] = data.trend.substring(0, 7);
     if (data.delta) msg[K.DELTA] = data.delta.substring(0, 15);
     if (data.iob) msg[K.IOB] = data.iob.substring(0, 15);
     if (data.cob) msg[K.COB] = data.cob.substring(0, 15);
     if (data.lastLoop) msg[K.LAST_LOOP] = data.lastLoop.substring(0, 15);
-    if (data.units) msg[K.UNITS] = data.units;
+    /* Display units: user preference overrides CGM payload */
+    if (settings.glucoseUnits === 'mmol') {
+        msg[K.UNITS] = 'mmol';
+    } else if (data.units) {
+        msg[K.UNITS] = data.units;
+    } else {
+        msg[K.UNITS] = 'mgdL';
+    }
     if (data.pumpStatus) msg[K.PUMP_STATUS] = data.pumpStatus.substring(0, 15);
     if (data.sensorAge) msg[K.SENSOR_AGE] = data.sensorAge.substring(0, 15);
 
@@ -356,10 +368,9 @@ function weatherCodeToIcon(code) {
 
 // ---------- Commands from Watch ----------
 function sendCommand(type, amount) {
-    if (settings.dataSource !== 0) {
-        // Commands only work with Trio data source
+    if (settings.dataSource !== 0 && settings.dataSource !== 3) {
         var msg = {};
-        msg[K.CMD_STATUS] = 'Commands require Trio';
+        msg[K.CMD_STATUS] = 'Commands need Trio API';
         Pebble.sendAppMessage(msg);
         return;
     }
@@ -417,10 +428,22 @@ Pebble.addEventListener('webviewclosed', function (e) {
             msg[K.CONFIG_ALERT_LOW_ENABLED] = settings.alertLowEnabled ? 1 : 0;
             msg[K.CONFIG_ALERT_SNOOZE_MIN] = settings.alertSnoozeMin;
             msg[K.CONFIG_COLOR_SCHEME] = settings.colorScheme;
+            msg[K.CONFIG_WEATHER_ENABLED] = settings.weatherEnabled ? 1 : 0;
+            msg[K.UNITS] = settings.glucoseUnits === 'mmol' ? 'mmol' : 'mgdL';
+            if (!settings.weatherEnabled) {
+                msg[K.WEATHER_TEMP] = 0;
+                msg[K.WEATHER_ICON] = 'off';
+            }
             Pebble.sendAppMessage(msg);
 
-            // Re-fetch with new source
             fetchData();
+            if (settings.weatherEnabled) fetchWeather();
+            else {
+                var w = {};
+                w[K.WEATHER_TEMP] = 0;
+                w[K.WEATHER_ICON] = 'off';
+                Pebble.sendAppMessage(w);
+            }
         } catch (ex) {
             console.log('Trio: config parse error: ' + ex);
         }
@@ -444,19 +467,32 @@ Pebble.addEventListener('ready', function () {
     console.log('Trio Pebble v2.0 ready');
     loadSettings();
 
-    // Push initial config
     var msg = {};
     msg[K.CONFIG_FACE_TYPE] = settings.faceType;
     msg[K.CONFIG_DATA_SOURCE] = settings.dataSource;
     msg[K.CONFIG_HIGH_THRESHOLD] = settings.highThreshold;
     msg[K.CONFIG_LOW_THRESHOLD] = settings.lowThreshold;
+    msg[K.CONFIG_ALERT_URGENT_LOW] = settings.urgentLow;
+    msg[K.CONFIG_ALERT_HIGH_ENABLED] = settings.alertHighEnabled ? 1 : 0;
+    msg[K.CONFIG_ALERT_LOW_ENABLED] = settings.alertLowEnabled ? 1 : 0;
+    msg[K.CONFIG_ALERT_SNOOZE_MIN] = settings.alertSnoozeMin;
     msg[K.CONFIG_COLOR_SCHEME] = settings.colorScheme;
+    msg[K.CONFIG_WEATHER_ENABLED] = settings.weatherEnabled ? 1 : 0;
+    msg[K.UNITS] = settings.glucoseUnits === 'mmol' ? 'mmol' : 'mgdL';
     Pebble.sendAppMessage(msg);
 
     fetchData();
-    fetchWeather();
+    if (settings.weatherEnabled) fetchWeather();
+    else {
+        var w = {};
+        w[K.WEATHER_TEMP] = 0;
+        w[K.WEATHER_ICON] = 'off';
+        Pebble.sendAppMessage(w);
+    }
     setInterval(fetchData, POLL_INTERVAL_MS);
-    setInterval(fetchWeather, WEATHER_INTERVAL_MS);
+    setInterval(function () {
+        if (settings.weatherEnabled) fetchWeather();
+    }, WEATHER_INTERVAL_MS);
 });
 
 // ---------- HTTP Helpers ----------

@@ -1,6 +1,6 @@
 #include "config.h"
 
-#define CONFIG_KEY 0x5472696F  // "Trio"
+#define CONFIG_KEY 0x54726171u  // "Tq" — v3 (weather_enabled; invalidate old persist blob)
 
 static TrioConfig s_config;
 
@@ -16,6 +16,7 @@ static void set_defaults(void) {
     s_config.alert_snooze_min = 15;
     s_config.show_complications = true;
     s_config.is_mmol = false;
+    s_config.weather_enabled = true;
 }
 
 void config_init(void) {
@@ -66,8 +67,12 @@ void config_apply_message(DictionaryIterator *iter) {
     t = dict_find(iter, KEY_UNITS);
     if (t) {
         const char *u = t->value->cstring;
-        s_config.is_mmol = (u && (u[0] == 'm' && u[1] == 'm'));
+        /* "mmol" / "mmol/L" style */
+        s_config.is_mmol = (u && u[0] == 'm' && u[1] == 'm' && u[2] == 'o');
     }
+
+    t = dict_find(iter, KEY_CONFIG_WEATHER_ENABLED);
+    if (t) s_config.weather_enabled = t->value->int32 != 0;
 
     config_save();
 }

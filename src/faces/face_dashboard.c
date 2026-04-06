@@ -6,6 +6,7 @@
 #include "face_dashboard.h"
 #include "../modules/graph.h"
 #include "../modules/complications.h"
+#include "../modules/glucose_format.h"
 
 static TextLayer *s_glucose, *s_trend, *s_delta, *s_time, *s_date;
 static TextLayer *s_iob, *s_cob, *s_loop, *s_pump;
@@ -118,10 +119,8 @@ void face_dashboard_update(AppState *state) {
     text_layer_set_text(s_time, s_time_buf);
     text_layer_set_text(s_date, s_date_buf);
 
-    snprintf(s_glucose_buf, sizeof(s_glucose_buf), "%s",
-             state->cgm.glucose > 0 ? "" : "--");
-    if (state->cgm.glucose > 0)
-        snprintf(s_glucose_buf, sizeof(s_glucose_buf), "%d", state->cgm.glucose);
+    format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose,
+                           state->config.is_mmol);
     text_layer_set_text(s_glucose, s_glucose_buf);
 
 #ifdef PBL_COLOR

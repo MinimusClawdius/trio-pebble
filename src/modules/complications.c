@@ -89,8 +89,8 @@ void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConf
                            GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
     }
 
-    // Weather
-    if (state->comp.weather_temp != 0) {
+    // Weather (optional; disabled from phone settings)
+    if (config->weather_enabled && state->comp.weather_temp != 0) {
         snprintf(buf, sizeof(buf), "%d°", state->comp.weather_temp);
         graphics_draw_text(ctx, buf, font, GRect(x + section_w * 3, y, section_w - 2, 16),
                            GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);

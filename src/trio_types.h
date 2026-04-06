@@ -49,6 +49,7 @@ typedef enum {
     KEY_SENSOR_AGE,
     KEY_CONFIG_CHANGED,
     KEY_TAP_ACTION,
+    KEY_CONFIG_WEATHER_ENABLED,
     KEY_COUNT
 } AppMessageKey;
 
@@ -56,7 +57,9 @@ typedef enum {
 typedef enum {
     DATA_SOURCE_TRIO = 0,
     DATA_SOURCE_DEXCOM_SHARE,
-    DATA_SOURCE_NIGHTSCOUT
+    DATA_SOURCE_NIGHTSCOUT,
+    /** Same HTTP API as Trio; use when CGM reaches Trio via Apple Health / Dexcom / etc. */
+    DATA_SOURCE_APPLE_HEALTH_VIA_TRIO
 } DataSource;
 
 // ---------- Face Type ----------
@@ -112,7 +115,8 @@ typedef struct {
     bool alert_low_enabled;
     uint8_t alert_snooze_min;
     bool show_complications;
-    bool is_mmol;               // derived from KEY_UNITS
+    bool is_mmol;               // display: mg/dL vs mmol/L (from KEY_UNITS)
+    bool weather_enabled;       // show weather in complications bar
 } TrioConfig;
 
 // ---------- CGM State ----------

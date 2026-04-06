@@ -18,24 +18,24 @@
     -webkit-appearance: none;
   }
   select { background: #111 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23666'/%3E%3C/svg%3E") no-repeat right 12px center; padding-right: 32px; }
-  .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
-  .toggle-row label { margin: 0; flex: 1; }
-  .toggle { position: relative; width: 48px; height: 28px; }
-  .toggle input { opacity: 0; width: 0; height: 0; }
-  .toggle .slider { position: absolute; inset: 0; background: #333; border-radius: 14px; cursor: pointer; transition: 0.3s; }
-  .toggle .slider:before { content: ''; position: absolute; width: 22px; height: 22px; left: 3px; bottom: 3px; background: #777; border-radius: 50%; transition: 0.3s; }
-  .toggle input:checked + .slider { background: #00c853; }
-  .toggle input:checked + .slider:before { transform: translateX(20px); background: #fff; }
+  .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; min-height: 44px; }
+  .toggle-label-text { flex: 1; font-size: 14px; color: #ccc; padding-right: 12px; }
+  /* Clickable switch: label wraps input + slider so taps toggle the checkbox */
+  .toggle-switch { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-switch .slider { position: absolute; inset: 0; background: #333; border-radius: 14px; cursor: pointer; transition: 0.3s; }
+  .toggle-switch .slider:before { content: ''; position: absolute; width: 22px; height: 22px; left: 3px; bottom: 3px; background: #777; border-radius: 50%; transition: 0.3s; }
+  .toggle-switch input:checked + .slider { background: #00c853; }
+  .toggle-switch input:checked + .slider:before { transform: translateX(20px); background: #fff; }
   .row { display: flex; gap: 12px; }
   .row > * { flex: 1; }
-  .threshold-preview { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 12px; color: #888; }
+  .threshold-preview { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 12px; color: #888; flex-wrap: wrap; }
   .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .dot.red { background: #f44336; } .dot.orange { background: #ff9800; } .dot.green { background: #4caf50; }
   .data-source-note { font-size: 11px; color: #555; margin-top: -8px; margin-bottom: 12px; }
   .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 20px; text-align: center; }
   .btn-save { background: #00c853; color: #000; }
   .btn-save:active { background: #00a044; }
-  .divider { height: 1px; background: #222; margin: 16px 0; }
   .version { text-align: center; font-size: 11px; color: #444; margin-top: 16px; }
 </style>
 </head>
@@ -60,21 +60,29 @@
     <option value="1">Light</option>
     <option value="2">High Contrast</option>
   </select>
+  <label>Blood glucose display units</label>
+  <select id="glucoseUnits" onchange="onGlucoseUnitsChange()">
+    <option value="mgdl">mg/dL</option>
+    <option value="mmol">mmol/L</option>
+  </select>
+  <p class="data-source-note">Thresholds below are entered in the units you select; the watch stores mg/dL internally for the graph.</p>
 </div>
 
 <h2>Data Source</h2>
 <div class="card">
   <label>Source</label>
   <select id="dataSource" onchange="toggleSourceFields()">
-    <option value="0">Trio (Local HTTP)</option>
-    <option value="1">Dexcom Share (Direct)</option>
+    <option value="0">Trio (local HTTP on this iPhone)</option>
+    <option value="3">Apple Health &amp; CGM via Trio</option>
+    <option value="1">Dexcom Share (direct)</option>
     <option value="2">Nightscout</option>
   </select>
 
   <div id="trioFields">
     <label>Trio API Host</label>
     <input type="text" id="trioHost" placeholder="http://127.0.0.1:8080">
-    <p class="data-source-note">Enable Pebble integration in Trio &gt; Watch &gt; Pebble settings</p>
+    <p class="data-source-note" id="trioNoteDefault">Turn on Pebble in Trio &rarr; Watch. Open Trio before Rebble polls; iOS may suspend Trio in the background.</p>
+    <p class="data-source-note" id="trioNoteHealth" style="display:none">Same API as Trio local HTTP. Use when CGM data reaches Trio (Dexcom, Health, etc.). Keep Trio running when possible so Rebble can reach 127.0.0.1.</p>
   </div>
 
   <div id="dexcomFields" style="display:none">
@@ -87,7 +95,7 @@
       <option value="us">United States</option>
       <option value="ous">Outside US</option>
     </select>
-    <p class="data-source-note">Dexcom Share must be enabled in the Dexcom app. Commands (bolus/carbs) are not available with Dexcom source.</p>
+    <p class="data-source-note">Dexcom Share must be enabled in the Dexcom app. Bolus/carbs from the watch require Trio (sources 0 or 3).</p>
   </div>
 
   <div id="nightscoutFields" style="display:none">
@@ -95,7 +103,7 @@
     <input type="text" id="nightscoutUrl" placeholder="https://your-site.herokuapp.com">
     <label>API Token (optional)</label>
     <input type="text" id="nightscoutToken" placeholder="your-api-secret-token">
-    <p class="data-source-note">Commands (bolus/carbs) are not available with Nightscout source.</p>
+    <p class="data-source-note">Bolus/carbs from the watch require Trio (sources 0 or 3).</p>
   </div>
 </div>
 
@@ -103,37 +111,43 @@
 <div class="card">
   <div class="row">
     <div>
-      <label>High (mg/dL)</label>
-      <input type="number" id="highThreshold" min="120" max="300" step="5">
+      <label id="lblHigh">High</label>
+      <input type="number" id="highThreshold" min="1" max="400" step="1">
     </div>
     <div>
-      <label>Low (mg/dL)</label>
-      <input type="number" id="lowThreshold" min="50" max="100" step="5">
+      <label id="lblLow">Low</label>
+      <input type="number" id="lowThreshold" min="1" max="400" step="1">
     </div>
     <div>
-      <label>Urgent Low</label>
-      <input type="number" id="urgentLow" min="40" max="70" step="5">
+      <label id="lblUrgent">Urgent Low</label>
+      <input type="number" id="urgentLow" min="1" max="400" step="1">
     </div>
   </div>
   <div class="threshold-preview">
     <span class="dot red"></span> &le; Low
     <span class="dot green"></span> In Range
     <span class="dot orange"></span> &ge; High
-    <span class="dot red"></span> &ge; High+60
+    <span class="dot red"></span> &ge; High+60 mg/dL
   </div>
 </div>
 
 <h2>Alerts</h2>
 <div class="card">
   <div class="toggle-row">
-    <label>High Glucose Alert</label>
-    <div class="toggle"><input type="checkbox" id="alertHighEnabled"><span class="slider"></span></div>
+    <span class="toggle-label-text">High Glucose Alert</span>
+    <label class="toggle-switch" for="alertHighEnabled">
+      <input type="checkbox" id="alertHighEnabled">
+      <span class="slider"></span>
+    </label>
   </div>
   <div class="toggle-row">
-    <label>Low Glucose Alert</label>
-    <div class="toggle"><input type="checkbox" id="alertLowEnabled"><span class="slider"></span></div>
+    <span class="toggle-label-text">Low Glucose Alert</span>
+    <label class="toggle-switch" for="alertLowEnabled">
+      <input type="checkbox" id="alertLowEnabled">
+      <span class="slider"></span>
+    </label>
   </div>
-  <p class="data-source-note" style="margin-top:8px">Urgent low alerts (&le; urgent threshold) are always active.</p>
+  <p class="data-source-note" style="margin-top:8px">Urgent low alerts (&le; urgent threshold) stay active.</p>
 
   <label style="margin-top:12px">Snooze Duration (minutes)</label>
   <select id="alertSnoozeMin">
@@ -149,20 +163,23 @@
 <h2>Complications</h2>
 <div class="card">
   <div class="toggle-row">
-    <label>Weather</label>
-    <div class="toggle"><input type="checkbox" id="weatherEnabled"><span class="slider"></span></div>
+    <span class="toggle-label-text">Weather</span>
+    <label class="toggle-switch" for="weatherEnabled">
+      <input type="checkbox" id="weatherEnabled">
+      <span class="slider"></span>
+    </label>
   </div>
   <label>Temperature Units</label>
   <select id="weatherUnits">
     <option value="f">Fahrenheit</option>
     <option value="c">Celsius</option>
   </select>
-  <p class="data-source-note">Steps and heart rate are read from Pebble Health (if available).</p>
+  <p class="data-source-note">Steps and heart rate use Pebble Health when available. PebbleKit JS cannot read Apple Health; use Trio or Nightscout for CGM.</p>
 </div>
 
 <button class="btn btn-save" onclick="saveAndReturn()">Save Settings</button>
 
-<div class="version">Trio Pebble v2.0 &middot; MinimusClawdius</div>
+<div class="version">Trio Pebble v2.1 &middot; MinimusClawdius</div>
 
 <script>
 function getSettings() {
@@ -172,20 +189,88 @@ function getSettings() {
     } catch (e) { return {}; }
 }
 
+function boolFromSetting(v) {
+    return v === true || v === 1 || v === '1' || v === 'true';
+}
+
+function setChecked(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.checked = boolFromSetting(val);
+}
+
+function thresholdMgdlFromInputs() {
+    var u = document.getElementById('glucoseUnits').value;
+    var h = parseFloat(document.getElementById('highThreshold').value, 10);
+    var l = parseFloat(document.getElementById('lowThreshold').value, 10);
+    var ur = parseFloat(document.getElementById('urgentLow').value, 10);
+    if (u === 'mmol') {
+        return {
+            high: Math.round(h * 18),
+            low: Math.round(l * 18),
+            urgent: Math.round(ur * 18)
+        };
+    }
+    return { high: Math.round(h), low: Math.round(l), urgent: Math.round(ur) };
+}
+
+function fillThresholdInputsFromMgdl(high, low, urgent) {
+    var u = document.getElementById('glucoseUnits').value;
+    if (u === 'mmol') {
+        document.getElementById('highThreshold').value = (Math.round((high / 18) * 10) / 10).toFixed(1);
+        document.getElementById('lowThreshold').value = (Math.round((low / 18) * 10) / 10).toFixed(1);
+        document.getElementById('urgentLow').value = (Math.round((urgent / 18) * 10) / 10).toFixed(1);
+    } else {
+        document.getElementById('highThreshold').value = high;
+        document.getElementById('lowThreshold').value = low;
+        document.getElementById('urgentLow').value = urgent;
+    }
+}
+
+function updateThresholdLabels() {
+    var u = document.getElementById('glucoseUnits').value;
+    var suf = u === 'mmol' ? ' (mmol/L)' : ' (mg/dL)';
+    document.getElementById('lblHigh').textContent = 'High' + suf;
+    document.getElementById('lblLow').textContent = 'Low' + suf;
+    document.getElementById('lblUrgent').textContent = 'Urgent Low' + suf;
+}
+
+function onGlucoseUnitsChange() {
+    var h = parseFloat(document.getElementById('highThreshold').value, 10) || 0;
+    var l = parseFloat(document.getElementById('lowThreshold').value, 10) || 0;
+    var ur = parseFloat(document.getElementById('urgentLow').value, 10) || 0;
+    var prev = document.getElementById('glucoseUnits').dataset.prev || 'mgdl';
+    var now = document.getElementById('glucoseUnits').value;
+    var highMg, lowMg, urgMg;
+    if (prev === 'mmol') {
+        highMg = Math.round(h * 18); lowMg = Math.round(l * 18); urgMg = Math.round(ur * 18);
+    } else {
+        highMg = Math.round(h); lowMg = Math.round(l); urgMg = Math.round(ur);
+    }
+    document.getElementById('glucoseUnits').dataset.prev = now;
+    fillThresholdInputsFromMgdl(highMg, lowMg, urgMg);
+    updateThresholdLabels();
+}
+
 function populateForm() {
     var s = getSettings();
     setValue('faceType', s.faceType);
     setValue('colorScheme', s.colorScheme);
-    setValue('dataSource', s.dataSource);
+    setValue('dataSource', s.dataSource !== undefined ? s.dataSource : 0);
     setValue('trioHost', s.trioHost);
     setValue('nightscoutUrl', s.nightscoutUrl);
     setValue('nightscoutToken', s.nightscoutToken);
     setValue('dexcomUsername', s.dexcomUsername);
     setValue('dexcomPassword', s.dexcomPassword);
     setValue('dexcomServer', s.dexcomServer);
-    setValue('highThreshold', s.highThreshold);
-    setValue('lowThreshold', s.lowThreshold);
-    setValue('urgentLow', s.urgentLow);
+    setValue('glucoseUnits', s.glucoseUnits || 'mgdl');
+    document.getElementById('glucoseUnits').dataset.prev = s.glucoseUnits || 'mgdl';
+
+    var th = s.highThreshold !== undefined ? s.highThreshold : 180;
+    var tl = s.lowThreshold !== undefined ? s.lowThreshold : 70;
+    var tu = s.urgentLow !== undefined ? s.urgentLow : 55;
+    fillThresholdInputsFromMgdl(th, tl, tu);
+    updateThresholdLabels();
+
     setChecked('alertHighEnabled', s.alertHighEnabled);
     setChecked('alertLowEnabled', s.alertLowEnabled);
     setValue('alertSnoozeMin', s.alertSnoozeMin);
@@ -195,6 +280,7 @@ function populateForm() {
 }
 
 function saveAndReturn() {
+    var t = thresholdMgdlFromInputs();
     var result = {
         faceType: intVal('faceType'),
         colorScheme: intVal('colorScheme'),
@@ -205,9 +291,10 @@ function saveAndReturn() {
         dexcomUsername: strVal('dexcomUsername'),
         dexcomPassword: strVal('dexcomPassword'),
         dexcomServer: strVal('dexcomServer'),
-        highThreshold: intVal('highThreshold'),
-        lowThreshold: intVal('lowThreshold'),
-        urgentLow: intVal('urgentLow'),
+        glucoseUnits: strVal('glucoseUnits') || 'mgdl',
+        highThreshold: t.high,
+        lowThreshold: t.low,
+        urgentLow: t.urgent,
         alertHighEnabled: boolVal('alertHighEnabled'),
         alertLowEnabled: boolVal('alertLowEnabled'),
         alertSnoozeMin: intVal('alertSnoozeMin'),
@@ -220,13 +307,17 @@ function saveAndReturn() {
 
 function toggleSourceFields() {
     var src = intVal('dataSource');
-    document.getElementById('trioFields').style.display = src === 0 ? '' : 'none';
+    document.getElementById('trioFields').style.display = (src === 0 || src === 3) ? '' : 'none';
     document.getElementById('dexcomFields').style.display = src === 1 ? '' : 'none';
     document.getElementById('nightscoutFields').style.display = src === 2 ? '' : 'none';
+    document.getElementById('trioNoteDefault').style.display = src === 0 ? '' : 'none';
+    document.getElementById('trioNoteHealth').style.display = src === 3 ? '' : 'none';
 }
 
-function setValue(id, val) { var el = document.getElementById(id); if (el && val !== undefined) el.value = val; }
-function setChecked(id, val) { var el = document.getElementById(id); if (el) el.checked = !!val; }
+function setValue(id, val) {
+    var el = document.getElementById(id);
+    if (el && val !== undefined && val !== null && val !== '') el.value = val;
+}
 function intVal(id) { return parseInt(document.getElementById(id).value, 10) || 0; }
 function strVal(id) { return document.getElementById(id).value || ''; }
 function boolVal(id) { return document.getElementById(id).checked; }
