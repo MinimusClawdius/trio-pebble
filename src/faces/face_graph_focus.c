@@ -9,7 +9,7 @@
 static TextLayer *s_glucose, *s_trend, *s_delta, *s_time;
 static TextLayer *s_iob_cob;
 static Layer *s_graph_layer;
-static char s_time_buf[8], s_glucose_buf[16], s_iob_cob_buf[32];
+static char s_time_buf[8], s_glucose_buf[16], s_iob_cob_buf[48];
 
 static void graph_proc(Layer *layer, GContext *ctx) {
     graph_draw(layer, ctx, config_get());

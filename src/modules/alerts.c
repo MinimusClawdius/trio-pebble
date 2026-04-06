@@ -37,7 +37,7 @@ void alerts_check(AppState *state) {
         state->alerts.urgent_low_active = true;
         state->alerts.last_alert_time = now;
         VibePattern pat = { .durations = VIBE_URGENT, .num_segments = ARRAY_LENGTH(VIBE_URGENT) };
-        vibes_enact_custom_pattern(pat);
+        vibes_enqueue_custom_pattern(pat);
         return;
     }
 
@@ -47,7 +47,7 @@ void alerts_check(AppState *state) {
             state->alerts.low_active = true;
             state->alerts.last_alert_time = now;
             VibePattern pat = { .durations = VIBE_LOW, .num_segments = ARRAY_LENGTH(VIBE_LOW) };
-            vibes_enact_custom_pattern(pat);
+            vibes_enqueue_custom_pattern(pat);
         }
         return;
     } else {
@@ -60,7 +60,7 @@ void alerts_check(AppState *state) {
             state->alerts.high_active = true;
             state->alerts.last_alert_time = now;
             VibePattern pat = { .durations = VIBE_HIGH, .num_segments = ARRAY_LENGTH(VIBE_HIGH) };
-            vibes_enact_custom_pattern(pat);
+            vibes_enqueue_custom_pattern(pat);
         }
         return;
     } else {

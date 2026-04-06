@@ -71,18 +71,18 @@ static void reload_face(void) {
     if (!s_main_window) return;
     unload_active_face();
 
-    // Remove all child layers from root before reloading
-    Layer *root = window_get_root_layer(s_main_window);
-    Layer *child = layer_get_first_child(root);
-    while (child) {
-        Layer *next = layer_get_next_sibling(child);
-        layer_remove_from_parent(child);
-        child = next;
-    }
+    // Pebble SDK doesn't expose layer child iteration,
+    // so we destroy and recreate the window to get a clean root layer.
+    window_stack_remove(s_main_window, false);
+    window_destroy(s_main_window);
 
-    tap_framework_init();
-    load_active_face(s_main_window);
-    update_active_face();
+    s_main_window = window_create();
+    window_set_click_config_provider(s_main_window, click_config);
+    window_set_window_handlers(s_main_window, (WindowHandlers){
+        .load = window_load,
+        .unload = window_unload,
+    });
+    window_stack_push(s_main_window, false);
 }
 
 // ---------- AppMessage Handlers ----------
