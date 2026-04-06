@@ -70,8 +70,13 @@ pebble install --phone <your-phone-ip>
 ### Configuration
 1. Open the Pebble/Rebble app on your phone
 2. Find "Trio Pebble" in your watchfaces
-3. Tap "Settings" to open the configuration page
+3. Tap **Settings** to open the configuration page (hosted URL; see below if you see **404**)
 4. Select your data source, thresholds, alerts, and face type
+
+**If Settings shows 404:** the phone loads `config/index.html` from the URL in `src/pkjs/index.js` (`TRIO_CONFIG_PAGE_URL`). The default uses **jsDelivr** so it works without GitHub Pages. If you forked the repo, update that constant to your `user/repo`. Full steps: [docs/CLOUDPEBBLE_AND_DEPLOY.md](docs/CLOUDPEBBLE_AND_DEPLOY.md).
+
+### CloudPebble: capability checkboxes
+In CloudPebble project **Settings**, enable **Configurable**, **Uses health**, and **Uses location** so they match this project (config page, `health_service_*` on the watch, `navigator.geolocation` for weather). Details: [docs/CLOUDPEBBLE_AND_DEPLOY.md](docs/CLOUDPEBBLE_AND_DEPLOY.md).
 
 ## Architecture
 

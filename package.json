@@ -54,6 +54,6 @@
       "KEY_CONFIG_CHANGED": 34,
       "KEY_TAP_ACTION": 35
     },
-    "capabilities": ["configurable"]
+    "capabilities": ["configurable", "health", "location"]
   }
 }

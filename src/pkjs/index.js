@@ -382,10 +382,15 @@ function sendCommand(type, amount) {
 }
 
 // ---------- Configuration Page ----------
+// Must be an https URL reachable from the phone. GitHub Pages only works if you
+// enable Pages on the repo; jsDelivr serves public GitHub files with correct MIME.
+// Override here if you fork the repo or use a custom host:
+var TRIO_CONFIG_PAGE_URL =
+    'https://cdn.jsdelivr.net/gh/MinimusClawdius/trio-pebble@main/config/index.html';
+
 Pebble.addEventListener('showConfiguration', function () {
-    var configUrl = 'https://minimusclawdius.github.io/trio-pebble/config/index.html';
     var params = encodeURIComponent(JSON.stringify(settings));
-    Pebble.openURL(configUrl + '#' + params);
+    Pebble.openURL(TRIO_CONFIG_PAGE_URL + '#' + params);
 });
 
 Pebble.addEventListener('webviewclosed', function (e) {
