@@ -1,8 +1,19 @@
 # CloudPebble settings, previews, and phone deployment
 
+## GitHub-linked CloudPebble: version and preview (why it looked “empty”)
+
+Rebble’s CloudPebble import walks the GitHub zip and picks the **first** valid manifest it finds at the project root. If both `appinfo.json` and `package.json` exist, **whichever appears first in the zip** wins—not necessarily `package.json`.
+
+- **Wrong or missing version in the CloudPebble UI** — For npm-style projects, **`package.json` top-level `"version"`** is what becomes the project semver (e.g. `2.2.5`). If CloudPebble imported **`appinfo.json` first**, it would use **`versionLabel`** from that file and **ignore** npm `version`, and it would **not** load `pebble.messageKeys` from `package.json`. This repo keeps **only `package.json`** at the root (see `docs/appinfo.reference.json` for a human-readable copy of the old appinfo fields).
+- **No emulator / list preview image** — The menu icon file must **exist** at `resources/images/menu_icon.png`, and the media entry should include **`"menuIcon": true`** so CloudPebble marks it for previews. A manifest line without the file causes zip import to fail resource validation; a file without `menuIcon` often builds but shows a generic tile.
+
+**After changing any of this**, use **GitHub → Pull** in CloudPebble (or re-import the project) so metadata and resources refresh.
+
+---
+
 ## The three checkboxes (Settings → your project)
 
-These should match what the app actually uses. The repo’s `appinfo.json` / `package.json` now declare:
+These should match what the app actually uses. The repo’s **`package.json`** (`pebble.capabilities`) declares:
 
 | Checkbox in CloudPebble | Enable when | This project |
 |-------------------------|-------------|--------------|
@@ -10,9 +21,9 @@ These should match what the app actually uses. The repo’s `appinfo.json` / `pa
 | **Uses health** | C code uses `health_service_*` (steps, heart rate, etc.) | **Yes** – `complications.c` |
 | **Uses location** | PebbleKit JS uses `navigator.geolocation` (or similar) | **Yes** – `fetchWeather()` in `index.js` |
 
-After importing from GitHub, open **Settings** in CloudPebble and ensure all three match the table. If CloudPebble ever disagrees with `appinfo.json`, prefer editing the repo and re-importing / syncing so the source of truth stays Git.
+After importing from GitHub, open **Settings** in CloudPebble and ensure all three match the table. Edit **`package.json`** in the repo and pull again if CloudPebble disagrees.
 
-If a build ever complains about an unknown capability, remove **Uses location** from the checkbox first and from `capabilities` in `appinfo.json` / `package.json`; weather will then only work when the phone still grants location at runtime (behavior depends on the Rebble app).
+If a build ever complains about an unknown capability, remove **Uses location** from the checkbox first and from `pebble.capabilities` in `package.json`; weather will then only work when the phone still grants location at runtime (behavior depends on the Rebble app).
 
 ---
 
@@ -88,19 +99,17 @@ PebbleKit JS also runs in the **Rebble** app. When Rebble is foreground, Trio is
 
 Sideloaded and dev builds often show a **generic** tile until you add a **menu icon** resource.
 
-1. Create a square PNG (commonly **25×25** for legacy, or follow CloudPebble’s current hint for menu icons).
-2. Put it in the project, e.g. `resources/images/menu_icon.png`.
-3. In `appinfo.json`, under `resources.media`, add:
+1. Use a square PNG at **`resources/images/menu_icon.png`** (this repo ships one).
+2. In **`package.json`**, under `pebble.resources.media`, include **`menuIcon`** on that entry:
 
 ```json
 {
+  "menuIcon": true,
   "type": "png",
   "name": "IMAGE_MENU_ICON",
   "file": "images/menu_icon.png"
 }
 ```
-
-Mirror the same entry under `pebble.resources.media` in `package.json` if CloudPebble reads from npm layout.
 
 **Store / listing screenshots** (for Rebble App Store later) are separate from the menu icon; you upload those in the store submission flow, not inside the `.pbw` alone.
 

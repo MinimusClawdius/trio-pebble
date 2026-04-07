@@ -1,4 +1,5 @@
 {
+  "_note": "Reference only. CloudPebble + pebble-tool use package.json as the canonical manifest. Do not add appinfo.json at repo root or GitHub import may pick it first and ignore npm version/messageKeys.",
   "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "shortName": "Trio",
   "longName": "Trio Pebble",
@@ -15,7 +16,8 @@
       {
         "type": "png",
         "name": "IMAGE_MENU_ICON",
-        "file": "images/menu_icon.png"
+        "file": "images/menu_icon.png",
+        "menuIcon": true
       }
     ]
   },
