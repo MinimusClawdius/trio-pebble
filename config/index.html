@@ -61,12 +61,12 @@
     <option value="1">Light</option>
     <option value="2">High Contrast</option>
   </select>
-  <label>Blood glucose display units</label>
+  <label>Show glucose on watch as</label>
   <select id="glucoseUnits" onfocus="this.dataset.prevUnit=this.value" onchange="onGlucoseUnitsChange()">
-    <option value="mgdl">mg/dL</option>
-    <option value="mmol">mmol/L</option>
+    <option value="mmol">mmol/L (one decimal)</option>
+    <option value="mgdl">mg/dL (integer)</option>
   </select>
-  <p class="data-source-note">Thresholds below are entered in the units you select; the watch stores mg/dL internally for the graph.</p>
+  <p class="data-source-note">How the main BG number is drawn on the watch. Thresholds below are entered in these same units; alerts and graph use mg/dL internally. Independent of whether Trio’s JSON uses mmol/L or mg/dL.</p>
 </div>
 
 <h2>Data Source</h2>
@@ -180,7 +180,7 @@
 
 <button class="btn btn-save" onclick="saveAndReturn()">Save Settings</button>
 
-<div class="version">Trio Pebble v2.1 &middot; MinimusClawdius</div>
+<div class="version">Trio Pebble config v2.1.1 &middot; MinimusClawdius</div>
 
 <script>
 function getSettings() {
