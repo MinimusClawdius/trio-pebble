@@ -14,7 +14,8 @@
 #define PERSIST_KEY_VERSION    0x5005
 
 /* Bump when struct layout changes to invalidate stale blobs. */
-#define PERSIST_STATE_VERSION  1
+/* v2: invalidate blobs that may hold pre-mmol→mg/dL-fix bogus CGM (e.g. glucose int 4). */
+#define PERSIST_STATE_VERSION  2
 
 /* ── Graph persistence ───────────────────────────────────────────
  * GraphData contains up to 48 × int16 values + 24 × int16 predictions +
