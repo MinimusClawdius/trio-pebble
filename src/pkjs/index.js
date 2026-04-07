@@ -117,6 +117,60 @@ function trioInferSourceIsMmol(unitsStr, glucoseRaw, historyArr) {
     return false;
 }
 
+function dexcomTrendToArrow(trend) {
+    var map = {
+        'DoubleUp': '↑↑', 'SingleUp': '↑', 'FortyFiveUp': '↗',
+        'Flat': '→', 'FortyFiveDown': '↘', 'SingleDown': '↓',
+        'DoubleDown': '↓↓', 'None': '--', 'NotComputable': '?',
+        'RateOutOfRange': '⚠'
+    };
+    if (typeof trend === 'number') {
+        var numMap = ['--', '↑↑', '↑', '↗', '→', '↘', '↓', '↓↓', '?', '⚠'];
+        return numMap[trend] || '--';
+    }
+    return map[trend] || '--';
+}
+
+/**
+ * Trio /api/all often sends human-readable trend strings ("Flat", "flat", "SingleUp").
+ * Map to compact arrows so the watch layout does not crowd the glucose value.
+ */
+function trioTrendToArrow(raw) {
+    if (raw === null || raw === undefined) return '--';
+    if (typeof raw === 'number') return dexcomTrendToArrow(raw);
+    var s = String(raw).trim();
+    if (!s) return '--';
+    var compact = s.replace(/\s+/g, '');
+    var m = dexcomTrendToArrow(compact);
+    if (m !== '--') return m;
+    var lc = compact.toLowerCase();
+    var toPascal = {
+        flat: 'Flat',
+        singleup: 'SingleUp',
+        doubleup: 'DoubleUp',
+        fortyfiveup: 'FortyFiveUp',
+        fortyfivedown: 'FortyFiveDown',
+        singledown: 'SingleDown',
+        doubledown: 'DoubleDown',
+        none: 'None',
+        notcomputable: 'NotComputable',
+        rateoutofrange: 'RateOutOfRange',
+        unknown: 'NotComputable',
+        stable: 'Flat',
+        steady: 'Flat'
+    };
+    if (toPascal[lc]) return dexcomTrendToArrow(toPascal[lc]);
+    var first = s.split(/[\s,;(]+/)[0];
+    if (first && first !== s) {
+        compact = first.replace(/\s+/g, '');
+        m = dexcomTrendToArrow(compact);
+        if (m !== '--') return m;
+        lc = compact.toLowerCase();
+        if (toPascal[lc]) return dexcomTrendToArrow(toPascal[lc]);
+    }
+    return '--';
+}
+
 /**
  * Watch AppMessage uses mg/dL integers for KEY_GLUCOSE + graph. Trio JSON may be mmol/L.
  * BUGFIX: previously returned raw 4.7 mmol as glucose → watch saw ~4 mg/dL → 0.2 mmol display + false urgent-low vibes.
@@ -153,7 +207,7 @@ function normalizeTrio(data) {
 
     return {
         glucose: glucoseMgdl,
-        trend: cgm.trend || '--',
+        trend: trioTrendToArrow(cgm.trend),
         delta: cgm.delta || '',
         isStale: cgm.isStale || false,
         iob: loop.iob || '',
@@ -302,21 +356,6 @@ function normalizeDexcom(entries) {
         pumpBattery: 0,
         sensorAge: ''
     };
-}
-
-function dexcomTrendToArrow(trend) {
-    var map = {
-        'DoubleUp': '↑↑', 'SingleUp': '↑', 'FortyFiveUp': '↗',
-        'Flat': '→', 'FortyFiveDown': '↘', 'SingleDown': '↓',
-        'DoubleDown': '↓↓', 'None': '--', 'NotComputable': '?',
-        'RateOutOfRange': '⚠'
-    };
-    // Also handle numeric trends (1-9)
-    if (typeof trend === 'number') {
-        var numMap = ['--', '↑↑', '↑', '↗', '→', '↘', '↓', '↓↓', '?', '⚠'];
-        return numMap[trend] || '--';
-    }
-    return map[trend] || '--';
 }
 
 function directionToArrow(direction) {
@@ -539,7 +578,7 @@ Pebble.addEventListener('appmessage', function (e) {
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble v2.2.6 ready');
+    console.log('Trio Pebble v2.2.7 ready');
     loadSettings();
 
     var msg = {};

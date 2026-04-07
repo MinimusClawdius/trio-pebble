@@ -17,7 +17,7 @@ GitHub sync only repopulates fields that come from the Pebble manifest (`package
 
 The SDK enforces a **maximum 25×25** pixel size for **`menuIcon`** bitmaps. Larger PNGs (e.g. 28×28) fail at compile time with  
 `menuIcon resource 'IMAGE_MENU_ICON' exceeds the maximum allowed dimensions of (25, 25)`.  
-If the Resources tab thumbnail looks broken before a successful build, fix dimensions first—**`type: "png"` is valid** for Pebble resources.
+**GIF (and JPEG) are not valid Pebble app resource types** for bundled images—the resource pack expects **PNG** (or fonts / raw data). This project ships a **palettized** 25×25 PNG, which avoids some tools choking on full RGBA thumbnails. If the CloudPebble Resources preview still fails after a green build, treat it as an IDE quirk; the **phone launcher** icon comes from the same asset in the `.pbw`.
 
 ---
 
