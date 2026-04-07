@@ -500,6 +500,15 @@ function weatherCodeToIcon(code) {
 }
 
 // ---------- Commands from Watch ----------
+/** Rebble / PebbleKit may expose dict keys as numbers or strings — normalize. */
+function payloadGet(p, keyNum) {
+    if (!p) return undefined;
+    var k = keyNum | 0;
+    if (p[k] !== undefined && p[k] !== null) return p[k];
+    if (p[String(k)] !== undefined && p[String(k)] !== null) return p[String(k)];
+    return undefined;
+}
+
 function sendCommand(type, amount) {
     if (settings.dataSource !== 0 && settings.dataSource !== 3) {
         var msg = {};
@@ -596,8 +605,11 @@ Pebble.addEventListener('webviewclosed', function (e) {
 // ---------- Watch Messages ----------
 Pebble.addEventListener('appmessage', function (e) {
     var p = e.payload;
-    if (p[K.CMD_TYPE] !== undefined && p[K.CMD_AMOUNT] !== undefined) {
-        sendCommand(p[K.CMD_TYPE], p[K.CMD_AMOUNT]);
+    var cmdType = payloadGet(p, K.CMD_TYPE);
+    var cmdAmt = payloadGet(p, K.CMD_AMOUNT);
+    if (cmdType !== undefined && cmdAmt !== undefined) {
+        console.log('Trio: watch command type=' + cmdType + ' amount=' + cmdAmt);
+        sendCommand(cmdType | 0, cmdAmt | 0);
     } else if (p[K.TAP_ACTION] !== undefined) {
         /* Includes watch tick refresh (KEY_TAP_ACTION = refresh) — do not use KEY_GLUCOSE (0) for pings */
         if (p[K.TAP_ACTION] === 4) fetchData();
