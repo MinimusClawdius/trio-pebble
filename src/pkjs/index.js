@@ -397,7 +397,16 @@ function sendToWatch(data) {
     if (gInt > 0) {
         msg[K.GLUCOSE] = gInt;
     }
-    if (data.trend) msg[K.TREND] = data.trend.substring(0, 7);
+    if (data.trend) {
+        var tr = String(data.trend);
+        var out = '';
+        for (var i = 0; i < tr.length && out.length < 8; ) {
+            var cp = tr.codePointAt(i);
+            out += String.fromCodePoint(cp);
+            i += cp > 0xffff ? 2 : 1;
+        }
+        msg[K.TREND] = out;
+    }
     if (data.delta) msg[K.DELTA] = data.delta.substring(0, 15);
     if (data.iob) msg[K.IOB] = data.iob.substring(0, 15);
     if (data.cob) msg[K.COB] = data.cob.substring(0, 15);
@@ -578,7 +587,7 @@ Pebble.addEventListener('appmessage', function (e) {
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble v2.2.7 ready');
+    console.log('Trio Pebble v2.2.8 ready');
     loadSettings();
 
     var msg = {};

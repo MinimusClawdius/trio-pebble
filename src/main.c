@@ -12,6 +12,7 @@
 #include "modules/complications.h"
 #include "modules/tap_framework.h"
 #include "modules/state_persist.h"
+#include "modules/trend_normalize.h"
 #include "faces/face_classic.h"
 #include "faces/face_graph_focus.h"
 #include "faces/face_compact.h"
@@ -120,7 +121,11 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     }
 
     t = dict_find(iter, KEY_TREND);
-    if (t) strncpy(s_state.cgm.trend_str, t->value->cstring, sizeof(s_state.cgm.trend_str) - 1);
+    if (t) {
+        strncpy(s_state.cgm.trend_str, t->value->cstring, sizeof(s_state.cgm.trend_str) - 1);
+        s_state.cgm.trend_str[sizeof(s_state.cgm.trend_str) - 1] = '\0';
+        trio_normalize_trend_str(s_state.cgm.trend_str, sizeof(s_state.cgm.trend_str));
+    }
 
     t = dict_find(iter, KEY_DELTA);
     if (t) strncpy(s_state.cgm.delta_str, t->value->cstring, sizeof(s_state.cgm.delta_str) - 1);

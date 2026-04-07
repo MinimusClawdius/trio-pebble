@@ -5,7 +5,7 @@
 // Trio Pebble - Shared Types & Constants
 // ============================================================
 
-#define APP_VERSION "2.2.7"
+#define APP_VERSION "2.2.8"
 #define MAX_GRAPH_POINTS 48
 #define MAX_PREDICTIONS 24
 
@@ -125,7 +125,7 @@ typedef struct {
 typedef struct {
     int16_t glucose;
     TrendDirection trend;
-    char trend_str[8];
+    char trend_str[16];
     char delta_str[16];
     bool is_stale;
     char units[8];

@@ -56,24 +56,20 @@ void face_dashboard_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    // Top-left: Glucose (right-aligned) + large trend on same row
-    s_glucose = make_text(root, GRect(2, -4, w / 2 - 38, 40), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentRight, fg);
+    s_glucose = make_text(root, GRect(4, -4, 56, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentLeft, fg);
     text_layer_set_text(s_glucose, "--");
-    s_trend = make_text(root, GRect(w / 2 - 36, 0, 40, 42), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+    s_trend = make_text(root, GRect(58, 0, 40, 42), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
 
-    s_delta = make_text(root, GRect(2, 30, w / 2 - 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
+    s_delta = make_text(root, GRect(4, 30, w / 2 - 8, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
 
-    // Top-right: Time & Date
-    s_time = make_text(root, GRect(w / 2, 0, w / 2 - 4, 24), FONT_KEY_GOTHIC_24_BOLD, GTextAlignmentRight, fg);
-    s_date = make_text(root, GRect(w / 2, 24, w / 2 - 4, 18), FONT_KEY_GOTHIC_14, GTextAlignmentRight, fg2);
+    s_time = make_text(root, GRect(w / 2, 0, w / 2 - 6, 28), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentRight, fg);
+    s_date = make_text(root, GRect(w / 2, 28, w / 2 - 6, 18), FONT_KEY_GOTHIC_14, GTextAlignmentRight, fg2);
 
-    // Divider
-    s_divider_layer = layer_create(GRect(0, 48, w, 1));
+    s_divider_layer = layer_create(GRect(0, 52, w, 1));
     layer_set_update_proc(s_divider_layer, divider_proc);
     layer_add_child(root, s_divider_layer);
 
-    // Graph - center (room for IOB/loop rows + taller complications bar)
-    int graph_top = 50;
+    int graph_top = 54;
     int bottom_stack = 14 + 16 + COMPLICATIONS_BAR_HEIGHT;
     int graph_h = h - graph_top - bottom_stack;
     s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, graph_top, graph_h));

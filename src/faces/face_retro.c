@@ -24,9 +24,16 @@ static void lcd_frame_proc(Layer *layer, GContext *ctx) {
     bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
     GColor ink = light ? GColorBlack : GColorWhite;
     graphics_context_set_stroke_color(ctx, ink);
+#ifdef PBL_COLOR
+    graphics_context_set_stroke_width(ctx, 2);
+    graphics_draw_rect(ctx, GRect(0, 0, b.size.w, b.size.h));
+    graphics_context_set_stroke_width(ctx, 1);
+#else
     graphics_context_set_stroke_width(ctx, 1);
     graphics_draw_rect(ctx, GRect(0, 0, b.size.w, b.size.h));
+#endif
     graphics_draw_rect(ctx, GRect(2, 2, b.size.w - 4, b.size.h - 4));
+    graphics_draw_rect(ctx, GRect(5, 5, b.size.w - 10, b.size.h - 10));
 }
 
 static TextLayer *make_text(Layer *root, GRect frame, const char *font_key, GTextAlignment align, GColor fg) {
@@ -47,9 +54,8 @@ void face_retro_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    /* Status row — date + clock like classic digital faces */
-    s_date = make_text(root, GRect(6, 2, w / 2 + 20, 18), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
-    s_clock = make_text(root, GRect(w / 2 - 10, 0, w / 2 + 4, 26), FONT_KEY_GOTHIC_24_BOLD, GTextAlignmentRight, fg);
+    s_date = make_text(root, GRect(6, 4, w / 2 + 10, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
+    s_clock = make_text(root, GRect(w / 2 - 16, 0, w / 2 + 10, 30), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentRight, fg);
 
     int lcd_y = 24;
     int lcd_h = 44;
@@ -57,12 +63,11 @@ void face_retro_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_lcd_frame_layer, lcd_frame_proc);
     layer_add_child(root, s_lcd_frame_layer);
 
-    /* Main readout inside the “LCD” */
     int inner_pad = 8;
-    s_glucose = make_text(root, GRect(inner_pad, lcd_y + 2, w - 72 - inner_pad, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS,
-                          GTextAlignmentRight, fg);
+    s_glucose = make_text(root, GRect(inner_pad, lcd_y + 4, w - 76 - inner_pad, 38), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS,
+                          GTextAlignmentLeft, fg);
     text_layer_set_text(s_glucose, "--");
-    s_trend = make_text(root, GRect(w - 68, lcd_y + 6, 60, 36), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+    s_trend = make_text(root, GRect(w - 72, lcd_y + 6, 64, 36), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
 
     s_delta = make_text(root, GRect(4, lcd_y + lcd_h + 2, w - 8, 14), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
     s_sub = make_text(root, GRect(4, lcd_y + lcd_h + 16, w - 8, 14), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);

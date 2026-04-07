@@ -5,7 +5,7 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ## Features
 
 ### Multiple Watchface Layouts
-Switch between 5 distinct face designs via buttons or the config page:
+Switch between **six** face designs via buttons or the config page:
 
 | Face | Description |
 |------|-------------|
@@ -14,6 +14,9 @@ Switch between 5 distinct face designs via buttons or the config page:
 | **Compact** | T1000-inspired: large glucose + trend, reading age, full graph |
 | **Dashboard** | Information-dense quadrant layout with date, pump, sensor data |
 | **Minimal** | Elegant time-forward design with sparkline - for everyday wear |
+| **Retro** | LCD-style frame (inspired by [91 Dub](https://apps.repebble.com/91-dub-v2-0_554e08d40136b0e6e200001b) layout); Bitham time + bordered readout |
+
+Apple Watch–style per-slot complication pickers are not implemented yet; the bottom bar order is fixed: **watch battery → steps → heart rate → weather**.
 
 ### Data Sources (Configurable)
 - **Trio** - Polls local HTTP API on `127.0.0.1:8080` (requires Trio iOS app with Pebble integration enabled)
@@ -42,10 +45,10 @@ When **weather** is enabled in settings, the graph area draws a simple sky scene
 - Minimum 60-second re-alert interval to prevent vibration spam
 
 ### Complications
-- Watch battery percentage (with charging indicator)
-- Steps (from Pebble Health)
-- Heart rate (from Pebble Health, when available)
-- Weather temperature (via Open-Meteo API, no API key needed)
+- **Left:** watch battery % (ellipsis meant the old layout was too narrow; widened in recent builds).
+- **Center:** step count today (e.g. `172` is steps, not BG).
+- **Next:** heart rate (bpm) when available.
+- **Right:** weather temperature (via Open-Meteo when enabled in settings).
 
 ### Color Schemes
 - **Dark** - Black background, green/red/orange glucose colors

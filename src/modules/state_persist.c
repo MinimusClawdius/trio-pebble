@@ -1,4 +1,5 @@
 #include "state_persist.h"
+#include "trend_normalize.h"
 #include <pebble.h>
 #include <string.h>
 
@@ -14,8 +15,8 @@
 #define PERSIST_KEY_VERSION    0x5005
 
 /* Bump when struct layout changes to invalidate stale blobs. */
-/* v2: invalidate blobs that may hold pre-mmol→mg/dL-fix bogus CGM (e.g. glucose int 4). */
-#define PERSIST_STATE_VERSION  2
+/* v2: mmol/mg/dL CGM fix. v3: CGMState.trend_str widened + trend normalization. */
+#define PERSIST_STATE_VERSION  3
 
 /* ── Graph persistence ───────────────────────────────────────────
  * GraphData contains up to 48 × int16 values + 24 × int16 predictions +
@@ -66,6 +67,7 @@ bool state_persist_load(AppState *state) {
 
     if (persist_exists(PERSIST_KEY_CGM)) {
         persist_read_data(PERSIST_KEY_CGM, &state->cgm, sizeof(CGMState));
+        trio_normalize_trend_str(state->cgm.trend_str, sizeof(state->cgm.trend_str));
     }
     if (persist_exists(PERSIST_KEY_LOOP)) {
         persist_read_data(PERSIST_KEY_LOOP, &state->loop, sizeof(LoopState));

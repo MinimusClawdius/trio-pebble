@@ -42,9 +42,8 @@ void face_minimal_load(Window *window, Layer *root, GRect bounds) {
     s_glucose = make_text(root, GRect(0, h / 2 - 60, w, 30), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter, fg);
     text_layer_set_text(s_glucose, "--");
 
-    // Trend + delta below time
-    s_trend = make_text(root, GRect(0, h / 2 + 10, w / 2, 20), FONT_KEY_GOTHIC_18, GTextAlignmentRight, fg2);
-    s_delta = make_text(root, GRect(w / 2, h / 2 + 10, w / 2, 20), FONT_KEY_GOTHIC_18, GTextAlignmentLeft, fg2);
+    s_trend = make_text(root, GRect(0, h / 2 + 10, w / 2 - 6, 20), FONT_KEY_GOTHIC_18, GTextAlignmentRight, fg2);
+    s_delta = make_text(root, GRect(w / 2 + 6, h / 2 + 10, w / 2 - 6, 20), FONT_KEY_GOTHIC_18, GTextAlignmentLeft, fg2);
 
     // Thin sparkline at bottom
     s_sparkline_layer = layer_create(trio_graph_layer_bounds(bounds, h - 30, 24));

@@ -40,16 +40,14 @@ void face_graph_focus_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
 
-    // Glucose + trend on one row (trend large, immediately after number)
-    s_glucose = make_text(root, GRect(4, -2, w / 2 - 6, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentRight, fg);
+    /* BG upper-left + trend; time larger top-right */
+    s_glucose = make_text(root, GRect(4, 0, 56, 44), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentLeft, fg);
     text_layer_set_text(s_glucose, "--");
-    s_trend = make_text(root, GRect(w / 2 - 12, 2, w / 2 - 8, 40), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+    s_trend = make_text(root, GRect(58, 2, 40, 40), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
 
-    // Delta below glucose
-    s_delta = make_text(root, GRect(4, 34, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
+    s_delta = make_text(root, GRect(4, 36, w / 2, 18), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
 
-    // Time - top right
-    s_time = make_text(root, GRect(w - 52, 2, 48, 20), FONT_KEY_GOTHIC_18, GTextAlignmentRight, fg2);
+    s_time = make_text(root, GRect(w - 66, 0, 62, 30), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentRight, fg);
 
     // IOB + COB combined - bottom left
     s_iob_cob = make_text(root, GRect(4, h - 18, w - 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);

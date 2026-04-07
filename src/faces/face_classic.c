@@ -40,19 +40,14 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    // Row 0: Time (top-right)
-    s_time = make_text(root, GRect(w - 56, 0, 52, 20), FONT_KEY_GOTHIC_18_BOLD, GTextAlignmentRight, fg2);
+    s_time = make_text(root, GRect(w - 66, 0, 62, 28), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentRight, fg2);
 
-    // Row 1: Glucose (right-aligned) + large trend arrow immediately to the right (not under the clock)
     {
-        int glucose_w = w * 58 / 100;
-        s_glucose = make_text(root, GRect(4, -4, glucose_w, 44), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentRight, fg);
+        s_glucose = make_text(root, GRect(4, -2, 56, 44), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentLeft, fg);
         text_layer_set_text(s_glucose, "--");
-        int trend_x = 4 + glucose_w - 2;
-        s_trend = make_text(root, GRect(trend_x, 2, w - trend_x - 54, 42), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+        s_trend = make_text(root, GRect(58, 0, 42, 42), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
     }
 
-    // Row 2: Delta + IOB + COB
     s_delta = make_text(root, GRect(0, 42, w / 2, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
 
 #ifdef PBL_COLOR

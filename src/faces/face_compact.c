@@ -35,18 +35,15 @@ void face_compact_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    // Row 1: Glucose (right-aligned) + large trend beside it
     {
-        int gw = w * 62 / 100;
-        s_glucose = make_text(root, GRect(0, -4, gw, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentRight, fg);
+        s_glucose = make_text(root, GRect(4, -4, 56, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentLeft, fg);
         text_layer_set_text(s_glucose, "--");
-        s_trend = make_text(root, GRect(gw - 6, 0, w - gw + 6, 44), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+        s_trend = make_text(root, GRect(56, 0, w - 60, 44), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
     }
 
-    // Row 2: Delta + reading age + time
     s_delta = make_text(root, GRect(0, 40, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
     s_age = make_text(root, GRect(w / 3, 40, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
-    s_time = make_text(root, GRect(2 * w / 3, 40, w / 3, 16), FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentCenter, fg2);
+    s_time = make_text(root, GRect(2 * w / 3, 36, w / 3 - 2, 24), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentCenter, fg2);
 
     // Graph - fill the rest
     int graph_top = 58;
