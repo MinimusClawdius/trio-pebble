@@ -86,6 +86,8 @@ void face_minimal_update(AppState *state) {
         else gc = GColorGreen;
         text_layer_set_text_color(s_glucose, gc);
         trend_ink = gc;
+    } else {
+        trend_ink = fg;
     }
 #else
     trend_ink = fg;
