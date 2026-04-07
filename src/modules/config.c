@@ -1,7 +1,7 @@
 #include "config.h"
 #include "platform_compat.h"
 
-#define CONFIG_KEY 0x54726F35u  /* v5: comp_slot[4]; invalidates shorter TrioConfig blobs */
+#define CONFIG_KEY 0x54726F36u  /* v6: clock_24h; invalidates shorter TrioConfig blobs */
 
 static TrioConfig s_config;
 
@@ -22,6 +22,7 @@ static void set_defaults(void) {
     s_config.comp_slot[1] = COMP_SLOT_STEPS;
     s_config.comp_slot[2] = COMP_SLOT_HEART_RATE;
     s_config.comp_slot[3] = COMP_SLOT_WEATHER;
+    s_config.clock_24h = true;
 #if !TRIO_DISPLAY_COLOR
     /* Sky/gradient art is color-first; B&W keeps a clean graph. Temp still available if user enables weather. */
     s_config.color_scheme = COLOR_SCHEME_HIGH_CONTRAST;
@@ -112,6 +113,9 @@ void config_apply_message(DictionaryIterator *iter) {
         int32_t v = t->value->int32;
         s_config.comp_slot[3] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_WEATHER) ? (uint8_t)v : COMP_SLOT_NONE;
     }
+
+    t = dict_find(iter, KEY_CONFIG_CLOCK_24H);
+    if (t) s_config.clock_24h = t->value->int32 != 0;
 
     config_save();
 }

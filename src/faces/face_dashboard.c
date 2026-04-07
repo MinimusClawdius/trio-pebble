@@ -8,11 +8,13 @@
 #include "../modules/complications.h"
 #include "../modules/glucose_format.h"
 #include "../modules/platform_compat.h"
+#include "../modules/time_display.h"
+#include "../modules/trend_glyphs.h"
 
-static TextLayer *s_glucose, *s_trend, *s_delta, *s_time, *s_date;
+static TextLayer *s_glucose, *s_delta, *s_time, *s_date;
 static TextLayer *s_iob, *s_cob, *s_loop, *s_pump;
-static Layer *s_graph_layer, *s_comp_layer, *s_divider_layer;
-static char s_time_buf[8], s_date_buf[16], s_glucose_buf[16];
+static Layer *s_graph_layer, *s_comp_layer, *s_divider_layer, *s_trend_layer;
+static char s_time_buf[16], s_date_buf[16], s_glucose_buf[16];
 static char s_pump_buf[32];
 
 static void graph_proc(Layer *layer, GContext *ctx) {
@@ -34,7 +36,6 @@ static void divider_proc(Layer *layer, GContext *ctx) {
     (void)light;
 #endif
     graphics_context_set_stroke_color(ctx, line_color);
-    // Horizontal line below glucose area
     graphics_draw_line(ctx, GPoint(0, 0), GPoint(bounds.size.w, 0));
 }
 
@@ -56,13 +57,16 @@ void face_dashboard_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    s_glucose = make_text(root, GRect(4, -4, 56, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentLeft, fg);
+    s_glucose = make_text(root, GRect(4, -4, 40, 40), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentLeft, fg);
     text_layer_set_text(s_glucose, "--");
-    s_trend = make_text(root, GRect(58, 0, 40, 42), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
 
-    s_delta = make_text(root, GRect(4, 30, w / 2 - 8, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
+    s_trend_layer = layer_create(GRect(42, 0, 30, 38));
+    layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
+    layer_add_child(root, s_trend_layer);
 
-    s_time = make_text(root, GRect(w / 2, 0, w / 2 - 6, 28), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentRight, fg);
+    s_delta = make_text(root, GRect(4, 38, w / 2 - 8, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
+
+    s_time = make_text(root, GRect(w / 2, 0, w / 2 - 6, 28), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentRight, fg);
     s_date = make_text(root, GRect(w / 2, 28, w / 2 - 6, 18), FONT_KEY_GOTHIC_14, GTextAlignmentRight, fg2);
 
     s_divider_layer = layer_create(GRect(0, 52, w, 1));
@@ -97,7 +101,6 @@ void face_dashboard_load(Window *window, Layer *root, GRect bounds) {
 
 void face_dashboard_unload(void) {
     text_layer_destroy(s_glucose);
-    text_layer_destroy(s_trend);
     text_layer_destroy(s_delta);
     text_layer_destroy(s_time);
     text_layer_destroy(s_date);
@@ -105,6 +108,7 @@ void face_dashboard_unload(void) {
     text_layer_destroy(s_cob);
     text_layer_destroy(s_loop);
     text_layer_destroy(s_pump);
+    layer_destroy(s_trend_layer);
     layer_destroy(s_graph_layer);
     layer_destroy(s_comp_layer);
     layer_destroy(s_divider_layer);
@@ -113,7 +117,11 @@ void face_dashboard_unload(void) {
 void face_dashboard_update(AppState *state) {
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
-    strftime(s_time_buf, sizeof(s_time_buf), "%H:%M", t);
+    bool light = state->config.color_scheme == COLOR_SCHEME_LIGHT;
+    GColor fg = light ? GColorBlack : GColorWhite;
+    GColor trend_ink = fg;
+
+    trio_format_clock(s_time_buf, sizeof(s_time_buf), now, state->config.clock_24h);
     strftime(s_date_buf, sizeof(s_date_buf), "%a %b %d", t);
     text_layer_set_text(s_time, s_time_buf);
     text_layer_set_text(s_date, s_date_buf);
@@ -130,11 +138,13 @@ void face_dashboard_update(AppState *state) {
         else if (state->cgm.glucose >= cfg->high_threshold) gc = GColorOrange;
         else gc = GColorGreen;
         text_layer_set_text_color(s_glucose, gc);
-        text_layer_set_text_color(s_trend, gc);
+        trend_ink = gc;
     }
 #endif
 
-    text_layer_set_text(s_trend, state->cgm.trend_str);
+    trio_trend_layer_set(state->cgm.trend_str, trend_ink);
+    layer_mark_dirty(s_trend_layer);
+
     text_layer_set_text(s_delta, state->cgm.delta_str);
     text_layer_set_text(s_iob, state->loop.iob);
     text_layer_set_text(s_cob, state->loop.cob);

@@ -61,6 +61,14 @@
     <option value="1">Light</option>
     <option value="2">High Contrast</option>
   </select>
+  <div class="toggle-row">
+    <span class="toggle-label-text">24-hour clock</span>
+    <label class="toggle-switch" for="clock24h">
+      <input type="checkbox" id="clock24h" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+  <p class="data-source-note" style="margin-top:-4px;margin-bottom:12px">Turn off for 12-hour time with AM/PM (wider layout on the watch).</p>
   <label>Show glucose on watch as</label>
   <select id="glucoseUnits" onfocus="this.dataset.prevUnit=this.value" onchange="onGlucoseUnitsChange()">
     <option value="mmol">mmol/L (one decimal)</option>
@@ -189,7 +197,7 @@
 
 <button class="btn btn-save" onclick="saveAndReturn()">Save Settings</button>
 
-<div class="version">Trio Pebble config v2.3.0 &middot; MinimusClawdius</div>
+<div class="version">Trio Pebble config v2.4.0 &middot; MinimusClawdius</div>
 
 <script>
 var COMP_SLOT_OPTIONS = [
@@ -287,6 +295,7 @@ function populateForm() {
     fillCompSlotSelects();
     setValue('faceType', s.faceType);
     setValue('colorScheme', s.colorScheme);
+    setChecked('clock24h', s.clock24h !== false);
     setValue('dataSource', s.dataSource !== undefined ? s.dataSource : 0);
     setValue('trioHost', s.trioHost);
     setValue('nightscoutUrl', s.nightscoutUrl);
@@ -320,6 +329,7 @@ function saveAndReturn() {
     var result = {
         faceType: intVal('faceType'),
         colorScheme: intVal('colorScheme'),
+        clock24h: boolVal('clock24h'),
         dataSource: intVal('dataSource'),
         trioHost: strVal('trioHost'),
         nightscoutUrl: strVal('nightscoutUrl'),

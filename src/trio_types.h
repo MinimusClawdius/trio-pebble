@@ -5,7 +5,7 @@
 // Trio Pebble - Shared Types & Constants
 // ============================================================
 
-#define APP_VERSION "2.3.0"
+#define APP_VERSION "2.4.0"
 #define MAX_GRAPH_POINTS 48
 #define MAX_PREDICTIONS 24
 
@@ -54,6 +54,7 @@ typedef enum {
     KEY_CONFIG_COMP_SLOT_1,
     KEY_CONFIG_COMP_SLOT_2,
     KEY_CONFIG_COMP_SLOT_3,
+    KEY_CONFIG_CLOCK_24H,
     KEY_COUNT
 } AppMessageKey;
 
@@ -136,6 +137,7 @@ typedef struct {
     bool is_mmol;               // display: mg/dL vs mmol/L (from KEY_UNITS)
     bool weather_enabled;       // master switch: fetch/draw weather data
     uint8_t comp_slot[TRIO_COMP_SLOT_COUNT]; /* ComplicationSlotKind per column */
+    bool clock_24h;             /* true = 24h clock, false = 12h + AM/PM */
 } TrioConfig;
 
 // ---------- CGM State ----------

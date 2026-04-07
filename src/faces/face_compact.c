@@ -8,10 +8,12 @@
 #include "../modules/graph.h"
 #include "../modules/glucose_format.h"
 #include "../modules/platform_compat.h"
+#include "../modules/time_display.h"
+#include "../modules/trend_glyphs.h"
 
-static TextLayer *s_glucose, *s_trend, *s_delta, *s_age, *s_time;
-static Layer *s_graph_layer;
-static char s_time_buf[8], s_glucose_buf[16], s_age_buf[16];
+static TextLayer *s_glucose, *s_delta, *s_age, *s_time;
+static Layer *s_graph_layer, *s_trend_layer;
+static char s_time_buf[16], s_glucose_buf[16], s_age_buf[16];
 
 static void graph_proc(Layer *layer, GContext *ctx) {
     graph_draw(layer, ctx, config_get());
@@ -35,18 +37,21 @@ void face_compact_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    {
-        s_glucose = make_text(root, GRect(4, -4, 56, 42), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentLeft, fg);
-        text_layer_set_text(s_glucose, "--");
-        s_trend = make_text(root, GRect(56, 0, w - 60, 44), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
-    }
+    s_glucose = make_text(root, GRect(4, -4, 48, 40), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentLeft, fg);
+    text_layer_set_text(s_glucose, "--");
 
-    s_delta = make_text(root, GRect(0, 40, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
-    s_age = make_text(root, GRect(w / 3, 40, w / 3, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
-    s_time = make_text(root, GRect(2 * w / 3, 36, w / 3 - 2, 24), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentCenter, fg2);
+    s_trend_layer = layer_create(GRect(50, 0, 32, 34));
+    layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
+    layer_add_child(root, s_trend_layer);
+
+    int col1 = w * 36 / 100;
+    int col2 = w * 34 / 100;
+    s_delta = make_text(root, GRect(0, 40, col1, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+    s_age = make_text(root, GRect(col1, 40, col2, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+    s_time = make_text(root, GRect(col1 + col2, 36, w - col1 - col2, 26), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter, fg2);
 
     // Graph - fill the rest
-    int graph_top = 58;
+    int graph_top = 60;
     s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, graph_top, h - graph_top - 2));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
@@ -54,17 +59,20 @@ void face_compact_load(Window *window, Layer *root, GRect bounds) {
 
 void face_compact_unload(void) {
     text_layer_destroy(s_glucose);
-    text_layer_destroy(s_trend);
     text_layer_destroy(s_delta);
     text_layer_destroy(s_age);
     text_layer_destroy(s_time);
+    layer_destroy(s_trend_layer);
     layer_destroy(s_graph_layer);
 }
 
 void face_compact_update(AppState *state) {
     time_t now = time(NULL);
-    struct tm *t = localtime(&now);
-    strftime(s_time_buf, sizeof(s_time_buf), "%H:%M", t);
+    bool light = state->config.color_scheme == COLOR_SCHEME_LIGHT;
+    GColor fg = light ? GColorBlack : GColorWhite;
+    GColor trend_ink = fg;
+
+    trio_format_clock(s_time_buf, sizeof(s_time_buf), now, state->config.clock_24h);
     text_layer_set_text(s_time, s_time_buf);
 
     format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose,
@@ -79,11 +87,13 @@ void face_compact_update(AppState *state) {
         else if (state->cgm.glucose >= cfg->high_threshold) gc = GColorOrange;
         else gc = GColorGreen;
         text_layer_set_text_color(s_glucose, gc);
-        text_layer_set_text_color(s_trend, gc);
+        trend_ink = gc;
     }
 #endif
 
-    text_layer_set_text(s_trend, state->cgm.trend_str);
+    trio_trend_layer_set(state->cgm.trend_str, trend_ink);
+    layer_mark_dirty(s_trend_layer);
+
     text_layer_set_text(s_delta, state->cgm.delta_str);
 
     // Reading age

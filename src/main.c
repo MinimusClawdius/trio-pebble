@@ -11,7 +11,9 @@
 #include "modules/alerts.h"
 #include "modules/complications.h"
 #include "modules/tap_framework.h"
+#include "modules/remote_cmds.h"
 #include "modules/state_persist.h"
+#include "modules/demo_preview.h"
 #include "modules/trend_normalize.h"
 #include "faces/face_classic.h"
 #include "faces/face_graph_focus.h"
@@ -92,6 +94,7 @@ static void reload_face(void) {
         .unload = window_unload,
     });
     window_stack_push(s_main_window, false);
+    remote_cmds_set_watchface_window(s_main_window);
 }
 
 // ---------- AppMessage Handlers ----------
@@ -283,9 +286,16 @@ static void down_click(ClickRecognizerRef recognizer, void *context) {
     reload_face();
 }
 
+static void select_long_click(ClickRecognizerRef recognizer, void *context) {
+    (void)recognizer;
+    (void)context;
+    remote_cmds_try_open(&s_state);
+}
+
 static void click_config(void *context) {
     (void)context;
     window_single_click_subscribe(BUTTON_ID_SELECT, select_click);
+    window_long_click_subscribe(BUTTON_ID_SELECT, select_long_click);
     window_single_click_subscribe(BUTTON_ID_UP, up_click);
     window_single_click_subscribe(BUTTON_ID_DOWN, down_click);
 }
@@ -320,6 +330,9 @@ static void init(void) {
         graph_restore_from_state(&s_state.graph);
     }
 
+    /* Optional fake CGM/graph for emulator store screenshots — see demo_preview.h */
+    trio_demo_preview_apply(&s_state);
+
     alerts_init();
     complications_init();
     tap_framework_init();
@@ -331,6 +344,7 @@ static void init(void) {
         .unload = window_unload,
     });
     window_stack_push(s_main_window, true);
+    remote_cmds_set_watchface_window(s_main_window);
 
     app_message_register_inbox_received(inbox_received);
     app_message_register_inbox_dropped(inbox_dropped);

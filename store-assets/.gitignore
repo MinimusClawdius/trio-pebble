@@ -1,0 +1,12 @@
+# Listing screenshots (PNG/JPEG) are meant to be committed — not ignored.
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# Optional: keep layered sources elsewhere (uncomment if you drop PSDs here)
+# *.psd
+# *.xcf

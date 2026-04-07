@@ -30,7 +30,8 @@ var K = {
     CONFIG_CHANGED: 34, TAP_ACTION: 35,
     CONFIG_WEATHER_ENABLED: 36,
     CONFIG_COMP_SLOT_0: 37, CONFIG_COMP_SLOT_1: 38,
-    CONFIG_COMP_SLOT_2: 39, CONFIG_COMP_SLOT_3: 40
+    CONFIG_COMP_SLOT_2: 39, CONFIG_COMP_SLOT_3: 40,
+    CONFIG_CLOCK_24H: 41
 };
 
 // ---------- Settings ----------
@@ -57,7 +58,8 @@ var settings = {
     compSlot0: 1,
     compSlot1: 3,
     compSlot2: 4,
-    compSlot3: 5
+    compSlot3: 5,
+    clock24h: true
 };
 
 function loadSettings() {
@@ -68,6 +70,9 @@ function loadSettings() {
             for (var key in parsed) {
                 if (parsed.hasOwnProperty(key)) settings[key] = parsed[key];
             }
+        }
+        if (settings.clock24h !== true && settings.clock24h !== false) {
+            settings.clock24h = true;
         }
     } catch (e) {
         console.log('Trio: settings load error: ' + e);
@@ -509,11 +514,16 @@ function sendCommand(type, amount) {
         : JSON.stringify({ grams: amount, absorptionHours: 3 });
 
     httpPost(settings.trioHost + endpoint, body, function (resp) {
-        var statusMsg = 'Sent';
-        try {
-            var r = JSON.parse(resp || '{}');
-            statusMsg = r.message || r.status || 'Sent';
-        } catch (e) { /* ok */ }
+        var statusMsg;
+        if (resp == null) {
+            statusMsg = 'Trio unreachable';
+        } else {
+            statusMsg = 'Sent';
+            try {
+                var r = JSON.parse(resp || '{}');
+                statusMsg = r.message || r.status || statusMsg;
+            } catch (e) { /* ok */ }
+        }
         var msg = {};
         msg[K.CMD_STATUS] = statusMsg.substring(0, 63);
         Pebble.sendAppMessage(msg);
@@ -561,6 +571,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
             msg[K.CONFIG_COMP_SLOT_1] = settings.compSlot1 | 0;
             msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
             msg[K.CONFIG_COMP_SLOT_3] = settings.compSlot3 | 0;
+            msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
             msg[K.UNITS] = displayUnitsForWatch();
             if (!settings.weatherEnabled) {
                 msg[K.WEATHER_TEMP] = 0;
@@ -598,7 +609,7 @@ Pebble.addEventListener('appmessage', function (e) {
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble v2.3.0 ready');
+    console.log('Trio Pebble v2.4.0 ready');
     loadSettings();
 
     var msg = {};
@@ -616,6 +627,7 @@ Pebble.addEventListener('ready', function () {
     msg[K.CONFIG_COMP_SLOT_1] = settings.compSlot1 | 0;
     msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
     msg[K.CONFIG_COMP_SLOT_3] = settings.compSlot3 | 0;
+    msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
     msg[K.UNITS] = displayUnitsForWatch();
     Pebble.sendAppMessage(msg);
 

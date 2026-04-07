@@ -6,10 +6,12 @@
 #include "../modules/glucose_format.h"
 #include "../modules/graph.h"
 #include "../modules/platform_compat.h"
+#include "../modules/time_display.h"
+#include "../modules/trend_glyphs.h"
 
-static TextLayer *s_glucose, *s_trend, *s_delta, *s_clock, *s_date, *s_sub, *s_loop;
-static Layer *s_lcd_frame_layer, *s_graph_layer, *s_comp_layer;
-static char s_glucose_buf[16], s_clock_buf[8], s_date_buf[14], s_sub_buf[40];
+static TextLayer *s_glucose, *s_delta, *s_clock, *s_date, *s_sub, *s_loop;
+static Layer *s_lcd_frame_layer, *s_graph_layer, *s_comp_layer, *s_trend_layer;
+static char s_glucose_buf[16], s_clock_buf[16], s_date_buf[14], s_sub_buf[40];
 
 static void graph_proc(Layer *layer, GContext *ctx) {
     graph_draw(layer, ctx, config_get());
@@ -54,8 +56,9 @@ void face_retro_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    s_date = make_text(root, GRect(6, 4, w / 2 + 10, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
-    s_clock = make_text(root, GRect(w / 2 - 16, 0, w / 2 + 10, 30), FONT_KEY_BITHAM_30_BLACK, GTextAlignmentRight, fg);
+    int half = w / 2;
+    s_date = make_text(root, GRect(8, 4, half - 12, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
+    s_clock = make_text(root, GRect(half - 4, 0, half + 4, 32), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentRight, fg);
 
     int lcd_y = 24;
     int lcd_h = 44;
@@ -64,10 +67,13 @@ void face_retro_load(Window *window, Layer *root, GRect bounds) {
     layer_add_child(root, s_lcd_frame_layer);
 
     int inner_pad = 8;
-    s_glucose = make_text(root, GRect(inner_pad, lcd_y + 4, w - 76 - inner_pad, 38), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS,
+    s_glucose = make_text(root, GRect(inner_pad, lcd_y + 4, w - 72 - inner_pad, 38), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS,
                           GTextAlignmentLeft, fg);
     text_layer_set_text(s_glucose, "--");
-    s_trend = make_text(root, GRect(w - 72, lcd_y + 6, 64, 36), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+
+    s_trend_layer = layer_create(GRect(w - 66, lcd_y + 6, 62, 34));
+    layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
+    layer_add_child(root, s_trend_layer);
 
     s_delta = make_text(root, GRect(4, lcd_y + lcd_h + 2, w - 8, 14), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
     s_sub = make_text(root, GRect(4, lcd_y + lcd_h + 16, w - 8, 14), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
@@ -91,12 +97,12 @@ void face_retro_load(Window *window, Layer *root, GRect bounds) {
 
 void face_retro_unload(void) {
     text_layer_destroy(s_glucose);
-    text_layer_destroy(s_trend);
     text_layer_destroy(s_delta);
     text_layer_destroy(s_clock);
     text_layer_destroy(s_date);
     text_layer_destroy(s_sub);
     text_layer_destroy(s_loop);
+    layer_destroy(s_trend_layer);
     layer_destroy(s_lcd_frame_layer);
     layer_destroy(s_graph_layer);
     layer_destroy(s_comp_layer);
@@ -105,7 +111,11 @@ void face_retro_unload(void) {
 void face_retro_update(AppState *state) {
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
-    strftime(s_clock_buf, sizeof(s_clock_buf), "%H:%M", t);
+    bool light = state->config.color_scheme == COLOR_SCHEME_LIGHT;
+    GColor fg = light ? GColorBlack : GColorWhite;
+    GColor trend_ink = fg;
+
+    trio_format_clock(s_clock_buf, sizeof(s_clock_buf), now, state->config.clock_24h);
     strftime(s_date_buf, sizeof(s_date_buf), "%a %d %b", t);
     text_layer_set_text(s_clock, s_clock_buf);
     text_layer_set_text(s_date, s_date_buf);
@@ -127,11 +137,13 @@ void face_retro_update(AppState *state) {
             gc = GColorGreen;
         }
         text_layer_set_text_color(s_glucose, gc);
-        text_layer_set_text_color(s_trend, gc);
+        trend_ink = gc;
     }
 #endif
 
-    text_layer_set_text(s_trend, state->cgm.trend_str);
+    trio_trend_layer_set(state->cgm.trend_str, trend_ink);
+    layer_mark_dirty(s_trend_layer);
+
     text_layer_set_text(s_delta, state->cgm.delta_str);
     snprintf(s_sub_buf, sizeof(s_sub_buf), "%s  |  %s", state->loop.iob, state->loop.cob);
     text_layer_set_text(s_sub, s_sub_buf);

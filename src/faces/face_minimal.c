@@ -7,13 +7,14 @@
 #include "../modules/graph.h"
 #include "../modules/glucose_format.h"
 #include "../modules/platform_compat.h"
+#include "../modules/time_display.h"
+#include "../modules/trend_glyphs.h"
 
-static TextLayer *s_time, *s_glucose, *s_trend, *s_delta;
-static Layer *s_sparkline_layer;
-static char s_time_buf[8], s_glucose_buf[16];
+static TextLayer *s_time, *s_glucose, *s_delta;
+static Layer *s_sparkline_layer, *s_trend_layer;
+static char s_time_buf[16], s_glucose_buf[16];
 
 static void sparkline_proc(Layer *layer, GContext *ctx) {
-    // Draw a thin sparkline (last 12 points only)
     graph_draw(layer, ctx, config_get());
 }
 
@@ -35,15 +36,18 @@ void face_minimal_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = light ? GColorDarkGray : GColorLightGray;
 
-    // Large centered time
-    s_time = make_text(root, GRect(0, h / 2 - 30, w, 40), FONT_KEY_BITHAM_34_MEDIUM_NUMBERS, GTextAlignmentCenter, fg);
-
-    // Glucose above time, prominent but not huge
-    s_glucose = make_text(root, GRect(0, h / 2 - 60, w, 30), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter, fg);
+    // Glucose above — prominent
+    s_glucose = make_text(root, GRect(0, h / 2 - 66, w, 28), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter, fg);
     text_layer_set_text(s_glucose, "--");
 
-    s_trend = make_text(root, GRect(0, h / 2 + 10, w / 2 - 6, 20), FONT_KEY_GOTHIC_18, GTextAlignmentRight, fg2);
-    s_delta = make_text(root, GRect(w / 2 + 6, h / 2 + 10, w / 2 - 6, 20), FONT_KEY_GOTHIC_18, GTextAlignmentLeft, fg2);
+    /* Large clock (SIMPLE CGM–style): full width for 12h + AM/PM */
+    s_time = make_text(root, GRect(4, h / 2 - 34, w - 8, 36), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter, fg);
+
+    s_trend_layer = layer_create(GRect(w / 2 - 40, h / 2 + 8, 36, 34));
+    layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
+    layer_add_child(root, s_trend_layer);
+
+    s_delta = make_text(root, GRect(w / 2 + 4, h / 2 + 12, w / 2 - 12, 22), FONT_KEY_GOTHIC_18, GTextAlignmentLeft, fg2);
 
     // Thin sparkline at bottom
     s_sparkline_layer = layer_create(trio_graph_layer_bounds(bounds, h - 30, 24));
@@ -54,15 +58,19 @@ void face_minimal_load(Window *window, Layer *root, GRect bounds) {
 void face_minimal_unload(void) {
     text_layer_destroy(s_time);
     text_layer_destroy(s_glucose);
-    text_layer_destroy(s_trend);
     text_layer_destroy(s_delta);
+    layer_destroy(s_trend_layer);
     layer_destroy(s_sparkline_layer);
 }
 
 void face_minimal_update(AppState *state) {
     time_t now = time(NULL);
-    struct tm *t = localtime(&now);
-    strftime(s_time_buf, sizeof(s_time_buf), "%H:%M", t);
+    bool light = state->config.color_scheme == COLOR_SCHEME_LIGHT;
+    GColor fg = light ? GColorBlack : GColorWhite;
+    GColor fg2 = light ? GColorDarkGray : GColorLightGray;
+    GColor trend_ink = fg2;
+
+    trio_format_clock(s_time_buf, sizeof(s_time_buf), now, state->config.clock_24h);
     text_layer_set_text(s_time, s_time_buf);
 
     format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose,
@@ -77,10 +85,13 @@ void face_minimal_update(AppState *state) {
         else if (state->cgm.glucose >= cfg->high_threshold) gc = GColorOrange;
         else gc = GColorGreen;
         text_layer_set_text_color(s_glucose, gc);
+        trend_ink = gc;
     }
 #endif
 
-    text_layer_set_text(s_trend, state->cgm.trend_str);
+    trio_trend_layer_set(state->cgm.trend_str, trend_ink);
+    layer_mark_dirty(s_trend_layer);
+
     text_layer_set_text(s_delta, state->cgm.delta_str);
 
     layer_mark_dirty(s_sparkline_layer);

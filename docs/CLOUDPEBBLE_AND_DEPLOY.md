@@ -123,6 +123,16 @@ Sideloaded and dev builds often show a **generic** tile until you add a **menu i
 
 **Store / listing screenshots** (for Rebble App Store later) are separate from the menu icon; you upload those in the store submission flow, not inside the `.pbw` alone.
 
+### Store screenshots with simulated CGM (demo graph)
+
+To capture **filled graphs and BG** in the emulator without Trio/phone data:
+
+1. Set **`TRIO_ENABLE_DEMO_GRAPH`** to **`1`** in `src/modules/demo_preview.h` (must be **`0`** for production PBWs).
+2. Build and run the **CloudPebble emulator** (or local SDK); use **UP/DOWN** to show each face layout.
+3. Export PNGs and upload them in the **Rebble App Store** listing; optionally commit copies under **`store-assets/`** for the repo.
+
+Details, resolution table, and CloudPebble import notes: **`store-assets/README.md`**.
+
 ---
 
 ## Deploy path: CloudPebble → phone → watch
