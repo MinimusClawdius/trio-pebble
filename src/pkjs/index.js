@@ -28,7 +28,9 @@ var K = {
     PREDICTIONS_DATA: 30, PREDICTIONS_COUNT: 31,
     PUMP_BATTERY: 32, SENSOR_AGE: 33,
     CONFIG_CHANGED: 34, TAP_ACTION: 35,
-    CONFIG_WEATHER_ENABLED: 36
+    CONFIG_WEATHER_ENABLED: 36,
+    CONFIG_COMP_SLOT_0: 37, CONFIG_COMP_SLOT_1: 38,
+    CONFIG_COMP_SLOT_2: 39, CONFIG_COMP_SLOT_3: 40
 };
 
 // ---------- Settings ----------
@@ -50,7 +52,12 @@ var settings = {
     alertSnoozeMin: 15,
     weatherEnabled: true,
     weatherUnits: 'f',    // 'f' or 'c'
-    glucoseUnits: 'mgdl'  // 'mgdl' | 'mmol' — watchface display + threshold entry
+    glucoseUnits: 'mgdl',  // 'mgdl' | 'mmol' — watchface display + threshold entry
+    /* Bottom bar left→right; values match watch ComplicationSlotKind */
+    compSlot0: 1,
+    compSlot1: 3,
+    compSlot2: 4,
+    compSlot3: 5
 };
 
 function loadSettings() {
@@ -550,6 +557,10 @@ Pebble.addEventListener('webviewclosed', function (e) {
             msg[K.CONFIG_ALERT_SNOOZE_MIN] = settings.alertSnoozeMin;
             msg[K.CONFIG_COLOR_SCHEME] = settings.colorScheme;
             msg[K.CONFIG_WEATHER_ENABLED] = settings.weatherEnabled ? 1 : 0;
+            msg[K.CONFIG_COMP_SLOT_0] = settings.compSlot0 | 0;
+            msg[K.CONFIG_COMP_SLOT_1] = settings.compSlot1 | 0;
+            msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
+            msg[K.CONFIG_COMP_SLOT_3] = settings.compSlot3 | 0;
             msg[K.UNITS] = displayUnitsForWatch();
             if (!settings.weatherEnabled) {
                 msg[K.WEATHER_TEMP] = 0;
@@ -587,7 +598,7 @@ Pebble.addEventListener('appmessage', function (e) {
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble v2.2.8 ready');
+    console.log('Trio Pebble v2.3.0 ready');
     loadSettings();
 
     var msg = {};
@@ -601,6 +612,10 @@ Pebble.addEventListener('ready', function () {
     msg[K.CONFIG_ALERT_SNOOZE_MIN] = settings.alertSnoozeMin;
     msg[K.CONFIG_COLOR_SCHEME] = settings.colorScheme;
     msg[K.CONFIG_WEATHER_ENABLED] = settings.weatherEnabled ? 1 : 0;
+    msg[K.CONFIG_COMP_SLOT_0] = settings.compSlot0 | 0;
+    msg[K.CONFIG_COMP_SLOT_1] = settings.compSlot1 | 0;
+    msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
+    msg[K.CONFIG_COMP_SLOT_3] = settings.compSlot3 | 0;
     msg[K.UNITS] = displayUnitsForWatch();
     Pebble.sendAppMessage(msg);
 

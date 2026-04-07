@@ -16,7 +16,7 @@ Switch between **six** face designs via buttons or the config page:
 | **Minimal** | Elegant time-forward design with sparkline - for everyday wear |
 | **Retro** | LCD-style frame (inspired by [91 Dub](https://apps.repebble.com/91-dub-v2-0_554e08d40136b0e6e200001b) layout); Bitham time + bordered readout |
 
-Apple Watch–style per-slot complication pickers are not implemented yet; the bottom bar order is fixed: **watch battery → steps → heart rate → weather**.
+The bottom bar has **four configurable slots** (phone settings page → Complications). Defaults match the old layout: watch battery, steps, heart rate, weather. Set any slot to **Empty** to skip it.
 
 ### Data Sources (Configurable)
 - **Trio** - Polls local HTTP API on `127.0.0.1:8080` (requires Trio iOS app with Pebble integration enabled)
@@ -44,11 +44,8 @@ When **weather** is enabled in settings, the graph area draws a simple sky scene
 - **Snooze** - press SELECT to snooze all alerts (configurable duration: 5-60 min)
 - Minimum 60-second re-alert interval to prevent vibration spam
 
-### Complications
-- **Left:** watch battery % (ellipsis meant the old layout was too narrow; widened in recent builds).
-- **Center:** step count today (e.g. `172` is steps, not BG).
-- **Next:** heart rate (bpm) when available.
-- **Right:** weather temperature (via Open-Meteo when enabled in settings).
+### Complications (four slots, left → right)
+Configure each slot on the settings page: **Empty**, **Watch battery**, **Phone battery** (from the phone when provided), **Steps**, **Heart rate** (Pebble Health), **Weather** (needs the weather fetch toggle on). Slots are equal width; **Weather** shows `off` if fetching is disabled.
 
 ### Color Schemes
 - **Dark** - Black background, green/red/orange glucose colors

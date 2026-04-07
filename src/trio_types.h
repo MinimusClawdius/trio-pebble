@@ -5,7 +5,7 @@
 // Trio Pebble - Shared Types & Constants
 // ============================================================
 
-#define APP_VERSION "2.2.8"
+#define APP_VERSION "2.3.0"
 #define MAX_GRAPH_POINTS 48
 #define MAX_PREDICTIONS 24
 
@@ -50,6 +50,10 @@ typedef enum {
     KEY_CONFIG_CHANGED,
     KEY_TAP_ACTION,
     KEY_CONFIG_WEATHER_ENABLED,
+    KEY_CONFIG_COMP_SLOT_0,
+    KEY_CONFIG_COMP_SLOT_1,
+    KEY_CONFIG_COMP_SLOT_2,
+    KEY_CONFIG_COMP_SLOT_3,
     KEY_COUNT
 } AppMessageKey;
 
@@ -105,6 +109,18 @@ typedef enum {
     TAP_ACTION_TOGGLE_FACE
 } TapAction;
 
+/** Bottom bar slots (left → right). Values sent via KEY_CONFIG_COMP_SLOT_0..3. */
+typedef enum {
+    COMP_SLOT_NONE = 0,
+    COMP_SLOT_WATCH_BATTERY,
+    COMP_SLOT_PHONE_BATTERY,
+    COMP_SLOT_STEPS,
+    COMP_SLOT_HEART_RATE,
+    COMP_SLOT_WEATHER
+} ComplicationSlotKind;
+
+#define TRIO_COMP_SLOT_COUNT 4
+
 // ---------- Configuration ----------
 typedef struct {
     FaceType face_type;
@@ -118,7 +134,8 @@ typedef struct {
     uint8_t alert_snooze_min;
     bool show_complications;
     bool is_mmol;               // display: mg/dL vs mmol/L (from KEY_UNITS)
-    bool weather_enabled;       // show weather in complications bar
+    bool weather_enabled;       // master switch: fetch/draw weather data
+    uint8_t comp_slot[TRIO_COMP_SLOT_COUNT]; /* ComplicationSlotKind per column */
 } TrioConfig;
 
 // ---------- CGM State ----------

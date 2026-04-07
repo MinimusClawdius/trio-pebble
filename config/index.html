@@ -163,26 +163,56 @@
 
 <h2>Complications</h2>
 <div class="card">
-  <div class="toggle-row">
-    <span class="toggle-label-text">Weather</span>
+  <p class="data-source-note" style="margin-bottom:12px">Four bottom-bar slots (left → right), similar to Apple Watch complications. Choose <strong>Empty</strong> to leave a column blank.</p>
+  <label>Slot 1 — left</label>
+  <select id="compSlot0"></select>
+  <label>Slot 2</label>
+  <select id="compSlot1"></select>
+  <label>Slot 3</label>
+  <select id="compSlot2"></select>
+  <label>Slot 4 — right</label>
+  <select id="compSlot3"></select>
+  <div class="toggle-row" style="margin-top:14px">
+    <span class="toggle-label-text">Fetch weather (Open-Meteo)</span>
     <label class="toggle-switch" for="weatherEnabled">
       <input type="checkbox" id="weatherEnabled">
       <span class="slider"></span>
     </label>
   </div>
-  <label>Temperature Units</label>
+  <label>Temperature units</label>
   <select id="weatherUnits">
     <option value="f">Fahrenheit</option>
     <option value="c">Celsius</option>
   </select>
-  <p class="data-source-note">Steps and heart rate use Pebble Health when available. PebbleKit JS cannot read Apple Health; use Trio or Nightscout for CGM.</p>
+  <p class="data-source-note">Watch battery is local. Phone battery comes from the phone when Trio/Rebble sends it. Steps and heart rate use Pebble Health on supported watches. A <strong>Weather</strong> slot shows temperature only when the toggle above is on and data is available.</p>
 </div>
 
 <button class="btn btn-save" onclick="saveAndReturn()">Save Settings</button>
 
-<div class="version">Trio Pebble config v2.1.1 &middot; MinimusClawdius</div>
+<div class="version">Trio Pebble config v2.3.0 &middot; MinimusClawdius</div>
 
 <script>
+var COMP_SLOT_OPTIONS = [
+    { v: 0, t: 'Empty' },
+    { v: 1, t: 'Watch battery %' },
+    { v: 2, t: 'Phone battery %' },
+    { v: 3, t: 'Steps (today)' },
+    { v: 4, t: 'Heart rate' },
+    { v: 5, t: 'Weather temperature' }
+];
+function fillCompSlotSelects() {
+    for (var s = 0; s < 4; s++) {
+        var el = document.getElementById('compSlot' + s);
+        if (!el) continue;
+        el.innerHTML = '';
+        for (var i = 0; i < COMP_SLOT_OPTIONS.length; i++) {
+            var o = document.createElement('option');
+            o.value = String(COMP_SLOT_OPTIONS[i].v);
+            o.textContent = COMP_SLOT_OPTIONS[i].t;
+            el.appendChild(o);
+        }
+    }
+}
 function getSettings() {
     try {
         var hash = window.location.hash.substring(1);
@@ -254,6 +284,7 @@ function onGlucoseUnitsChange() {
 
 function populateForm() {
     var s = getSettings();
+    fillCompSlotSelects();
     setValue('faceType', s.faceType);
     setValue('colorScheme', s.colorScheme);
     setValue('dataSource', s.dataSource !== undefined ? s.dataSource : 0);
@@ -277,6 +308,10 @@ function populateForm() {
     setValue('alertSnoozeMin', s.alertSnoozeMin);
     setChecked('weatherEnabled', s.weatherEnabled);
     setValue('weatherUnits', s.weatherUnits);
+    setValue('compSlot0', s.compSlot0 !== undefined ? s.compSlot0 : 1);
+    setValue('compSlot1', s.compSlot1 !== undefined ? s.compSlot1 : 3);
+    setValue('compSlot2', s.compSlot2 !== undefined ? s.compSlot2 : 4);
+    setValue('compSlot3', s.compSlot3 !== undefined ? s.compSlot3 : 5);
     toggleSourceFields();
 }
 
@@ -300,7 +335,11 @@ function saveAndReturn() {
         alertLowEnabled: boolVal('alertLowEnabled'),
         alertSnoozeMin: intVal('alertSnoozeMin'),
         weatherEnabled: boolVal('weatherEnabled'),
-        weatherUnits: strVal('weatherUnits')
+        weatherUnits: strVal('weatherUnits'),
+        compSlot0: intVal('compSlot0'),
+        compSlot1: intVal('compSlot1'),
+        compSlot2: intVal('compSlot2'),
+        compSlot3: intVal('compSlot3')
     };
     var encoded = encodeURIComponent(JSON.stringify(result));
     window.location.href = 'pebblejs://close#' + encoded;
@@ -318,7 +357,7 @@ function toggleSourceFields() {
 function setValue(id, val) {
     var el = document.getElementById(id);
     if (!el || val === undefined || val === null) return;
-    el.value = val;
+    el.value = (typeof val === 'number') ? String(val) : val;
 }
 function intVal(id) { return parseInt(document.getElementById(id).value, 10) || 0; }
 function strVal(id) { return document.getElementById(id).value || ''; }
