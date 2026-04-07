@@ -286,14 +286,15 @@ static void down_click(ClickRecognizerRef recognizer, void *context) {
     reload_face();
 }
 
-/* SDK 3: long click needs hold delay (ms) plus down/up handlers */
-static void select_long_down(ClickRecognizerRef recognizer, void *context) {
+/* SDK 3: long click needs hold delay (ms) plus down/up handlers.
+ * Select long-press is often taken by Pebble "Quick Launch" (Time 2, etc.) — we also bind DOWN long. */
+static void remote_menu_long_down(ClickRecognizerRef recognizer, void *context) {
     (void)recognizer;
     (void)context;
     remote_cmds_try_open(&s_state);
 }
 
-static void select_long_up(ClickRecognizerRef recognizer, void *context) {
+static void remote_menu_long_up(ClickRecognizerRef recognizer, void *context) {
     (void)recognizer;
     (void)context;
 }
@@ -301,9 +302,10 @@ static void select_long_up(ClickRecognizerRef recognizer, void *context) {
 static void click_config(void *context) {
     (void)context;
     window_single_click_subscribe(BUTTON_ID_SELECT, select_click);
-    window_long_click_subscribe(BUTTON_ID_SELECT, 700, select_long_down, select_long_up);
+    window_long_click_subscribe(BUTTON_ID_SELECT, 700, remote_menu_long_down, remote_menu_long_up);
     window_single_click_subscribe(BUTTON_ID_UP, up_click);
     window_single_click_subscribe(BUTTON_ID_DOWN, down_click);
+    window_long_click_subscribe(BUTTON_ID_DOWN, 700, remote_menu_long_down, remote_menu_long_up);
 }
 
 // ---------- Window Handlers ----------

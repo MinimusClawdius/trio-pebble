@@ -90,7 +90,7 @@
   <div id="trioFields">
     <label>Trio API Host</label>
     <input type="text" id="trioHost" placeholder="http://127.0.0.1:8080">
-    <p class="data-source-note" style="margin-bottom:10px"><strong>Remote bolus / carbs from the watch:</strong> On the watchface, <strong>press and hold the middle (Select) button ~1&nbsp;second</strong> &rarr; choose Remote bolus or Remote carbs &rarr; adjust with Up/Down &rarr; Select to send. Rebble forwards the request to the URL above; <strong>Trio must be running</strong> with Pebble integration on (same port). If the source is Dexcom or Nightscout, remote entry is disabled (double buzz on long-press).</p>
+    <p class="data-source-note" style="margin-bottom:10px"><strong>Remote bolus / carbs from the watch:</strong> On the watchface, <strong>press and hold the bottom (Down) button ~1&nbsp;second</strong> (or hold Select if Quick Launch is off for that button) &rarr; Remote bolus / Remote carbs &rarr; Up/Down to adjust &rarr; Select to send. <strong>Pebble Time 2 / Quick Launch:</strong> a long Select usually opens the system quick-launch instead of this menu — use <strong>long Down</strong>, or on the watch go to <strong>Settings &rarr; Quick Launch</strong> and disable or move the shortcut off the middle button. Rebble sends the request to the URL above; <strong>Trio must be running</strong>. Dexcom/Nightscout-only source disables remote entry (double buzz).</p>
     <p class="data-source-note" id="trioNoteDefault">Turn on Pebble in Trio &rarr; Watch. Open Trio before Rebble polls; iOS may suspend Trio in the background.</p>
     <p class="data-source-note" id="trioNoteHealth" style="display:none">Same API as Trio local HTTP. Use when CGM data reaches Trio (Dexcom, Health, etc.). Keep Trio running when possible so Rebble can reach 127.0.0.1.</p>
   </div>
@@ -198,7 +198,7 @@
 
 <button class="btn btn-save" onclick="saveAndReturn()">Save Settings</button>
 
-<div class="version">Trio Pebble config v2.4.0 &middot; MinimusClawdius</div>
+<div class="version">Trio Pebble config v2.4.1 &middot; MinimusClawdius</div>
 
 <script>
 var COMP_SLOT_OPTIONS = [
