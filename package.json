@@ -1,6 +1,6 @@
 {
   "name": "Trio",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "description": "Premium CGM watchface for Pebble - Trio, Dexcom Share, Nightscout",
   "author": "MinimusClawdius",
   "license": "MIT",
@@ -15,14 +15,7 @@
       "watchface": true
     },
     "resources": {
-      "media": [
-        {
-          "menuIcon": true,
-          "type": "png",
-          "name": "IMAGE_MENU_ICON",
-          "file": "images/menu_icon.png"
-        }
-      ]
+      "media": []
     },
     "messageKeys": {
       "KEY_GLUCOSE": 0,

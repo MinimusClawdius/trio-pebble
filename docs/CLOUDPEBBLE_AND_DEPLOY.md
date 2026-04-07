@@ -4,9 +4,9 @@
 
 Rebble’s CloudPebble import walks the GitHub zip and picks the **first** valid manifest it finds at the project root. If both `appinfo.json` and `package.json` exist, **whichever appears first in the zip** wins—not necessarily `package.json`.
 
-- **Wrong or missing version in the CloudPebble UI** — For npm-style projects, **`package.json` top-level `"version"`** is what becomes the project semver (e.g. `2.2.5`). If CloudPebble imported **`appinfo.json` first**, it would use **`versionLabel`** from that file and **ignore** npm `version`, and it would **not** load `pebble.messageKeys` from `package.json`. This repo keeps **only `package.json`** at the root (see `docs/pebble-legacy-manifest-reference.json` for non-resource legacy fields only — **resources must live only in `package.json`**).
-- **`RESOURCE_ID_IMAGE_MENU_ICON` redefined / menu_icon.reso created twice** — CloudPebble merged **two** definitions of the menu icon (e.g. `package.json` **and** another manifest fragment, **or** the Resources tab in CloudPebble **plus** `package.json`). Fix: define **`IMAGE_MENU_ICON` only once** — remove any duplicate from **CloudPebble → Resources**, and ensure no second JSON in the repo lists the same `menuIcon` media entry.
-- **No emulator / list preview image** — The menu icon file must **exist** at `resources/images/menu_icon.png`, and the media entry should include **`"menuIcon": true`** so CloudPebble marks it for previews. A manifest line without the file causes zip import to fail resource validation; a file without `menuIcon` often builds but shows a generic tile.
+- **Wrong or missing version in the CloudPebble UI** — For npm-style projects, **`package.json` top-level `"version"`** is what becomes the project semver (e.g. `2.2.5`). If CloudPebble imported **`appinfo.json` first**, it would use **`versionLabel`** from that file and **ignore** npm `version`, and it would **not** load `pebble.messageKeys` from `package.json`. This repo keeps **only `package.json`** at the root. Human-only legacy field reference: **`docs/pebble-legacy-manifest-reference.md`** (not a manifest; do not duplicate resources there).
+- **`RESOURCE_ID_IMAGE_MENU_ICON` redefined / `menu_icon.reso` created twice** — The build runs **two** `reso` tasks for the same PNG when the merged manifest lists **`IMAGE_MENU_ICON` twice** (typical cause: **`pebble.resources.media` in `package.json` plus** the same resource in **CloudPebble → Resources**). This repo ships **`pebble.resources.media` as `[]`** so GitHub-linked CloudPebble only gets the menu icon from **one** place: add it **once** under **Resources** in the IDE (25×25 PNG, “menu image”, path `images/menu_icon.png`). **Remove** any stale duplicate rows in Resources after **GitHub → Pull**. For **local `pebble build` only**, temporarily add the single media object shown under “Local CLI build” below—**do not commit** that change if you also use CloudPebble with the same resource in the UI.
+- **No emulator / list preview image** — After pulling, define the menu icon **either** only in CloudPebble Resources **or** only in `package.json`—never both. The file should live at **`resources/images/menu_icon.png`** in the repo.
 
 **After changing any of this**, use **GitHub → Pull** in CloudPebble (or re-import the project) so metadata and resources refresh.
 
@@ -111,7 +111,8 @@ PebbleKit JS also runs in the **Rebble** app. When Rebble is foreground, Trio is
 Sideloaded and dev builds often show a **generic** tile until you add a **menu icon** resource.
 
 1. Use a square PNG at **`resources/images/menu_icon.png`**, **exactly 25×25** (or smaller) for `menuIcon` (this repo ships one).
-2. In **`package.json`**, under `pebble.resources.media`, include **`menuIcon`** on that entry:
+2. **CloudPebble (GitHub-linked):** In **Resources**, add **one** PNG resource: name **`IMAGE_MENU_ICON`**, file **`images/menu_icon.png`**, enable **menu image** / launcher icon. Do **not** also paste the same entry into `package.json` while that row exists in the IDE (duplicate → `RESOURCE_ID_IMAGE_MENU_ICON` redefined).
+3. **Local `pebble build` (CLI) only:** If you are **not** merging CloudPebble Resources, add this single object to **`pebble.resources.media`** in `package.json` (and keep Resources empty / in sync):
 
 ```json
 {
@@ -163,5 +164,5 @@ Always **rebuild** in CloudPebble and **reinstall** the `.pbw` to the watch so t
 
 - [ ] **Configurable** + **Uses health** + **Uses location** enabled (or match trimmed capabilities if you dropped location).
 - [ ] Settings URL loads in **Safari/Chrome on the phone** before blaming the watch.
-- [ ] Optional: add `IMAGE_MENU_ICON` for a nicer list tile.
+- [ ] Optional: add `IMAGE_MENU_ICON` once (CloudPebble **Resources** *or* `package.json` media—not both).
 - [ ] Trio API: only works from the phone when Trio’s local server is on the same device (`127.0.0.1`).
