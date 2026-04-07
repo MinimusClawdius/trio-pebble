@@ -56,35 +56,36 @@ static TrendGlyphKind classify_trend(const char *s) {
     return TG_TEXT;
 }
 
+/* SDK 3 / CloudPebble: graphics_fill_rect(ctx, rect, corner_radius, corner_mask) */
 static void fill_fat_right(GContext *ctx, int cx, int cy, GColor c) {
     graphics_context_set_fill_color(ctx, c);
-    graphics_fill_rect(ctx, GRect(cx - 12, cy - 4, 17, 8));
-    graphics_fill_rect(ctx, GRect(cx + 4, cy - 8, 6, 6));
-    graphics_fill_rect(ctx, GRect(cx + 4, cy + 2, 6, 6));
-    graphics_fill_rect(ctx, GRect(cx + 8, cy - 5, 6, 10));
+    graphics_fill_rect(ctx, GRect(cx - 12, cy - 4, 17, 8), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(cx + 4, cy - 8, 6, 6), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(cx + 4, cy + 2, 6, 6), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(cx + 8, cy - 5, 6, 10), 0, GCornerNone);
 }
 
 static void fill_fat_up(GContext *ctx, int cx, int cy, GColor c) {
     graphics_context_set_fill_color(ctx, c);
-    graphics_fill_rect(ctx, GRect(cx - 4, cy - 2, 8, 14));
-    graphics_fill_rect(ctx, GRect(cx - 8, cy - 10, 6, 6));
-    graphics_fill_rect(ctx, GRect(cx + 2, cy - 10, 6, 6));
-    graphics_fill_rect(ctx, GRect(cx - 5, cy - 14, 10, 6));
+    graphics_fill_rect(ctx, GRect(cx - 4, cy - 2, 8, 14), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(cx - 8, cy - 10, 6, 6), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(cx + 2, cy - 10, 6, 6), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(cx - 5, cy - 14, 10, 6), 0, GCornerNone);
 }
 
 static void fill_fat_down(GContext *ctx, int cx, int cy, GColor c) {
     graphics_context_set_fill_color(ctx, c);
-    graphics_fill_rect(ctx, GRect(cx - 4, cy - 12, 8, 14));
-    graphics_fill_rect(ctx, GRect(cx - 8, cy + 4, 6, 6));
-    graphics_fill_rect(ctx, GRect(cx + 2, cy + 4, 6, 6));
-    graphics_fill_rect(ctx, GRect(cx - 5, cy + 8, 10, 6));
+    graphics_fill_rect(ctx, GRect(cx - 4, cy - 12, 8, 14), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(cx - 8, cy + 4, 6, 6), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(cx + 2, cy + 4, 6, 6), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(cx - 5, cy + 8, 10, 6), 0, GCornerNone);
 }
 
 static void fill_fat_ur(GContext *ctx, int cx, int cy, GColor c) {
     graphics_context_set_fill_color(ctx, c);
     int i;
     for (i = 0; i < 5; i++) {
-        graphics_fill_rect(ctx, GRect(cx - 9 + i * 3, cy + 5 - i * 3, 6, 6));
+        graphics_fill_rect(ctx, GRect(cx - 9 + i * 3, cy + 5 - i * 3, 6, 6), 0, GCornerNone);
     }
 }
 
@@ -92,7 +93,7 @@ static void fill_fat_dr(GContext *ctx, int cx, int cy, GColor c) {
     graphics_context_set_fill_color(ctx, c);
     int i;
     for (i = 0; i < 5; i++) {
-        graphics_fill_rect(ctx, GRect(cx - 9 + i * 3, cy - 9 + i * 3, 6, 6));
+        graphics_fill_rect(ctx, GRect(cx - 9 + i * 3, cy - 9 + i * 3, 6, 6), 0, GCornerNone);
     }
 }
 

@@ -87,6 +87,8 @@ void face_minimal_update(AppState *state) {
         text_layer_set_text_color(s_glucose, gc);
         trend_ink = gc;
     }
+#else
+    trend_ink = fg;
 #endif
 
     trio_trend_layer_set(state->cgm.trend_str, trend_ink);
