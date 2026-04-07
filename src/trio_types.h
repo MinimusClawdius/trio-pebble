@@ -5,7 +5,7 @@
 // Trio Pebble - Shared Types & Constants
 // ============================================================
 
-#define APP_VERSION "2.0.0"
+#define APP_VERSION "2.2.4"
 #define MAX_GRAPH_POINTS 48
 #define MAX_PREDICTIONS 24
 
@@ -169,6 +169,7 @@ typedef struct {
     bool low_active;
     bool urgent_low_active;
     time_t last_alert_time;
+    time_t last_urgent_alert_time;
     time_t snooze_until;
 } AlertState;
 

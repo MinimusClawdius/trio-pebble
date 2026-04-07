@@ -91,29 +91,65 @@ function fetchTrio(callback) {
     });
 }
 
+function trioParseGlucoseNumber(raw) {
+    if (raw == null || raw === '') return NaN;
+    if (typeof raw === 'number') return raw;
+    return parseFloat(String(raw).replace(',', '.'));
+}
+
+/**
+ * Use cgm.units when present; if missing/wrong, infer from value scale (Trio mmol ~2–30, mg/dL ~40–400).
+ */
+function trioInferSourceIsMmol(unitsStr, glucoseRaw, historyArr) {
+    var u = String(unitsStr || '').toLowerCase();
+    if (u.indexOf('mmol') >= 0) return true;
+    if (u.indexOf('mg') >= 0 && u.indexOf('dl') >= 0) return false;
+    var g = trioParseGlucoseNumber(glucoseRaw);
+    if (!isNaN(g) && g > 0) {
+        if (g < 35) return true;
+        if (g >= 40) return false;
+    }
+    if (historyArr && historyArr.length > 0) {
+        var v = trioParseGlucoseNumber(historyArr[0]);
+        if (!isNaN(v) && v > 0 && v < 35) return true;
+        if (!isNaN(v) && v >= 40) return false;
+    }
+    return false;
+}
+
+/**
+ * Watch AppMessage uses mg/dL integers for KEY_GLUCOSE + graph. Trio JSON may be mmol/L.
+ * BUGFIX: previously returned raw 4.7 mmol as glucose → watch saw ~4 mg/dL → 0.2 mmol display + false urgent-low vibes.
+ */
 function normalizeTrio(data) {
     var cgm = data.cgm || {};
     var loop = data.loop || {};
-    var u = cgm.units || '';
-    var isMmol = u.indexOf('mmol') >= 0;
-    var gRaw = cgm.glucose;
-    var glucoseNum = 0;
-    if (typeof gRaw === 'number') {
-        glucoseNum = gRaw;
-    } else if (gRaw != null && String(gRaw).length) {
-        glucoseNum = isMmol ? parseFloat(String(gRaw)) : (parseInt(String(gRaw), 10) || 0);
-        if (isNaN(glucoseNum)) glucoseNum = 0;
+    var histIn = loop.glucoseHistory || [];
+    var isMmol = trioInferSourceIsMmol(cgm.units, cgm.glucose, histIn);
+
+    var gNum = trioParseGlucoseNumber(cgm.glucose);
+    var glucoseMgdl = 0;
+    if (!isNaN(gNum) && gNum > 0) {
+        glucoseMgdl = isMmol ? Math.round(gNum * 18.0) : Math.round(gNum);
     }
+
+    var historyMgdl = [];
+    for (var i = 0; i < histIn.length; i++) {
+        var v = trioParseGlucoseNumber(histIn[i]);
+        if (isNaN(v) || v <= 0) continue;
+        var mg = isMmol ? Math.round(v * 18.0) : Math.round(v);
+        if (mg > 0 && mg <= 65535) historyMgdl.push(mg);
+    }
+
     return {
-        glucose: glucoseNum,
+        glucose: glucoseMgdl,
         trend: cgm.trend || '--',
         delta: cgm.delta || '',
         isStale: cgm.isStale || false,
-        units: cgm.units || 'mgdL',
         iob: loop.iob || '',
         cob: loop.cob || '',
         lastLoop: loop.lastLoopTime || '',
-        history: loop.glucoseHistory || [],
+        history: historyMgdl,
         pumpStatus: '',
         reservoir: 0,
         pumpBattery: 0,
@@ -298,25 +334,25 @@ function fetchData() {
 }
 
 // ---------- Send to Watch ----------
+function displayUnitsForWatch() {
+    return settings.glucoseUnits === 'mmol' ? 'mmol/L' : 'mg/dL';
+}
+
 function sendToWatch(data) {
     var msg = {};
 
-    if (typeof data.glucose === 'number' && !isNaN(data.glucose) && data.glucose > 0) {
-        msg[K.GLUCOSE] = data.glucose;
+    /* Watch number format only — source values are always mg/dL after normalizeTrio */
+    msg[K.UNITS] = displayUnitsForWatch();
+
+    var gInt = Math.round(Number(data.glucose) || 0);
+    if (gInt > 0) {
+        msg[K.GLUCOSE] = gInt;
     }
     if (data.trend) msg[K.TREND] = data.trend.substring(0, 7);
     if (data.delta) msg[K.DELTA] = data.delta.substring(0, 15);
     if (data.iob) msg[K.IOB] = data.iob.substring(0, 15);
     if (data.cob) msg[K.COB] = data.cob.substring(0, 15);
     if (data.lastLoop) msg[K.LAST_LOOP] = data.lastLoop.substring(0, 15);
-    /* Display units: user preference overrides CGM payload */
-    if (settings.glucoseUnits === 'mmol') {
-        msg[K.UNITS] = 'mmol';
-    } else if (data.units) {
-        msg[K.UNITS] = data.units;
-    } else {
-        msg[K.UNITS] = 'mgdL';
-    }
     if (data.pumpStatus) msg[K.PUMP_STATUS] = data.pumpStatus.substring(0, 15);
     if (data.sensorAge) msg[K.SENSOR_AGE] = data.sensorAge.substring(0, 15);
 
@@ -324,13 +360,15 @@ function sendToWatch(data) {
     if (data.reservoir) msg[K.RESERVOIR] = data.reservoir;
     if (data.pumpBattery) msg[K.PUMP_BATTERY] = data.pumpBattery;
 
-    // Graph data as packed uint16 LE bytes
+    // Graph: mg/dL uint16 LE (already converted in normalizeTrio)
     var history = data.history || [];
     if (history.length > 0) {
         var count = Math.min(history.length, 48);
         var bytes = [];
         for (var i = 0; i < count; i++) {
-            var val = history[i] || 0;
+            var val = Math.round(Number(history[i]) || 0);
+            if (val < 0) val = 0;
+            if (val > 65535) val = 65535;
             bytes.push(val & 0xFF);
             bytes.push((val >> 8) & 0xFF);
         }
@@ -454,7 +492,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
             msg[K.CONFIG_ALERT_SNOOZE_MIN] = settings.alertSnoozeMin;
             msg[K.CONFIG_COLOR_SCHEME] = settings.colorScheme;
             msg[K.CONFIG_WEATHER_ENABLED] = settings.weatherEnabled ? 1 : 0;
-            msg[K.UNITS] = settings.glucoseUnits === 'mmol' ? 'mmol' : 'mgdL';
+            msg[K.UNITS] = displayUnitsForWatch();
             if (!settings.weatherEnabled) {
                 msg[K.WEATHER_TEMP] = 0;
                 msg[K.WEATHER_ICON] = 'off';
@@ -489,7 +527,7 @@ Pebble.addEventListener('appmessage', function (e) {
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble v2.0 ready');
+    console.log('Trio Pebble v2.2.4 ready');
     loadSettings();
 
     var msg = {};
@@ -503,7 +541,7 @@ Pebble.addEventListener('ready', function () {
     msg[K.CONFIG_ALERT_SNOOZE_MIN] = settings.alertSnoozeMin;
     msg[K.CONFIG_COLOR_SCHEME] = settings.colorScheme;
     msg[K.CONFIG_WEATHER_ENABLED] = settings.weatherEnabled ? 1 : 0;
-    msg[K.UNITS] = settings.glucoseUnits === 'mmol' ? 'mmol' : 'mgdL';
+    msg[K.UNITS] = displayUnitsForWatch();
     Pebble.sendAppMessage(msg);
 
     fetchData();
