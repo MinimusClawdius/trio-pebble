@@ -199,7 +199,17 @@ void remote_cmds_set_watchface_window(Window *watchface) {
 }
 
 void remote_cmds_try_open(AppState *state) {
-    if (!s_watchface || window_stack_get_top_window() != s_watchface) {
+    if (!s_watchface || !window_stack_contains_window(s_watchface)) {
+        return;
+    }
+    Window *top = window_stack_get_top_window();
+    if (top == s_menu_window || top == s_pick_window) {
+        return;
+    }
+    /* Older check (top == s_watchface) failed on some devices: get_top_window() was NULL or not the
+     * same pointer while the watchface was visible, so long-press did nothing. Allow when top is NULL
+     * or matches the watchface; block only if another window is clearly on top. */
+    if (top != NULL && top != s_watchface) {
         return;
     }
 

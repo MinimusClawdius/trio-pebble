@@ -131,13 +131,14 @@ Phone (HTML)
 | Button | Watchface Mode | Alert Active |
 |--------|---------------|--------------|
 | **UP** | Previous face layout | Previous face layout |
+| **UP (hold ~½s)** | Remote bolus / carbs menu (Trio source) | Same |
 | **DOWN** | Next face layout | Next face layout |
-| **DOWN (hold ~1s)** | Remote bolus / carbs menu (Trio source) | Same |
-| **SELECT (hold ~1s)** | Same menu *if* system Quick Launch does not steal Select (see below) | Same |
+| **DOWN (hold ~½s)** | Remote bolus / carbs menu (Trio source) | Same |
+| **SELECT (hold ~½s)** | Same menu *if* system Quick Launch does not steal Select (see below) | Same |
 | **SELECT (short)** | — | Snooze alerts |
 | **BACK** | Exit watchface | Exit watchface |
 
-**Quick Launch (Pebble Time 2, etc.):** A long press on **Select** often triggers Pebble’s **Quick Launch** instead of this watchface. Use **long press Down** for the remote menu, or disable/move Quick Launch for the middle button under **Settings → Quick Launch** on the watch.
+**Quick Launch (Pebble Time 2, etc.):** A long press on **Select** often triggers Pebble’s **Quick Launch** instead of this watchface. Use **long Up** or **long Down** for the remote menu, or disable/move Quick Launch for the middle button under **Settings → Quick Launch** on the watch. If the menu never appears with Trio as the data source, update to the latest build (older code required the top window pointer to match exactly, which failed on some firmware paths).
 
 ## Safety
 
