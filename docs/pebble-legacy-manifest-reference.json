@@ -1,0 +1,15 @@
+{
+  "_note": "Human-readable legacy fields only. Do NOT duplicate pebble.resources here — package.json is canonical. CloudPebble may merge JSON manifests; a second copy of menuIcon caused RESOURCE_ID_IMAGE_MENU_ICON redefined (build fail).",
+  "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "shortName": "Trio",
+  "longName": "Trio Pebble",
+  "companyName": "MinimusClawdius",
+  "versionLabel": "(use package.json version)",
+  "sdkVersion": "3",
+  "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "emery"],
+  "watchapp": {
+    "watchface": true
+  },
+  "enableMultiJS": true,
+  "capabilities": ["configurable", "health", "location"]
+}
