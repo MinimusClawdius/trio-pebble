@@ -4,7 +4,7 @@
   "shortName": "Trio",
   "longName": "Trio Pebble",
   "companyName": "MinimusClawdius",
-  "versionLabel": "2.2.5",
+  "versionLabel": "2.2.6",
   "sdkVersion": "3",
   "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "emery"],
   "watchapp": {

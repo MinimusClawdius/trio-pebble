@@ -9,6 +9,16 @@ Rebble’s CloudPebble import walks the GitHub zip and picks the **first** valid
 
 **After changing any of this**, use **GitHub → Pull** in CloudPebble (or re-import the project) so metadata and resources refresh.
 
+### Description and “release notes” in CloudPebble
+
+GitHub sync only repopulates fields that come from the Pebble manifest (`package.json` → UUID, names, version, capabilities, message keys, resources, etc.). The CloudPebble **Project** model does not map `package.json` **`description`** or npm metadata into the IDE’s description / release-notes style fields, and **build logs** do not carry store-style release text. Keep long descriptions and per-build notes **in the CloudPebble project UI** (or your store listing), and use the repo **`description`** field for GitHub/npm readability only.
+
+### Menu icon: PNG is supported; size is strict
+
+The SDK enforces a **maximum 25×25** pixel size for **`menuIcon`** bitmaps. Larger PNGs (e.g. 28×28) fail at compile time with  
+`menuIcon resource 'IMAGE_MENU_ICON' exceeds the maximum allowed dimensions of (25, 25)`.  
+If the Resources tab thumbnail looks broken before a successful build, fix dimensions first—**`type: "png"` is valid** for Pebble resources.
+
 ---
 
 ## The three checkboxes (Settings → your project)
@@ -99,7 +109,7 @@ PebbleKit JS also runs in the **Rebble** app. When Rebble is foreground, Trio is
 
 Sideloaded and dev builds often show a **generic** tile until you add a **menu icon** resource.
 
-1. Use a square PNG at **`resources/images/menu_icon.png`** (this repo ships one).
+1. Use a square PNG at **`resources/images/menu_icon.png`**, **exactly 25×25** (or smaller) for `menuIcon` (this repo ships one).
 2. In **`package.json`**, under `pebble.resources.media`, include **`menuIcon`** on that entry:
 
 ```json
