@@ -228,6 +228,6 @@ void remote_cmds_try_open(AppState *state) {
         });
     }
 
-    APP_LOG(APP_LOG_LEVEL_INFO, "remote: pushing menu (top was %p)", top);
+    APP_LOG(APP_LOG_LEVEL_INFO, "remote: pushing menu (stack top %p)", window_stack_get_top_window());
     window_stack_push(s_menu_window, true);
 }

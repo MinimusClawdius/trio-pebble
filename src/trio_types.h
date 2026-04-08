@@ -5,7 +5,7 @@
 // Trio Pebble - Shared Types & Constants
 // ============================================================
 
-#define APP_VERSION "2.14.1"
+#define APP_VERSION "2.14.2"
 #define MAX_GRAPH_POINTS 48
 #define MAX_PREDICTIONS 24
 
