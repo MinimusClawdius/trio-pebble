@@ -32,7 +32,8 @@ var K = {
     CONFIG_COMP_SLOT_0: 37, CONFIG_COMP_SLOT_1: 38,
     CONFIG_COMP_SLOT_2: 39, CONFIG_COMP_SLOT_3: 40,
     CONFIG_CLOCK_24H: 41,
-    CONFIG_GRAPH_SCALE_MODE: 42
+    CONFIG_GRAPH_SCALE_MODE: 42,
+    CONFIG_GRAPH_TIME_RANGE: 43
 };
 
 // ---------- Settings ----------
@@ -61,8 +62,35 @@ var settings = {
     compSlot2: 6,
     compSlot3: 0,
     clock24h: true,
-    graphScaleMode: 0
+    graphScaleMode: 0,
+    graphTimeRange: 0
 };
+
+var GRAPH_SEND_MAX = 48;
+
+function graphHoursFromMode(mode) {
+    var m = mode | 0;
+    if (m === 1) return 6;
+    if (m === 2) return 12;
+    if (m === 3) return 24;
+    return 3;
+}
+
+function maxRawGraphSamplesForHours(hours) {
+    return Math.min(500, Math.max(GRAPH_SEND_MAX, Math.ceil(hours * 60 / 5) + 10));
+}
+
+function downsampleGraphHistory(arr, targetLen) {
+    if (!arr || arr.length === 0) return [];
+    if (targetLen <= 1) return [arr[arr.length - 1]];
+    if (arr.length <= targetLen) return arr.slice();
+    var out = [];
+    for (var j = 0; j < targetLen; j++) {
+        var idx = Math.round((j * (arr.length - 1)) / (targetLen - 1));
+        out.push(arr[idx]);
+    }
+    return out;
+}
 
 function loadSettings() {
     try {
@@ -80,6 +108,11 @@ function loadSettings() {
         if (gsm < 0 || gsm > 2) {
             settings.graphScaleMode = 0;
         }
+        var gtr = settings.graphTimeRange | 0;
+        if (gtr < 0 || gtr > 3) {
+            settings.graphTimeRange = 0;
+        }
+        settings.compSlot3 = 0;
     } catch (e) {
         console.log('Trio: settings load error: ' + e);
     }
@@ -223,6 +256,12 @@ function normalizeTrio(data) {
         if (mg > 0 && mg <= 65535) historyMgdl.push(mg);
     }
 
+    var gh = graphHoursFromMode(settings.graphTimeRange);
+    var maxHist = Math.min(500, Math.ceil(gh * 60 / 5) + 8);
+    if (historyMgdl.length > maxHist) {
+        historyMgdl = historyMgdl.slice(historyMgdl.length - maxHist);
+    }
+
     return {
         glucose: glucoseMgdl,
         trend: trioTrendToArrow(cgm.trend),
@@ -242,9 +281,10 @@ function normalizeTrio(data) {
 // ---------- Data Source: Nightscout ----------
 function fetchNightscout(callback) {
     var url = settings.nightscoutUrl.replace(/\/$/, '');
-    var tokenParam = settings.nightscoutToken ? '?token=' + settings.nightscoutToken : '';
+    var tokenQs = settings.nightscoutToken ? '&token=' + encodeURIComponent(settings.nightscoutToken) : '';
+    var hc = maxRawGraphSamplesForHours(graphHoursFromMode(settings.graphTimeRange));
 
-    httpGet(url + '/api/v1/entries/sgv.json?count=48' + (tokenParam ? '&token=' + settings.nightscoutToken : ''), function (sgvData) {
+    httpGet(url + '/api/v1/entries/sgv.json?count=' + hc + tokenQs, function (sgvData) {
         if (!sgvData) return callback(null);
         try {
             var entries = JSON.parse(sgvData);
@@ -278,7 +318,8 @@ function normalizeNightscout(entries, props) {
         lastLoop = loopAge + ' min';
     }
 
-    var history = entries.slice(0, 48).map(function (e) { return e.sgv; }).reverse();
+    var lim = maxRawGraphSamplesForHours(graphHoursFromMode(settings.graphTimeRange));
+    var history = entries.slice(0, Math.min(entries.length, lim)).map(function (e) { return e.sgv; }).reverse();
 
     return {
         glucose: latest.sgv || 0,
@@ -309,7 +350,9 @@ function fetchDexcom(callback) {
     var readUrl = server + '/ShareWebServices/Services/Publisher/ReadPublisherLatestGlucoseValues';
 
     function doRead(sessionId) {
-        httpPost(readUrl + '?sessionId=' + sessionId + '&minutes=180&maxCount=48', '', function (data) {
+        var hours = graphHoursFromMode(settings.graphTimeRange);
+        var maxCount = maxRawGraphSamplesForHours(hours);
+        httpPost(readUrl + '?sessionId=' + sessionId + '&minutes=' + (hours * 60) + '&maxCount=' + maxCount, '', function (data) {
             if (!data) return callback(null);
             try {
                 var entries = JSON.parse(data);
@@ -359,7 +402,7 @@ function normalizeDexcom(entries) {
     var timestamp = dateMatch ? parseInt(dateMatch[0], 10) : Date.now();
     var isStale = (Date.now() - timestamp) > 15 * 60 * 1000;
 
-    var history = entries.slice(0, 48).map(function (e) { return e.Value; }).reverse();
+    var history = entries.map(function (e) { return e.Value; }).reverse();
 
     return {
         glucose: glucose,
@@ -437,9 +480,9 @@ function sendToWatch(data) {
     if (data.pumpBattery) msg[K.PUMP_BATTERY] = data.pumpBattery;
 
     // Graph: mg/dL uint16 LE (already converted in normalizeTrio)
-    var history = data.history || [];
+    var history = downsampleGraphHistory(data.history || [], GRAPH_SEND_MAX);
     if (history.length > 0) {
-        var count = Math.min(history.length, 48);
+        var count = history.length;
         var bytes = [];
         for (var i = 0; i < count; i++) {
             var val = Math.round(Number(history[i]) || 0);
@@ -585,9 +628,10 @@ Pebble.addEventListener('webviewclosed', function (e) {
             msg[K.CONFIG_COMP_SLOT_0] = settings.compSlot0 | 0;
             msg[K.CONFIG_COMP_SLOT_1] = settings.compSlot1 | 0;
             msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
-            msg[K.CONFIG_COMP_SLOT_3] = settings.compSlot3 | 0;
+            msg[K.CONFIG_COMP_SLOT_3] = 0;
             msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
             msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
+            msg[K.CONFIG_GRAPH_TIME_RANGE] = settings.graphTimeRange | 0;
             msg[K.UNITS] = displayUnitsForWatch();
             if (!settings.weatherEnabled) {
                 msg[K.WEATHER_TEMP] = 0;
@@ -645,9 +689,10 @@ Pebble.addEventListener('ready', function () {
     msg[K.CONFIG_COMP_SLOT_0] = settings.compSlot0 | 0;
     msg[K.CONFIG_COMP_SLOT_1] = settings.compSlot1 | 0;
     msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
-    msg[K.CONFIG_COMP_SLOT_3] = settings.compSlot3 | 0;
+    msg[K.CONFIG_COMP_SLOT_3] = 0;
     msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
     msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
+    msg[K.CONFIG_GRAPH_TIME_RANGE] = settings.graphTimeRange | 0;
     msg[K.UNITS] = displayUnitsForWatch();
     Pebble.sendAppMessage(msg);
 

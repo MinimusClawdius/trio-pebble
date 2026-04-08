@@ -41,6 +41,7 @@ void face_compact_load(Window *window, Layer *root, GRect bounds) {
     text_layer_set_text(s_glucose, "--");
 
     s_trend_layer = layer_create(GRect(50, 0, 32, 34));
+    layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 

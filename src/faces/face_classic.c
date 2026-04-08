@@ -1,7 +1,7 @@
 // Face: Classic — LOOP-style layout (Diorite / Emery targets)
 // Header: time left, reading age right ("N MIN AGO").
 // Hero: large glucose + trend arrow right.
-// Graph: 3h trace (see graph.c — dotted thresholds, color bands on PBL_COLOR).
+// Graph: history window from settings (3–24h on phone); dotted thresholds, color bands on PBL_COLOR.
 // Footer: complications bar (default: battery, weather, IOB).
 
 #include "face_classic.h"
@@ -12,7 +12,7 @@
 #include "../modules/time_display.h"
 #include "../modules/trend_glyphs.h"
 
-#define LOOP_HEADER_H 30
+#define LOOP_HEADER_H 22
 #define LOOP_HERO_H 54
 #define LOOP_GRAPH_TOP (LOOP_HEADER_H + LOOP_HERO_H)
 
@@ -47,7 +47,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    s_time = make_text(root, GRect(0, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+    s_time = make_text(root, GRect(0, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_18_BOLD, GTextAlignmentLeft, fg);
     s_age = make_text(root, GRect(w / 2, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_14_BOLD,
                       GTextAlignmentRight, fg2);
 
@@ -61,6 +61,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     text_layer_set_text(s_glucose, "--");
 
     s_trend_layer = layer_create(GRect(gw, LOOP_HEADER_H, w - gw, LOOP_HERO_H));
+    layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 

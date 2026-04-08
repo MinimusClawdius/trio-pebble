@@ -45,21 +45,25 @@ void complications_apply_message(DictionaryIterator *iter, AppState *state) {
     if (t) state->comp.heart_rate = (int16_t)t->value->int32;
 }
 
-static void slot_icon_text_split(GRect cell, GRect *out_icon, GRect *out_text, bool with_icon) {
+static void slot_icon_text_split_pct(GRect cell, GRect *out_icon, GRect *out_text, bool with_icon, int icon_pct) {
     if (!with_icon) {
         *out_icon = GRect(cell.origin.x, cell.origin.y, 0, 0);
         *out_text = cell;
         return;
     }
-    int iw = cell.size.w * 46 / 100;
-    if (iw < 22) {
-        iw = 22;
+    int iw = cell.size.w * icon_pct / 100;
+    if (iw < 18) {
+        iw = 18;
     }
-    if (iw > cell.size.w - 18) {
-        iw = cell.size.w - 18;
+    if (iw > cell.size.w - 14) {
+        iw = cell.size.w - 14;
     }
     *out_icon = GRect(cell.origin.x, cell.origin.y, iw, cell.size.h);
     *out_text = GRect(cell.origin.x + iw, cell.origin.y, cell.size.w - iw, cell.size.h);
+}
+
+static void slot_icon_text_split(GRect cell, GRect *out_icon, GRect *out_text, bool with_icon) {
+    slot_icon_text_split_pct(cell, out_icon, out_text, with_icon, 46);
 }
 
 static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, AppState *state, TrioConfig *config,
@@ -76,14 +80,14 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             return;
         case COMP_SLOT_WATCH_BATTERY: {
             GRect ir, tr;
-            slot_icon_text_split(cell, &ir, &tr, true);
+            slot_icon_text_split_pct(cell, &ir, &tr, true, 32);
             trio_draw_footer_battery_bar(ctx, ir, state->comp.watch_battery, state->comp.watch_charging, fg, config);
             if (state->comp.watch_charging) {
-                snprintf(buf, sizeof(buf), "%d%%+", state->comp.watch_battery);
+                snprintf(buf, sizeof(buf), "%d+", state->comp.watch_battery);
             } else {
                 snprintf(buf, sizeof(buf), "%d%%", state->comp.watch_battery);
             }
-            graphics_draw_text(ctx, buf, font_side, tr, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            graphics_draw_text(ctx, buf, font_aux, tr, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
             return;
         }
         case COMP_SLOT_PHONE_BATTERY:
@@ -154,7 +158,7 @@ void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConf
     int y = area.origin.y;
     int row_h = area.size.h;
     int aw = area.size.w;
-    int slot_w = aw / TRIO_COMP_SLOT_COUNT;
+    int slot_w = aw / TRIO_COMP_BAR_COLUMNS;
 
 #if TRIO_DISPLAY_COLOR
     GColor fg = (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorDarkGray : GColorLightGray;
@@ -162,7 +166,7 @@ void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConf
     GColor fg = (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
 #endif
 
-    for (int i = 0; i < TRIO_COMP_SLOT_COUNT; i++) {
+    for (int i = 0; i < TRIO_COMP_BAR_COLUMNS; i++) {
         ComplicationSlotKind k = (ComplicationSlotKind)config->comp_slot[i];
         if (k > COMP_SLOT_IOB) {
             k = COMP_SLOT_NONE;

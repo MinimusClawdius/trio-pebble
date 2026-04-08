@@ -1,4 +1,5 @@
 #include "trend_glyphs.h"
+#include "config.h"
 #include <string.h>
 
 static char s_trend_utf8[16];
@@ -106,6 +107,24 @@ void trio_trend_glyphs_deinit(void) {
 
 void trio_trend_glyph_draw(GContext *ctx, GRect bounds, const char *utf8, GColor ink) {
     (void)ink;
+    {
+        TrioConfig *cfg = config_get();
+        GColor bg = GColorBlack;
+        switch (cfg->color_scheme) {
+            case COLOR_SCHEME_LIGHT:
+                bg = GColorWhite;
+                break;
+            case COLOR_SCHEME_HIGH_CONTRAST:
+                bg = GColorBlack;
+                break;
+            default:
+                bg = GColorBlack;
+                break;
+        }
+        graphics_context_set_fill_color(ctx, bg);
+        graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    }
+
     TrendGlyphKind k = classify_trend(utf8);
     bool light = s_light_color_scheme;
 

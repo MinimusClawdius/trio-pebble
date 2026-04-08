@@ -5,7 +5,7 @@
 // Trio Pebble - Shared Types & Constants
 // ============================================================
 
-#define APP_VERSION "2.9.0"
+#define APP_VERSION "2.10.0"
 #define MAX_GRAPH_POINTS 48
 #define MAX_PREDICTIONS 24
 
@@ -57,6 +57,8 @@ typedef enum {
     KEY_CONFIG_CLOCK_24H,
     /** 0=auto-fit Y-axis to data, 1=fit around High/Low thresholds, 2=legacy 40–400 mg/dL */
     KEY_CONFIG_GRAPH_SCALE_MODE,
+    /** 0=3h, 1=6h, 2=12h, 3=24h — phone fetches & down-samples to 48 points */
+    KEY_CONFIG_GRAPH_TIME_RANGE,
     KEY_COUNT
 } AppMessageKey;
 
@@ -109,6 +111,14 @@ typedef enum {
     GRAPH_SCALE_LEGACY = 2
 } GraphScaleMode;
 
+/** Horizontal span for graph samples (phone-side fetch); watch still gets ≤48 points. */
+typedef enum {
+    GRAPH_TIME_3H = 0,
+    GRAPH_TIME_6H = 1,
+    GRAPH_TIME_12H = 2,
+    GRAPH_TIME_24H = 3
+} GraphTimeRange;
+
 // ---------- Tap Action (future touch framework) ----------
 typedef enum {
     TAP_ACTION_NONE = 0,
@@ -132,6 +142,8 @@ typedef enum {
 } ComplicationSlotKind;
 
 #define TRIO_COMP_SLOT_COUNT 4
+/** Visible columns in the footer bar (slots 0..2; slot 3 kept for protocol / future). */
+#define TRIO_COMP_BAR_COLUMNS 3
 
 // ---------- Configuration ----------
 typedef struct {
@@ -150,6 +162,7 @@ typedef struct {
     uint8_t comp_slot[TRIO_COMP_SLOT_COUNT]; /* ComplicationSlotKind per column */
     bool clock_24h;             /* true = 24h clock, false = 12h (no AM/PM on watch) */
     uint8_t graph_scale_mode;   /* GraphScaleMode */
+    uint8_t graph_time_range;     /* GraphTimeRange */
 } TrioConfig;
 
 // ---------- CGM State ----------

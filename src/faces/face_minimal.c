@@ -44,6 +44,7 @@ void face_minimal_load(Window *window, Layer *root, GRect bounds) {
     s_time = make_text(root, GRect(4, h / 2 - 34, w - 8, 36), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter, fg);
 
     s_trend_layer = layer_create(GRect(w / 2 - 40, h / 2 + 8, 36, 34));
+    layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 

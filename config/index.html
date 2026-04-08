@@ -76,6 +76,14 @@
     <option value="2">Full — legacy 40–400 mg/dL axis</option>
   </select>
   <p class="data-source-note">Phone sends graph points in mg/dL. Dynamic mode zooms so a tight range (e.g. stable values) uses more of the graph height. If there is no data yet, Fixed thresholds are used.</p>
+  <label>Graph time range (horizontal)</label>
+  <select id="graphTimeRange">
+    <option value="0">3 hours</option>
+    <option value="1">6 hours</option>
+    <option value="2">12 hours</option>
+    <option value="3">24 hours</option>
+  </select>
+  <p class="data-source-note">The phone fetches CGM history for this window and sends up to 48 points to the watch (evenly sampled). Wider windows use coarser effective resolution.</p>
   <label>Show glucose on watch as</label>
   <select id="glucoseUnits" onfocus="this.dataset.prevUnit=this.value" onchange="onGlucoseUnitsChange()">
     <option value="mmol">mmol/L (one decimal)</option>
@@ -179,15 +187,13 @@
 
 <h2>Complications</h2>
 <div class="card">
-  <p class="data-source-note" style="margin-bottom:12px">Four bottom-bar slots (left → right), similar to Apple Watch complications. Choose <strong>Empty</strong> to leave a column blank.</p>
-  <label>Slot 1 — left</label>
+  <p class="data-source-note" style="margin-bottom:12px">Three bottom-bar columns (left → right). Choose <strong>Empty</strong> to leave a column blank.</p>
+  <label>Column 1 — left</label>
   <select id="compSlot0"></select>
-  <label>Slot 2</label>
+  <label>Column 2</label>
   <select id="compSlot1"></select>
-  <label>Slot 3</label>
+  <label>Column 3 — right</label>
   <select id="compSlot2"></select>
-  <label>Slot 4 — right</label>
-  <select id="compSlot3"></select>
   <div class="toggle-row" style="margin-top:14px">
     <span class="toggle-label-text">Fetch weather (Open-Meteo)</span>
     <label class="toggle-switch" for="weatherEnabled">
@@ -205,7 +211,7 @@
 
 <button class="btn btn-save" onclick="saveAndReturn()">Save Settings</button>
 
-<div class="version">Trio Pebble config v2.9.0 &middot; MinimusClawdius</div>
+<div class="version">Trio Pebble config v2.10.0 &middot; MinimusClawdius</div>
 
 <script>
 var COMP_SLOT_OPTIONS = [
@@ -218,7 +224,7 @@ var COMP_SLOT_OPTIONS = [
     { v: 6, t: 'IOB (Loop / insulin on board)' }
 ];
 function fillCompSlotSelects() {
-    for (var s = 0; s < 4; s++) {
+    for (var s = 0; s < 3; s++) {
         var el = document.getElementById('compSlot' + s);
         if (!el) continue;
         el.innerHTML = '';
@@ -306,6 +312,7 @@ function populateForm() {
     setValue('colorScheme', s.colorScheme);
     setChecked('clock24h', s.clock24h !== false);
     setValue('graphScaleMode', s.graphScaleMode !== undefined ? s.graphScaleMode : 0);
+    setValue('graphTimeRange', s.graphTimeRange !== undefined ? s.graphTimeRange : 0);
     setValue('dataSource', s.dataSource !== undefined ? s.dataSource : 0);
     setValue('trioHost', s.trioHost);
     setValue('nightscoutUrl', s.nightscoutUrl);
@@ -330,7 +337,6 @@ function populateForm() {
     setValue('compSlot0', s.compSlot0 !== undefined ? s.compSlot0 : 1);
     setValue('compSlot1', s.compSlot1 !== undefined ? s.compSlot1 : 5);
     setValue('compSlot2', s.compSlot2 !== undefined ? s.compSlot2 : 6);
-    setValue('compSlot3', s.compSlot3 !== undefined ? s.compSlot3 : 0);
     toggleSourceFields();
 }
 
@@ -341,6 +347,7 @@ function saveAndReturn() {
         colorScheme: intVal('colorScheme'),
         clock24h: boolVal('clock24h'),
         graphScaleMode: intVal('graphScaleMode'),
+        graphTimeRange: intVal('graphTimeRange'),
         dataSource: intVal('dataSource'),
         trioHost: strVal('trioHost'),
         nightscoutUrl: strVal('nightscoutUrl'),
@@ -360,7 +367,7 @@ function saveAndReturn() {
         compSlot0: intVal('compSlot0'),
         compSlot1: intVal('compSlot1'),
         compSlot2: intVal('compSlot2'),
-        compSlot3: intVal('compSlot3')
+        compSlot3: 0
     };
     var encoded = encodeURIComponent(JSON.stringify(result));
     window.location.href = 'pebblejs://close#' + encoded;

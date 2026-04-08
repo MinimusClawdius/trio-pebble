@@ -16,7 +16,7 @@ void trio_draw_footer_battery_bar(GContext *ctx, GRect icon_area, int pct, bool 
         pct = 100;
     }
 
-    int bar_h = 8;
+    int bar_h = 6;
     if (bar_h > icon_area.size.h - 2) {
         bar_h = icon_area.size.h - 2;
     }
