@@ -85,29 +85,26 @@ In CloudPebble project **Settings**, enable **Configurable**, **Uses health**, a
 
 ## Trio Remote (companion watch app)
 
-Rebble’s Pebble docs state that **watchfaces are not meant to use hardware buttons for user interaction** (use accelerometer instead). Remote bolus/carbs menus belong in a **watch app**. This repo includes a sibling project:
+Rebble’s Pebble docs state that **watchfaces are not meant to use hardware buttons for user interaction** (use accelerometer instead). Remote bolus/carbs belong in a **watch app**.
 
-| Path | Role |
-|------|------|
-| Repository **root** (`package.json` here) | **Trio** watchface (CGM UI) |
-| **`remote-app/`** | **Trio Remote** — same bolus/carbs flow as the old watchface menu, with full **button** support |
+| Where | Role |
+|-------|------|
+| This repo **root** | **Trio** watchface |
+| This repo **`remote-app/`** | Same **Trio Remote** sources for **local `pebble build`** (monorepo) |
+| GitHub **`trio-pebble-remote`** (separate repo) | **Recommended for CloudPebble** — import **that** URL as project #2 (CloudPebble cannot use a subfolder of `trio-pebble` as the project root). |
 
-**Build & install (local SDK):**
+**CloudPebble:** Project **A** = import **`trio-pebble`**. Project **B** = import **`trio-pebble-remote`**. You are **not** importing “another branch” into the same project to fix the path — there is no subfolder redirect. See [docs/CLOUDPEBBLE_AND_DEPLOY.md](docs/CLOUDPEBBLE_AND_DEPLOY.md) § *Watchface + Trio Remote*.
+
+**Local SDK (monorepo):**
 ```bash
 cd remote-app
 pebble build
 pebble install --phone <ip>
 ```
 
-Install **both** the watchface PBW and `remote-app/build/*.pbw` (or install from the `remote-app` folder in your IDE).
+**Quick Launch:** Assign **Trio Remote** (the watch **app**) to a shortcut on the watch.
 
-**Quick Launch (Pebble 2 / Time series):** On the watch: **Settings → Quick Launch** (or system launcher settings) and assign **Trio Remote** to a button shortcut so you can open the menu without scrolling the app list.
-
-**Configuration:** Trio Remote includes the same hosted **Settings** URL as the watchface (`showConfiguration`). PebbleKit JS `localStorage` may be **per watch app UUID**; if commands say “need Trio API” or can’t reach Trio, open **Settings** once from **Trio Remote** on the phone so `trioHost` / data source match your watchface (or re-enter them).
-
-**Message keys:** `remote-app/package.json` `messageKeys` match the watchface so `KEY_CMD_TYPE` / `KEY_CMD_AMOUNT` and the JS bridge behave the same.
-
-**UUID:** `remote-app/package.json` uses its **own** UUID (see file — must differ from the watchface). If you use **native iOS PebbleKit** outside Rebble’s JS path, the host app may need to allow this second UUID for AppMessage. **CloudPebble:** use **two projects** so each build keeps its manifest; see [docs/CLOUDPEBBLE_AND_DEPLOY.md](docs/CLOUDPEBBLE_AND_DEPLOY.md) § *Watchface + Trio Remote*.
+**Configuration / UUID / keys:** Same behavior as documented earlier; Remote uses its **own** UUID and the same `messageKeys` as the watchface. Publish **`trio-pebble-remote`** on GitHub, add `resources/images/menu_icon.png` there (25×25; copy from this repo’s watchface icon path), then import in CloudPebble.
 
 ## Architecture
 

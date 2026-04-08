@@ -174,54 +174,46 @@ Always **rebuild** in CloudPebble and **reinstall** the `.pbw` to the watch so t
 
 ## Watchface + Trio Remote (two PBWs, two UUIDs)
 
+### CloudPebble has no “subfolder import”
+
+When you **Import from GitHub**, CloudPebble uses the repository **root** only (see [GitHub-linked CloudPebble](#github-linked-cloudpebble-version-and-preview-why-it-looked-empty)). There is **no** setting to “use `remote-app/` as the project root.” So:
+
+- **You do not fix this by importing “a different branch” of `trio-pebble` into the same CloudPebble project** — the same project still has one linked repo + branch, and Pull still brings **root** `package.json` (watchface UUID) unless you never Pull.
+- A **separate branch** can work **only** if you create a branch whose **root tree** is literally the watchapp files (`package.json` + `wscript` + `src/` at repo root), and you create a **second CloudPebble project** that links to **`trio-pebble`** but checks out **that branch**. That is easy to get wrong when merging `main`; most teams prefer a **second repository** instead.
+
 ### Why installing the “watchapp” removed the watchface
 
-On Pebble / Rebble, each installed item is keyed by its **`uuid`** in `package.json` (same idea as Android `applicationId`). **Installing a `.pbw` replaces whatever is already installed with that exact UUID** — it is not “watchface slot” vs “app slot” at the UUID level. Two different UUIDs = **two separate installs** (one can be a watchface, one a watchapp).
+Pebble keys installs by **`uuid`** in `package.json`. **Same UUID → one slot**; the new `.pbw` replaces the old one. Two different UUIDs → two installs.
 
-If both builds used the **same** manifest (same UUID), the second install would **overwrite** the first. That usually happens on CloudPebble when:
+If both CloudPebble builds used the **watchface** manifest (same UUID), the second PBW overwrote the first.
 
-1. **One CloudPebble project** is linked to this GitHub repo’s **root** (see [GitHub-linked CloudPebble](#github-linked-cloudpebble-version-and-preview-why-it-looked-empty) — the import uses the **root** `package.json`, UUID `a1b2c3d4-e5f6-7890-abcd-ef1234567890`).
-2. You then change **`watchface`** to `false`, swap source files toward `remote-app/`, and **Compile** again — the project still **Pull**s the repo’s **root** `package.json` on sync, so the UUID often stays the watchface UUID unless you maintain a **fork** or never Pull.
-3. You install that PBW → it **replaces** the previous install with that UUID (your watchface).
+### Recommended: two GitHub repositories + two CloudPebble projects
 
-So the conflict is **not** “watchface vs app container” in the abstract — it is **same UUID = same install slot**.
+| CloudPebble project | Import this GitHub repo | What you get |
+|---------------------|-------------------------|----------------|
+| **A** | **`trio-pebble`** (`main`) | Trio **watchface** |
+| **B** | **`trio-pebble-remote`** (`main`) | **Trio Remote** watch **app** |
 
-### Fix: two CloudPebble projects (recommended)
+The companion repo **`trio-pebble-remote`** exists so project **B** is a normal “import repo root” flow — no manual copy/paste of `remote-app/` into an empty CloudPebble project.
 
-| Project | Source | `package.json` | UUID (this repo) |
-|---------|--------|----------------|------------------|
-| **A – Trio watchface** | GitHub: `trio-pebble` **root** | Repo root `package.json` | `a1b2c3d4-e5f6-7890-abcd-ef1234567890` |
-| **B – Trio Remote** | **Not** the same root-only import | Must be **`remote-app/package.json`** at the **CloudPebble project root** | See `remote-app/package.json` (`fdd1d4b6-…` in current tree) |
+Maintainers: after changing `trio-pebble/remote-app/`, copy/sync into **`trio-pebble-remote`** (see that repo’s `SYNC_WITH_TRIO_PEBBLE.md`). Optional script: `trio-pebble/scripts/sync-trio-pebble-remote.ps1`.
 
-**Project B setup (typical):**
+**First build of `trio-pebble-remote`:** add **`resources/images/menu_icon.png`** (25×25) — copy from `trio-pebble` (see that repo’s `resources/images` / `images` path for the watchface menu icon).
 
-1. In CloudPebble: **Create project** → native **watchapp** (not watchface), or import a **minimal** repo/zip whose **root** is the contents of `remote-app/` (i.e. `package.json` + `wscript` + `src/` from `remote-app/` only).
-2. Paste **`remote-app/package.json`** as the project manifest (or maintain a small fork / branch where `remote-app/` is the repository root).
-3. Copy **`remote-app/wscript`** and **`remote-app/src/**`** into that project (same paths as in this repo: `src/main.c`, `src/remote_menu.c`, `src/pkjs/index.js`).
-4. **Resources:** ensure **`IMAGE_MENU_ICON`** exists (this repo references `../images/menu_icon.png` from `remote-app/`; on CloudPebble you may need a **Resources** row or copy the PNG into `remote-app/resources/` and point `file` at it).
-5. **Compile** → install PBW **B**. Confirm in Rebble / app list you now have **both** “Trio Pebble” (watchface) and “Trio Remote” (app).
+**Verify:** CloudPebble **Settings → UUID** differs between project A and project B.
 
-**Verify:** Open each project’s **Settings** in CloudPebble and confirm the **UUID** field differs between project A and project B before trusting installs.
-
-### Alternative: local CLI (no CloudPebble ambiguity)
-
-From a machine with the Pebble SDK:
+### Alternative: local CLI (monorepo)
 
 ```bash
-# Watchface
-cd /path/to/trio-pebble
-pebble build && pebble install --phone <ip>
-
-# Remote app (different folder → different package.json → different UUID)
-cd /path/to/trio-pebble/remote-app
-pebble build && pebble install --phone <ip>
+cd /path/to/trio-pebble && pebble build && pebble install --phone <ip>
+cd /path/to/trio-pebble/remote-app && pebble build && pebble install --phone <ip>
 ```
 
 ---
 
 ## Quick checklist
 
-- [ ] **Trio Remote:** separate CloudPebble project (or local build from `remote-app/`) so its **UUID ≠** watchface UUID; see [Watchface + Trio Remote](#watchface--trio-remote-two-pbws-two-uuids).
+- [ ] **Trio Remote:** second CloudPebble project imports GitHub **`trio-pebble-remote`** (or local `pebble build` from `remote-app/`); **UUID ≠** watchface; see [Watchface + Trio Remote](#watchface--trio-remote-two-pbws-two-uuids).
 - [ ] **Configurable** + **Uses health** + **Uses location** enabled (or match trimmed capabilities if you dropped location).
 - [ ] Settings URL loads in **Safari/Chrome on the phone** before blaming the watch.
 - [ ] Optional: add `IMAGE_MENU_ICON` once (CloudPebble **Resources** *or* `package.json` media—not both).
