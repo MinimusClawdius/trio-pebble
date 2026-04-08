@@ -5,8 +5,8 @@ static bool wx_icon_is(const char *icon, const char *tag) {
     return icon && strncmp(icon, tag, 16) == 0;
 }
 
-void trio_draw_footer_battery_bar(GContext *ctx, GRect icon_area, int pct, bool charging, GColor border_ink,
-                                  const TrioConfig *config) {
+void trio_draw_footer_battery_bar(GContext *ctx, GRect icon_area, int align_mid_y, int pct, bool charging,
+                                  GColor border_ink, const TrioConfig *config) {
     (void)config;
     (void)charging;
     if (pct < 0) {
@@ -25,7 +25,18 @@ void trio_draw_footer_battery_bar(GContext *ctx, GRect icon_area, int pct, bool 
         return;
     }
     int bx = icon_area.origin.x + 1;
-    int by = icon_area.origin.y + (icon_area.size.h - bar_h) / 2;
+    int by;
+    if (align_mid_y >= 0) {
+        by = align_mid_y - bar_h / 2;
+        if (by < icon_area.origin.y) {
+            by = icon_area.origin.y;
+        }
+        if (by + bar_h > icon_area.origin.y + icon_area.size.h) {
+            by = icon_area.origin.y + icon_area.size.h - bar_h;
+        }
+    } else {
+        by = icon_area.origin.y + (icon_area.size.h - bar_h) / 2;
+    }
     GRect bar = GRect(bx, by, bar_w, bar_h);
 
     graphics_context_set_stroke_color(ctx, border_ink);

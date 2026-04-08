@@ -6,6 +6,8 @@
 static char s_trend_utf8[16];
 static GColor s_trend_ink;
 static bool s_light_color_scheme;
+/** *_BLACK assets use opposite 1-bit polarity; invert when rasterizing. */
+static bool s_trend_invert_mask;
 
 static GBitmap *s_trend_bmp;
 static char s_cached_utf8[16] = "";
@@ -106,6 +108,11 @@ static bool trend_bitmap_pixel_on(const GBitmap *bmp, int x, int y) {
     }
 }
 
+static bool trend_pixel_filled(const GBitmap *bmp, int sx, int sy) {
+    bool on = trend_bitmap_pixel_on(bmp, sx, sy);
+    return s_trend_invert_mask ? !on : on;
+}
+
 static bool trend_bitmap_nn_supported(const GBitmap *bmp) {
     switch (gbitmap_get_format(bmp)) {
         case GBitmapFormat1Bit:
@@ -157,7 +164,7 @@ static void draw_bitmap_nn_scaled(GContext *ctx, const GBitmap *bmp, GRect conta
             if (sx >= sw) {
                 sx = sw - 1;
             }
-            if (!trend_bitmap_pixel_on(bmp, sx, sy)) {
+            if (!trend_pixel_filled(bmp, sx, sy)) {
                 x++;
                 continue;
             }
@@ -168,7 +175,7 @@ static void draw_bitmap_nn_scaled(GContext *ctx, const GBitmap *bmp, GRect conta
                 if (sx2 >= sw) {
                     sx2 = sw - 1;
                 }
-                if (!trend_bitmap_pixel_on(bmp, sx2, sy)) {
+                if (!trend_pixel_filled(bmp, sx2, sy)) {
                     break;
                 }
                 x++;
@@ -204,6 +211,7 @@ void trio_trend_layer_set(const char *utf8, GColor ink, bool light_color_scheme)
     s_trend_utf8[sizeof(s_trend_utf8) - 1] = '\0';
     s_trend_ink = ink;
     s_light_color_scheme = light_color_scheme;
+    s_trend_invert_mask = light_color_scheme;
     if (changed) {
         trio_trend_glyphs_deinit();
     }
@@ -223,7 +231,7 @@ void trio_trend_glyph_draw(GContext *ctx, GRect bounds, const char *utf8, GColor
         TrioConfig *cfg = config_get();
         GColor bg;
         if (trio_classic_chrome_active(cfg)) {
-            bg = GColorWhite;
+            bg = trio_classic_light_pills(cfg) ? GColorWhite : GColorBlack;
         } else {
             switch (cfg->color_scheme) {
                 case COLOR_SCHEME_LIGHT:

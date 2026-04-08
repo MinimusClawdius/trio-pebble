@@ -1,6 +1,6 @@
 // Face: Classic — LOOP-style layout (Diorite / Emery targets)
-// Light: black header/footer with outer-corner rounding on black strips; solid white center.
-// Dark: black header/footer (seamless frame); white rounded card for hero + graph (inverted content).
+// Light: black header/footer (square to bezel); white rounded center card (hero + trend + graph).
+// Dark: inverse — white bars, black rounded center card.
 // High contrast: no chrome layer (flat legacy layout).
 
 #include "face_classic.h"
@@ -14,10 +14,9 @@
 #define LOOP_HEADER_H 24
 #define LOOP_HERO_H 54
 #define LOOP_GRAPH_TOP (LOOP_HEADER_H + LOOP_HERO_H)
-#define CLASSIC_CHROME_RADIUS 6
 #define CLASSIC_CARD_INSET 2
 #define CLASSIC_CARD_RADIUS 5
-#define CLASSIC_TIME_PAD_LEFT 6
+#define CLASSIC_TIME_PAD_LEFT 8
 
 static TextLayer *s_time, *s_age, *s_glucose;
 static Layer *s_classic_chrome_layer, *s_graph_layer, *s_comp_layer, *s_trend_layer;
@@ -31,29 +30,23 @@ static void classic_chrome_proc(Layer *layer, GContext *ctx) {
     }
     int w = wb.size.w;
     int h = wb.size.h;
-    const int R = CLASSIC_CHROME_RADIUS;
+    int cy = LOOP_HEADER_H;
+    int ch = h - LOOP_HEADER_H - COMPLICATIONS_BAR_HEIGHT;
+    GRect card = GRect(CLASSIC_CARD_INSET, cy, w - 2 * CLASSIC_CARD_INSET, ch);
+    GCornerMask card_corners =
+        (GCornerMask)(GCornerTopLeft | GCornerTopRight | GCornerBottomLeft | GCornerBottomRight);
 
     if (trio_classic_light_pills(cfg)) {
-        graphics_context_set_fill_color(ctx, GColorWhite);
-        graphics_fill_rect(ctx, wb, 0, GCornerNone);
         graphics_context_set_fill_color(ctx, GColorBlack);
-        /* Round the outer top of the header and outer bottom of the footer (toward bezel). */
-        graphics_fill_rect(ctx, GRect(0, 0, w, LOOP_HEADER_H), R,
-                           (GCornerMask)(GCornerTopLeft | GCornerTopRight));
-        graphics_fill_rect(ctx, GRect(0, h - COMPLICATIONS_BAR_HEIGHT, w, COMPLICATIONS_BAR_HEIGHT), R,
-                           (GCornerMask)(GCornerBottomLeft | GCornerBottomRight));
+        graphics_fill_rect(ctx, wb, 0, GCornerNone);
+        graphics_context_set_fill_color(ctx, GColorWhite);
+        graphics_fill_rect(ctx, card, CLASSIC_CARD_RADIUS, card_corners);
         return;
     }
-    /* Dark: black full screen, white inverted card behind hero + graph */
-    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_context_set_fill_color(ctx, GColorWhite);
     graphics_fill_rect(ctx, wb, 0, GCornerNone);
-    {
-        int cy = LOOP_HEADER_H;
-        int ch = h - LOOP_HEADER_H - COMPLICATIONS_BAR_HEIGHT;
-        graphics_context_set_fill_color(ctx, GColorWhite);
-        graphics_fill_rect(ctx, GRect(CLASSIC_CARD_INSET, cy, w - 2 * CLASSIC_CARD_INSET, ch), CLASSIC_CARD_RADIUS,
-                           (GCornerMask)(GCornerTopLeft | GCornerTopRight | GCornerBottomLeft | GCornerBottomRight));
-    }
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_fill_rect(ctx, card, CLASSIC_CARD_RADIUS, card_corners);
 }
 
 static void graph_proc(Layer *layer, GContext *ctx) {
@@ -83,8 +76,8 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
     bool chrome = trio_classic_chrome_active(config_get());
-    GColor hdr_time = chrome ? GColorWhite : fg;
-    GColor hdr_age = chrome ? GColorWhite : fg2;
+    GColor hdr_time = chrome ? (light ? GColorWhite : GColorBlack) : fg;
+    GColor hdr_age = chrome ? (light ? GColorWhite : GColorDarkGray) : fg2;
 
     s_classic_chrome_layer = layer_create(bounds);
     layer_set_update_proc(s_classic_chrome_layer, classic_chrome_proc);
@@ -107,7 +100,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
 #endif
     GColor hero_glucose = fg;
     if (chrome) {
-        hero_glucose = GColorBlack;
+        hero_glucose = light ? GColorBlack : GColorWhite;
     }
     s_glucose = make_text(root, GRect(0, LOOP_HEADER_H, gw, LOOP_HERO_H), glucose_font, GTextAlignmentLeft,
                           hero_glucose);
@@ -155,8 +148,13 @@ void face_classic_update(AppState *state) {
     text_layer_set_text(s_age, s_age_buf);
 
     if (chrome) {
-        text_layer_set_text_color(s_time, GColorWhite);
-        text_layer_set_text_color(s_age, GColorWhite);
+        if (light) {
+            text_layer_set_text_color(s_time, GColorWhite);
+            text_layer_set_text_color(s_age, GColorWhite);
+        } else {
+            text_layer_set_text_color(s_time, GColorBlack);
+            text_layer_set_text_color(s_age, GColorDarkGray);
+        }
     } else {
         text_layer_set_text_color(s_time, fg);
         text_layer_set_text_color(s_age, trio_secondary_fg(&state->config));
@@ -181,10 +179,10 @@ void face_classic_update(AppState *state) {
         text_layer_set_text_color(s_glucose, gc);
         trend_ink = gc;
     } else {
-        text_layer_set_text_color(s_glucose, chrome ? GColorBlack : fg);
+        text_layer_set_text_color(s_glucose, chrome ? (light ? GColorBlack : GColorWhite) : fg);
     }
 #else
-    text_layer_set_text_color(s_glucose, chrome ? GColorBlack : fg);
+    text_layer_set_text_color(s_glucose, chrome ? (light ? GColorBlack : GColorWhite) : fg);
 #endif
 
     trio_trend_layer_set(state->cgm.trend_str, trend_ink, trio_trend_light_background_assets(&state->config));

@@ -174,29 +174,23 @@ static GColor bg_color(TrioConfig *config) {
 
 static GColor graph_panel_bg(TrioConfig *config) {
     if (trio_classic_chrome_active(config)) {
-        return GColorWhite;
+        return trio_classic_light_pills(config) ? GColorWhite : GColorBlack;
     }
     return bg_color(config);
 }
 
 static GColor graph_ink(TrioConfig *config) {
     if (trio_classic_chrome_active(config)) {
-        return GColorBlack;
+        return trio_classic_light_pills(config) ? GColorBlack : GColorWhite;
     }
     return (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
 }
 
 static int graph_x_for_point(int i, int w, int count) {
-    int r = GRAPH_THRESHOLD_LABEL_RESERVE;
-    int uw = w - r;
-    if (uw < 16) {
-        r = 0;
-        uw = w;
-    }
     if (count <= 1) {
-        return r + uw / 2;
+        return w / 2;
     }
-    return r + i * (uw - 1) / (count - 1);
+    return i * (w - 1) / (count - 1);
 }
 
 static void draw_dotted_horizontal(GContext *ctx, int y, int x0, int x1, int h, GColor c) {
@@ -223,13 +217,13 @@ static void draw_graph_threshold_labels(GContext *ctx, TrioConfig *config, int w
     graphics_context_set_text_color(ctx, ink);
     GFont f = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 
-    /* Keep labels off the dashed line; slightly smaller than bold 14. */
-    int hi_y = y_hi - 13;
+    /* Keep baseline band fully above the dashed threshold (Gothic ~14px cap height). */
+    int hi_y = y_hi - 16;
     if (hi_y < 0) {
         hi_y = 0;
     }
-    if (hi_y + 11 >= y_hi && y_hi > 12) {
-        hi_y = y_hi - 12;
+    if (hi_y + 14 > y_hi && y_hi > 18) {
+        hi_y = y_hi - 18;
     }
     GRect r_hi = GRect(2, hi_y, GRAPH_THRESHOLD_LABEL_RESERVE - 4, 12);
     graphics_draw_text(ctx, hi_lbl, f, r_hi, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
@@ -301,11 +295,7 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         if (s_count == 1) {
             int x = graph_x_for_point(0, w, s_count);
             int y = map_y_sc(s_values[0], h, g_min, g_max);
-            GColor inner = graph_panel_bg(config);
-#ifdef PBL_COLOR
-            inner = GColorWhite;
-#endif
-            draw_endpoint_hollow(ctx, GPoint(x, y), 4, inner, ink);
+            draw_endpoint_hollow(ctx, GPoint(x, y), 4, graph_panel_bg(config), ink);
         }
         goto draw_predictions;
     }
@@ -324,11 +314,7 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         int x = graph_x_for_point(i, w, s_count);
         int y = map_y_sc(s_values[i], h, g_min, g_max);
         if (i == s_count - 1) {
-            GColor inner = graph_panel_bg(config);
-#ifdef PBL_COLOR
-            inner = GColorWhite;
-#endif
-            draw_endpoint_hollow(ctx, GPoint(x, y), 4, inner, ink);
+            draw_endpoint_hollow(ctx, GPoint(x, y), 4, graph_panel_bg(config), ink);
         } else {
             graphics_context_set_fill_color(ctx, ink);
             graphics_fill_circle(ctx, GPoint(x, y), 3);
@@ -340,7 +326,7 @@ draw_predictions:
         return;
     }
 
-    int pred_start_x = (s_count > 0) ? graph_x_for_point(s_count - 1, w, s_count) : GRAPH_THRESHOLD_LABEL_RESERVE;
+    int pred_start_x = (s_count > 0) ? graph_x_for_point(s_count - 1, w, s_count) : w / 2;
     int pred_span = w - pred_start_x;
     if (pred_span < 4) {
         pred_span = 4;

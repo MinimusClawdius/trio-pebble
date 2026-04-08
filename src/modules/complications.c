@@ -75,6 +75,13 @@ static GRect footer_text_band_vcenter(GRect subcol, int text_h) {
     return GRect(subcol.origin.x, subcol.origin.y + pad, subcol.size.w, text_h);
 }
 
+/** Match icon + text vertical center using full slot height (battery + %, etc.). */
+static GRect footer_text_band_cell_mid(GRect cell, GRect text_col, int text_h) {
+    int mid_y = cell.origin.y + cell.size.h / 2;
+    int y = mid_y - text_h / 2;
+    return GRect(text_col.origin.x, y, text_col.size.w, text_h);
+}
+
 static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, AppState *state, TrioConfig *config,
                           GColor fg) {
     char buf[24];
@@ -88,14 +95,16 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
         case COMP_SLOT_WATCH_BATTERY: {
             GRect ir, tr;
             slot_icon_text_split_pct(cell, &ir, &tr, true, 40);
-            trio_draw_footer_battery_bar(ctx, ir, state->comp.watch_battery, state->comp.watch_charging, fg, config);
+            int mid_y = cell.origin.y + cell.size.h / 2;
+            trio_draw_footer_battery_bar(ctx, ir, mid_y, state->comp.watch_battery, state->comp.watch_charging, fg,
+                                         config);
             if (state->comp.watch_charging) {
                 snprintf(buf, sizeof(buf), "%d+", state->comp.watch_battery);
             } else {
                 snprintf(buf, sizeof(buf), "%d%%", state->comp.watch_battery);
             }
             {
-                GRect tb = footer_text_band_vcenter(tr, 16);
+                GRect tb = footer_text_band_cell_mid(cell, tr, 16);
                 graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
             }
             return;
@@ -179,16 +188,20 @@ void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConf
 
     GColor fg;
 #if TRIO_DISPLAY_COLOR
-    if (trio_classic_black_strip_footer(config)) {
+    if (trio_classic_footer_light_ink(config)) {
         fg = GColorWhite;
+    } else if (trio_classic_chrome_active(config)) {
+        fg = GColorBlack;
     } else if (config->color_scheme == COLOR_SCHEME_LIGHT) {
         fg = GColorDarkGray;
     } else {
         fg = GColorLightGray;
     }
 #else
-    if (trio_classic_black_strip_footer(config)) {
+    if (trio_classic_footer_light_ink(config)) {
         fg = GColorWhite;
+    } else if (trio_classic_chrome_active(config)) {
+        fg = GColorBlack;
     } else if (config->color_scheme == COLOR_SCHEME_LIGHT) {
         fg = GColorBlack;
     } else {
