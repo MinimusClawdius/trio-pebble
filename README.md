@@ -83,6 +83,32 @@ pebble install --phone <your-phone-ip>
 ### CloudPebble: capability checkboxes
 In CloudPebble project **Settings**, enable **Configurable**, **Uses health**, and **Uses location** so they match this project (config page, `health_service_*` on the watch, `navigator.geolocation` for weather). Details: [docs/CLOUDPEBBLE_AND_DEPLOY.md](docs/CLOUDPEBBLE_AND_DEPLOY.md).
 
+## Trio Remote (companion watch app)
+
+Rebble’s Pebble docs state that **watchfaces are not meant to use hardware buttons for user interaction** (use accelerometer instead). Remote bolus/carbs menus belong in a **watch app**. This repo includes a sibling project:
+
+| Path | Role |
+|------|------|
+| Repository **root** (`package.json` here) | **Trio** watchface (CGM UI) |
+| **`remote-app/`** | **Trio Remote** — same bolus/carbs flow as the old watchface menu, with full **button** support |
+
+**Build & install (local SDK):**
+```bash
+cd remote-app
+pebble build
+pebble install --phone <ip>
+```
+
+Install **both** the watchface PBW and `remote-app/build/*.pbw` (or install from the `remote-app` folder in your IDE).
+
+**Quick Launch (Pebble 2 / Time series):** On the watch: **Settings → Quick Launch** (or system launcher settings) and assign **Trio Remote** to a button shortcut so you can open the menu without scrolling the app list.
+
+**Configuration:** Trio Remote includes the same hosted **Settings** URL as the watchface (`showConfiguration`). PebbleKit JS `localStorage` may be **per watch app UUID**; if commands say “need Trio API” or can’t reach Trio, open **Settings** once from **Trio Remote** on the phone so `trioHost` / data source match your watchface (or re-enter them).
+
+**Message keys:** `remote-app/package.json` `messageKeys` match the watchface so `KEY_CMD_TYPE` / `KEY_CMD_AMOUNT` and the JS bridge behave the same.
+
+**UUID:** `remote-app` uses its own UUID (`b2c3d4e5-f6a7-4901-bcde-f123456789abc`). If you use **native iOS PebbleKit** outside Rebble’s JS path, the host app may need to allow this second UUID for AppMessage — most Rebble installs only need the two PBWs and phone-side JS.
+
 ## Architecture
 
 ```
