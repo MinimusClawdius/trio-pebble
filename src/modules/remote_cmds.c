@@ -203,15 +203,13 @@ void remote_cmds_try_open(AppState *state) {
         APP_LOG(APP_LOG_LEVEL_WARNING, "remote: s_watchface NULL");
         return;
     }
-    /* Do not use window_stack_contains_window(s_watchface): on some firmware/watchface stacks it
-     * stays false while the face is visible, which blocked the menu entirely. */
-    Window *top = window_stack_get_top_window();
-    if (top == s_menu_window || top == s_pick_window) {
+    /* Only block if our menu/picker is already showing. Do NOT require
+     * window_stack_get_top_window() == s_watchface: on Pebble 2 (diorite) and some firmware,
+     * the top window pointer can differ from the watchface we created even while the face is
+     * visible — that check prevented the remote menu from ever opening. */
+    if ((s_menu_window && window_stack_contains_window(s_menu_window)) ||
+        (s_pick_window && window_stack_contains_window(s_pick_window))) {
         APP_LOG(APP_LOG_LEVEL_DEBUG, "remote: already in menu/picker");
-        return;
-    }
-    if (top != NULL && top != s_watchface) {
-        APP_LOG(APP_LOG_LEVEL_WARNING, "remote: top=%p != watch=%p", top, s_watchface);
         return;
     }
 

@@ -1,4 +1,4 @@
-# Trio Pebble v2.14
+# Trio Pebble v2.14.1
 
 A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**, **Dexcom Share**, and **Nightscout** data sources.
 
@@ -131,14 +131,14 @@ Phone (HTML)
 | Button | Watchface Mode | Alert Active |
 |--------|---------------|--------------|
 | **UP** | Previous face layout | Previous face layout |
-| **UP (hold ~½s)** | Remote bolus / carbs menu (Trio source) | Same |
+| **UP (hold ~0.7s)** | Remote bolus / carbs menu (Trio source) | Same |
 | **DOWN** | Next face layout | Next face layout |
-| **DOWN (hold ~½s)** | Remote bolus / carbs menu (Trio source) | Same |
-| **SELECT (hold ~½s)** | Same menu *if* system Quick Launch does not steal Select (see below) | Same |
+| **DOWN (hold ~0.7s)** | Remote bolus / carbs menu (Trio source) | Same |
+| **SELECT (hold ~0.7s)** | Same menu *if* firmware does not steal Select (see below) | Same |
 | **SELECT (short)** | — | Snooze alerts |
 | **BACK** | Exit watchface | Exit watchface |
 
-**Quick Launch (Pebble Time 2, etc.):** A long press on **Select** often triggers Pebble’s **Quick Launch** instead of this watchface. Use **long Up** or **long Down** for the remote menu, or disable/move Quick Launch for the middle button under **Settings → Quick Launch** on the watch. If the menu never appears with Trio as the data source, update to the latest build (older code required the top window pointer to match exactly, which failed on some firmware paths).
+**Firmware vs Select long-press (Pebble 2 HR, Time 2, etc.):** The **middle** button long-press is often captured by the OS (Quick Launch, voice, etc.). Use **long Up** or **long Down** (~0.7s, release after the menu appears) for the remote menu. **Pebble 2 HR (diorite):** an older build could not open the menu because it required `window_stack_get_top_window()` to match the watchface pointer exactly — that check is removed; rebuild from current `main`.
 
 ## Safety
 
