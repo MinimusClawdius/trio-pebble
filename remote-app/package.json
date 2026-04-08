@@ -1,13 +1,13 @@
 {
   "name": "Trio Remote",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Trio bolus/carbs remote — companion watch app (use with Trio watchface)",
   "author": "MinimusClawdius",
   "license": "MIT",
   "pebble": {
     "displayName": "Trio Remote",
     "projectType": "native",
-    "uuid": "b2c3d4e5-f6a7-4901-bcde-f123456789abc",
+    "uuid": "fdd1d4b6-f2f2-4819-a26b-8ccad4264feb",
     "sdkVersion": "4.9.148",
     "enableMultiJS": true,
     "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "emery"],

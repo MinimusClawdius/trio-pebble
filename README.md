@@ -107,7 +107,7 @@ Install **both** the watchface PBW and `remote-app/build/*.pbw` (or install from
 
 **Message keys:** `remote-app/package.json` `messageKeys` match the watchface so `KEY_CMD_TYPE` / `KEY_CMD_AMOUNT` and the JS bridge behave the same.
 
-**UUID:** `remote-app` uses its own UUID (`b2c3d4e5-f6a7-4901-bcde-f123456789abc`). If you use **native iOS PebbleKit** outside Rebble’s JS path, the host app may need to allow this second UUID for AppMessage — most Rebble installs only need the two PBWs and phone-side JS.
+**UUID:** `remote-app/package.json` uses its **own** UUID (see file — must differ from the watchface). If you use **native iOS PebbleKit** outside Rebble’s JS path, the host app may need to allow this second UUID for AppMessage. **CloudPebble:** use **two projects** so each build keeps its manifest; see [docs/CLOUDPEBBLE_AND_DEPLOY.md](docs/CLOUDPEBBLE_AND_DEPLOY.md) § *Watchface + Trio Remote*.
 
 ## Architecture
 
