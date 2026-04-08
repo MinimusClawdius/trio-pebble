@@ -9,9 +9,9 @@
 #include "../modules/time_display.h"
 #include "../modules/trend_glyphs.h"
 
-static TextLayer *s_glucose, *s_delta, *s_clock, *s_date, *s_sub, *s_loop;
+static TextLayer *s_glucose, *s_clock, *s_date;
 static Layer *s_lcd_frame_layer, *s_graph_layer, *s_comp_layer, *s_trend_layer;
-static char s_glucose_buf[16], s_clock_buf[16], s_date_buf[14], s_sub_buf[40];
+static char s_glucose_buf[16], s_clock_buf[16], s_date_buf[14];
 
 static void graph_proc(Layer *layer, GContext *ctx) {
     graph_draw(layer, ctx, config_get());
@@ -50,6 +50,8 @@ static TextLayer *make_text(Layer *root, GRect frame, const char *font_key, GTex
 
 void face_retro_load(Window *window, Layer *root, GRect bounds) {
     (void)window;
+    graph_set_minimal_style(true);
+
     int w = bounds.size.w;
     int h = bounds.size.h;
     bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
@@ -75,19 +77,14 @@ void face_retro_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
-    s_delta = make_text(root, GRect(4, lcd_y + lcd_h + 2, w - 8, 14), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
-    s_sub = make_text(root, GRect(4, lcd_y + lcd_h + 16, w - 8, 14), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
-
-    int graph_top = lcd_y + lcd_h + 32;
-    int graph_h = h - graph_top - 16 - COMPLICATIONS_BAR_HEIGHT;
+    int graph_top = lcd_y + lcd_h + 4;
+    int graph_h = h - graph_top - COMPLICATIONS_BAR_HEIGHT;
     if (graph_h < 28) {
         graph_h = 28;
     }
     s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, graph_top, graph_h));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
-
-    s_loop = make_text(root, GRect(0, h - 16 - COMPLICATIONS_BAR_HEIGHT, w, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
 
     s_comp_layer = layer_create(
         GRect(TRIO_GRAPH_SIDE_INSET, h - COMPLICATIONS_BAR_HEIGHT, w - 2 * TRIO_GRAPH_SIDE_INSET, COMPLICATIONS_BAR_HEIGHT));
@@ -96,12 +93,10 @@ void face_retro_load(Window *window, Layer *root, GRect bounds) {
 }
 
 void face_retro_unload(void) {
+    graph_set_minimal_style(false);
     text_layer_destroy(s_glucose);
-    text_layer_destroy(s_delta);
     text_layer_destroy(s_clock);
     text_layer_destroy(s_date);
-    text_layer_destroy(s_sub);
-    text_layer_destroy(s_loop);
     layer_destroy(s_trend_layer);
     layer_destroy(s_lcd_frame_layer);
     layer_destroy(s_graph_layer);
@@ -143,11 +138,6 @@ void face_retro_update(AppState *state) {
 
     trio_trend_layer_set(state->cgm.trend_str, trend_ink);
     layer_mark_dirty(s_trend_layer);
-
-    text_layer_set_text(s_delta, state->cgm.delta_str);
-    snprintf(s_sub_buf, sizeof(s_sub_buf), "%s  |  %s", state->loop.iob, state->loop.cob);
-    text_layer_set_text(s_sub, s_sub_buf);
-    text_layer_set_text(s_loop, state->loop.last_loop_time);
 
     layer_mark_dirty(s_lcd_frame_layer);
     layer_mark_dirty(s_graph_layer);

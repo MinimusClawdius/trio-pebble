@@ -10,6 +10,11 @@ static int16_t s_values[MAX_GRAPH_POINTS];
 static int s_count = 0;
 static int16_t s_predictions[MAX_PREDICTIONS];
 static int s_pred_count = 0;
+static bool s_minimal_style = false;
+
+void graph_set_minimal_style(bool minimal) {
+    s_minimal_style = minimal;
+}
 
 #define GRAPH_MIN 40
 #define GRAPH_MAX 400
@@ -186,36 +191,38 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
 #endif
     }
 
-    draw_horizontal_value_grid(ctx, w, h, config, use_weather_bg);
+    if (!s_minimal_style) {
+        draw_horizontal_value_grid(ctx, w, h, config, use_weather_bg);
 
-    // Threshold lines (dashed effect via short segments)
-    graphics_context_set_stroke_color(ctx, grid_color(config));
-    for (int x = 0; x < w; x += 6) {
-        graphics_draw_line(ctx, GPoint(x, y_high), GPoint(x + 3, y_high));
-        graphics_draw_line(ctx, GPoint(x, y_low), GPoint(x + 3, y_low));
-    }
+        // Threshold lines (dashed effect via short segments)
+        graphics_context_set_stroke_color(ctx, grid_color(config));
+        for (int x = 0; x < w; x += 6) {
+            graphics_draw_line(ctx, GPoint(x, y_high), GPoint(x + 3, y_high));
+            graphics_draw_line(ctx, GPoint(x, y_low), GPoint(x + 3, y_low));
+        }
 
-    // Urgent low line
-    int y_urgent = map_y(config->urgent_low, h);
+        // Urgent low line
+        int y_urgent = map_y(config->urgent_low, h);
 #ifdef PBL_COLOR
-    graphics_context_set_stroke_color(ctx, GColorRed);
+        graphics_context_set_stroke_color(ctx, GColorRed);
 #else
-    graphics_context_set_stroke_color(ctx,
-        (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite);
+        graphics_context_set_stroke_color(ctx,
+            (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite);
 #endif
-    for (int x = 0; x < w; x += 4) {
-        graphics_draw_line(ctx, GPoint(x, y_urgent), GPoint(x + 2, y_urgent));
-    }
+        for (int x = 0; x < w; x += 4) {
+            graphics_draw_line(ctx, GPoint(x, y_urgent), GPoint(x + 2, y_urgent));
+        }
 
-    // Hour markers on X axis
-    graphics_context_set_stroke_color(ctx, grid_color(config));
-    if (s_count > 12) {
-        for (int hr = 12; hr < s_count; hr += 12) {
-            int x = (hr * w) / (s_count > 1 ? s_count - 1 : 1);
-            for (int y = 0; y < h; y += 4) {
-                graphics_draw_pixel(ctx, GPoint(x, y));
-                if (y + 1 < h) {
-                    graphics_draw_pixel(ctx, GPoint(x, y + 1));
+        // Hour markers on X axis (vertical ticks)
+        graphics_context_set_stroke_color(ctx, grid_color(config));
+        if (s_count > 12) {
+            for (int hr = 12; hr < s_count; hr += 12) {
+                int x = (hr * w) / (s_count > 1 ? s_count - 1 : 1);
+                for (int y = 0; y < h; y += 4) {
+                    graphics_draw_pixel(ctx, GPoint(x, y));
+                    if (y + 1 < h) {
+                        graphics_draw_pixel(ctx, GPoint(x, y + 1));
+                    }
                 }
             }
         }
@@ -302,8 +309,7 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         }
     }
 
-    // Current value indicator line (rightmost point, horizontal)
-    if (s_count > 0) {
+    if (!s_minimal_style && s_count > 0) {
         int last_y = map_y(s_values[s_count - 1], h);
         GColor last_color = glucose_color(s_values[s_count - 1], config);
         graphics_context_set_stroke_color(ctx, last_color);
