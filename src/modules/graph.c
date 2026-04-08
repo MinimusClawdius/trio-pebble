@@ -9,8 +9,9 @@ static int s_count = 0;
 static int16_t s_predictions[MAX_PREDICTIONS];
 static int s_pred_count = 0;
 
-#define GRAPH_MIN 40
-#define GRAPH_MAX 400
+/** Legacy fixed axis (mg/dL) when graph_scale_mode == GRAPH_SCALE_LEGACY. */
+#define GRAPH_LEGACY_MIN 40
+#define GRAPH_LEGACY_MAX 400
 
 void graph_init(void) {
     s_count = 0;
@@ -44,11 +45,120 @@ void graph_restore_from_state(const GraphData *gd) {
     }
 }
 
-static int map_y(int glucose, int height) {
-    int clamped = glucose;
-    if (clamped < GRAPH_MIN) clamped = GRAPH_MIN;
-    if (clamped > GRAPH_MAX) clamped = GRAPH_MAX;
-    return height - ((clamped - GRAPH_MIN) * height / (GRAPH_MAX - GRAPH_MIN));
+static int map_y_sc(int glucose, int h, int g_min, int g_max) {
+    if (g_max <= g_min) {
+        g_max = g_min + 1;
+    }
+    int32_t c = glucose;
+    if (c < g_min) {
+        c = g_min;
+    }
+    if (c > g_max) {
+        c = g_max;
+    }
+    return (int)(h - (c - g_min) * (int32_t)h / (g_max - g_min));
+}
+
+static void threshold_fallback_range(const TrioConfig *cfg, int16_t *g_min, int16_t *g_max) {
+    int lo = cfg->low_threshold;
+    int hi = cfg->high_threshold;
+    int span = hi - lo;
+    if (span < 25) {
+        span = 25;
+    }
+    int pad = span / 6;
+    if (pad < 12) {
+        pad = 12;
+    }
+    *g_min = (int16_t)(lo - pad);
+    *g_max = (int16_t)(hi + pad);
+    if (*g_min < 10) {
+        *g_min = 10;
+    }
+    if (*g_max > 500) {
+        *g_max = 500;
+    }
+    if (*g_max <= *g_min) {
+        *g_max = (int16_t)(*g_min + 40);
+    }
+}
+
+static void compute_graph_y_range(const TrioConfig *cfg, int16_t *g_min, int16_t *g_max) {
+    switch ((GraphScaleMode)cfg->graph_scale_mode) {
+        case GRAPH_SCALE_LEGACY:
+            *g_min = GRAPH_LEGACY_MIN;
+            *g_max = GRAPH_LEGACY_MAX;
+            return;
+        case GRAPH_SCALE_THRESHOLDS:
+            threshold_fallback_range(cfg, g_min, g_max);
+            return;
+        case GRAPH_SCALE_AUTO:
+        default: {
+            int dmin = 32767;
+            int dmax = -32768;
+            int i;
+            for (i = 0; i < s_count; i++) {
+                int v = s_values[i];
+                if (v > 0) {
+                    if (v < dmin) {
+                        dmin = v;
+                    }
+                    if (v > dmax) {
+                        dmax = v;
+                    }
+                }
+            }
+            for (i = 0; i < s_pred_count; i++) {
+                int v = s_predictions[i];
+                if (v > 0) {
+                    if (v < dmin) {
+                        dmin = v;
+                    }
+                    if (v > dmax) {
+                        dmax = v;
+                    }
+                }
+            }
+            {
+                AppState *st = app_state_get();
+                if (st->cgm.glucose > 0) {
+                    int v = st->cgm.glucose;
+                    if (v < dmin) {
+                        dmin = v;
+                    }
+                    if (v > dmax) {
+                        dmax = v;
+                    }
+                }
+            }
+            if (dmin > dmax) {
+                threshold_fallback_range(cfg, g_min, g_max);
+                return;
+            }
+            {
+                int span = dmax - dmin;
+                if (span < 1) {
+                    span = 1;
+                }
+                int pad = (span * 15) / 100;
+                if (pad < 8) {
+                    pad = 8;
+                }
+                *g_min = (int16_t)(dmin - pad);
+                *g_max = (int16_t)(dmax + pad);
+                if (*g_min < 10) {
+                    *g_min = 10;
+                }
+                if (*g_max > 500) {
+                    *g_max = 500;
+                }
+                if (*g_max <= *g_min) {
+                    *g_max = (int16_t)(*g_min + 20);
+                }
+            }
+            return;
+        }
+    }
 }
 
 static GColor bg_color(TrioConfig *config) {
@@ -59,7 +169,6 @@ static GColor bg_color(TrioConfig *config) {
     }
 }
 
-/** Trace + labels: high-contrast ink on graph (LOOP spec: black on pastels / B&W). */
 static GColor graph_ink(TrioConfig *config) {
     return (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
 }
@@ -110,7 +219,6 @@ static void draw_graph_threshold_labels(GContext *ctx, TrioConfig *config, int w
     graphics_draw_text(ctx, lo_lbl, f, r_lo, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
 }
 
-/** Latest point: filled interior + outline (LOOP / Emery spec). */
 static void draw_endpoint_hollow(GContext *ctx, GPoint p, int r, GColor inner, GColor edge) {
     graphics_context_set_fill_color(ctx, inner);
     graphics_fill_circle(ctx, p, r);
@@ -124,12 +232,14 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     int w = bounds.size.w;
     int h = bounds.size.h;
 
-    /* LOOP target: clean graph (no weather illustration behind trace). */
+    int16_t g_min, g_max;
+    compute_graph_y_range(config, &g_min, &g_max);
+
     graphics_context_set_fill_color(ctx, bg_color(config));
     graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
-    int y_high = map_y(config->high_threshold, h);
-    int y_low = map_y(config->low_threshold, h);
+    int y_high = map_y_sc(config->high_threshold, h, g_min, g_max);
+    int y_low = map_y_sc(config->low_threshold, h, g_min, g_max);
     if (y_high < 0) {
         y_high = 0;
     }
@@ -143,10 +253,6 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     }
 
 #ifdef PBL_COLOR
-    /*
-     * Color targets (Emery etc.): high / in-range / low bands — no vertical grid.
-     * Use only GColor names present in CloudPebble / SDK 3 palette (no GColorVeryLightYellow, etc.).
-     */
     graphics_context_set_fill_color(ctx, GColorYellow);
     graphics_fill_rect(ctx, GRect(0, 0, w, y_high), 0, GCornerNone);
     graphics_context_set_fill_color(ctx, GColorMintGreen);
@@ -168,7 +274,7 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     if (s_count < 2) {
         if (s_count == 1) {
             int x = graph_x_for_point(0, w, s_count);
-            int y = map_y(s_values[0], h);
+            int y = map_y_sc(s_values[0], h, g_min, g_max);
             GColor inner = bg_color(config);
 #ifdef PBL_COLOR
             inner = GColorWhite;
@@ -187,15 +293,15 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     graphics_context_set_stroke_width(ctx, 2);
     for (int i = 1; i < s_count; i++) {
         int x0 = (i - 1) * spacing;
-        int y0 = map_y(s_values[i - 1], h);
+        int y0 = map_y_sc(s_values[i - 1], h, g_min, g_max);
         int x1 = i * spacing;
-        int y1 = map_y(s_values[i], h);
+        int y1 = map_y_sc(s_values[i], h, g_min, g_max);
         graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
     }
 
     for (int i = 0; i < s_count; i++) {
         int x = i * spacing;
-        int y = map_y(s_values[i], h);
+        int y = map_y_sc(s_values[i], h, g_min, g_max);
         if (i == s_count - 1) {
             GColor inner = bg_color(config);
 #ifdef PBL_COLOR
@@ -228,9 +334,9 @@ draw_predictions:
 
     for (int i = 1; i < s_pred_count; i++) {
         int x0 = pred_start_x + (i - 1) * pred_spacing;
-        int y0 = map_y(s_predictions[i - 1], h);
+        int y0 = map_y_sc(s_predictions[i - 1], h, g_min, g_max);
         int x1 = pred_start_x + i * pred_spacing;
-        int y1 = map_y(s_predictions[i], h);
+        int y1 = map_y_sc(s_predictions[i], h, g_min, g_max);
         graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
     }
 }

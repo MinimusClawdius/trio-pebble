@@ -1,6 +1,6 @@
 {
   "name": "Trio",
-  "version": "2.8.0",
+  "version": "2.9.0",
   "description": "Premium CGM watchface for Pebble - Trio, Dexcom Share, Nightscout",
   "author": "MinimusClawdius",
   "license": "MIT",
@@ -14,8 +14,10 @@
     "watchapp": {
       "watchface": true
     },
+    "menuIcon": "IMAGE_MENU_ICON",
     "resources": {
       "media": [
+        { "type": "png", "name": "IMAGE_MENU_ICON", "file": "images/menu_icon.png" },
         { "type": "png", "name": "TRIO_TREND_FLAT", "file": "images/trend_flat.png" },
         { "type": "png", "name": "TRIO_TREND_FLAT_BLACK", "file": "images/trend_flat_black.png" },
         { "type": "png", "name": "TRIO_TREND_UP", "file": "images/trend_up.png" },
@@ -76,7 +78,8 @@
       "KEY_CONFIG_COMP_SLOT_1": 38,
       "KEY_CONFIG_COMP_SLOT_2": 39,
       "KEY_CONFIG_COMP_SLOT_3": 40,
-      "KEY_CONFIG_CLOCK_24H": 41
+      "KEY_CONFIG_CLOCK_24H": 41,
+      "KEY_CONFIG_GRAPH_SCALE_MODE": 42
     },
     "capabilities": ["configurable", "health", "location"]
   }

@@ -31,7 +31,8 @@ var K = {
     CONFIG_WEATHER_ENABLED: 36,
     CONFIG_COMP_SLOT_0: 37, CONFIG_COMP_SLOT_1: 38,
     CONFIG_COMP_SLOT_2: 39, CONFIG_COMP_SLOT_3: 40,
-    CONFIG_CLOCK_24H: 41
+    CONFIG_CLOCK_24H: 41,
+    CONFIG_GRAPH_SCALE_MODE: 42
 };
 
 // ---------- Settings ----------
@@ -59,7 +60,8 @@ var settings = {
     compSlot1: 5,
     compSlot2: 6,
     compSlot3: 0,
-    clock24h: true
+    clock24h: true,
+    graphScaleMode: 0
 };
 
 function loadSettings() {
@@ -73,6 +75,10 @@ function loadSettings() {
         }
         if (settings.clock24h !== true && settings.clock24h !== false) {
             settings.clock24h = true;
+        }
+        var gsm = settings.graphScaleMode | 0;
+        if (gsm < 0 || gsm > 2) {
+            settings.graphScaleMode = 0;
         }
     } catch (e) {
         console.log('Trio: settings load error: ' + e);
@@ -581,6 +587,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
             msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
             msg[K.CONFIG_COMP_SLOT_3] = settings.compSlot3 | 0;
             msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
+            msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
             msg[K.UNITS] = displayUnitsForWatch();
             if (!settings.weatherEnabled) {
                 msg[K.WEATHER_TEMP] = 0;
@@ -640,6 +647,7 @@ Pebble.addEventListener('ready', function () {
     msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
     msg[K.CONFIG_COMP_SLOT_3] = settings.compSlot3 | 0;
     msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
+    msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
     msg[K.UNITS] = displayUnitsForWatch();
     Pebble.sendAppMessage(msg);
 

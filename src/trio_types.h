@@ -5,7 +5,7 @@
 // Trio Pebble - Shared Types & Constants
 // ============================================================
 
-#define APP_VERSION "2.8.0"
+#define APP_VERSION "2.9.0"
 #define MAX_GRAPH_POINTS 48
 #define MAX_PREDICTIONS 24
 
@@ -55,6 +55,8 @@ typedef enum {
     KEY_CONFIG_COMP_SLOT_2,
     KEY_CONFIG_COMP_SLOT_3,
     KEY_CONFIG_CLOCK_24H,
+    /** 0=auto-fit Y-axis to data, 1=fit around High/Low thresholds, 2=legacy 40–400 mg/dL */
+    KEY_CONFIG_GRAPH_SCALE_MODE,
     KEY_COUNT
 } AppMessageKey;
 
@@ -100,6 +102,13 @@ typedef enum {
     TREND_NOT_COMPUTABLE
 } TrendDirection;
 
+/** Vertical scale for CGM graph (values are always mg/dL on the wire). */
+typedef enum {
+    GRAPH_SCALE_AUTO = 0,
+    GRAPH_SCALE_THRESHOLDS = 1,
+    GRAPH_SCALE_LEGACY = 2
+} GraphScaleMode;
+
 // ---------- Tap Action (future touch framework) ----------
 typedef enum {
     TAP_ACTION_NONE = 0,
@@ -139,7 +148,8 @@ typedef struct {
     bool is_mmol;               // display: mg/dL vs mmol/L (from KEY_UNITS)
     bool weather_enabled;       // master switch: fetch/draw weather data
     uint8_t comp_slot[TRIO_COMP_SLOT_COUNT]; /* ComplicationSlotKind per column */
-    bool clock_24h;             /* true = 24h clock, false = 12h + AM/PM */
+    bool clock_24h;             /* true = 24h clock, false = 12h (no AM/PM on watch) */
+    uint8_t graph_scale_mode;   /* GraphScaleMode */
 } TrioConfig;
 
 // ---------- CGM State ----------

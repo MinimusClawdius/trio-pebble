@@ -1,7 +1,7 @@
 #include "config.h"
 #include "platform_compat.h"
 
-#define CONFIG_KEY 0x54726F36u  /* v6: clock_24h; invalidates shorter TrioConfig blobs */
+#define CONFIG_KEY 0x54726F38u  /* v8: graph_scale_mode; TrioConfig grew */
 
 static TrioConfig s_config;
 
@@ -23,6 +23,7 @@ static void set_defaults(void) {
     s_config.comp_slot[2] = COMP_SLOT_IOB;
     s_config.comp_slot[3] = COMP_SLOT_NONE;
     s_config.clock_24h = true;
+    s_config.graph_scale_mode = GRAPH_SCALE_AUTO;
 #if !TRIO_DISPLAY_COLOR
     /* Sky/gradient art is color-first; B&W keeps a clean graph. Temp still available if user enables weather. */
     s_config.color_scheme = COLOR_SCHEME_HIGH_CONTRAST;
@@ -46,10 +47,17 @@ static void sanitize_comp_slots(void) {
     }
 }
 
+static void sanitize_graph_scale_mode(void) {
+    if (s_config.graph_scale_mode > GRAPH_SCALE_LEGACY) {
+        s_config.graph_scale_mode = GRAPH_SCALE_LEGACY;
+    }
+}
+
 void config_load(void) {
     if (persist_exists(CONFIG_KEY)) {
         persist_read_data(CONFIG_KEY, &s_config, sizeof(TrioConfig));
         sanitize_comp_slots();
+        sanitize_graph_scale_mode();
     }
 }
 
@@ -117,6 +125,13 @@ void config_apply_message(DictionaryIterator *iter) {
     t = dict_find(iter, KEY_CONFIG_CLOCK_24H);
     if (t) s_config.clock_24h = t->value->int32 != 0;
 
+    t = dict_find(iter, KEY_CONFIG_GRAPH_SCALE_MODE);
+    if (t) {
+        int32_t v = t->value->int32;
+        s_config.graph_scale_mode = (v >= GRAPH_SCALE_AUTO && v <= GRAPH_SCALE_LEGACY) ? (uint8_t)v : GRAPH_SCALE_LEGACY;
+    }
+
+    sanitize_graph_scale_mode();
     config_save();
 }
 
