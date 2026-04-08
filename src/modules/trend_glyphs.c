@@ -3,16 +3,11 @@
 
 static char s_trend_utf8[16];
 static GColor s_trend_ink;
+static bool s_light_color_scheme;
 
-void trio_trend_layer_set(const char *utf8, GColor ink) {
-    if (utf8) {
-        strncpy(s_trend_utf8, utf8, sizeof(s_trend_utf8) - 1);
-        s_trend_utf8[sizeof(s_trend_utf8) - 1] = '\0';
-    } else {
-        s_trend_utf8[0] = '\0';
-    }
-    s_trend_ink = ink;
-}
+static GBitmap *s_trend_bmp;
+static char s_cached_utf8[16] = "";
+static bool s_cached_light = true;
 
 typedef enum {
     TG_RIGHT = 0,
@@ -56,91 +51,90 @@ static TrendGlyphKind classify_trend(const char *s) {
     return TG_TEXT;
 }
 
-/* SDK 3 / CloudPebble: graphics_fill_rect(ctx, rect, corner_radius, corner_mask) */
-static void fill_fat_right(GContext *ctx, int cx, int cy, GColor c) {
-    graphics_context_set_fill_color(ctx, c);
-    graphics_fill_rect(ctx, GRect(cx - 12, cy - 4, 17, 8), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(cx + 4, cy - 8, 6, 6), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(cx + 4, cy + 2, 6, 6), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(cx + 8, cy - 5, 6, 10), 0, GCornerNone);
-}
-
-static void fill_fat_up(GContext *ctx, int cx, int cy, GColor c) {
-    graphics_context_set_fill_color(ctx, c);
-    graphics_fill_rect(ctx, GRect(cx - 4, cy - 2, 8, 14), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(cx - 8, cy - 10, 6, 6), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(cx + 2, cy - 10, 6, 6), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(cx - 5, cy - 14, 10, 6), 0, GCornerNone);
-}
-
-static void fill_fat_down(GContext *ctx, int cx, int cy, GColor c) {
-    graphics_context_set_fill_color(ctx, c);
-    graphics_fill_rect(ctx, GRect(cx - 4, cy - 12, 8, 14), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(cx - 8, cy + 4, 6, 6), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(cx + 2, cy + 4, 6, 6), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(cx - 5, cy + 8, 10, 6), 0, GCornerNone);
-}
-
-static void fill_fat_ur(GContext *ctx, int cx, int cy, GColor c) {
-    graphics_context_set_fill_color(ctx, c);
-    int i;
-    for (i = 0; i < 5; i++) {
-        graphics_fill_rect(ctx, GRect(cx - 9 + i * 3, cy + 5 - i * 3, 6, 6), 0, GCornerNone);
+static uint32_t resource_for_trend(TrendGlyphKind k, bool light_bg) {
+    if (light_bg) {
+        switch (k) {
+            case TG_RIGHT: return RESOURCE_ID_TRIO_TREND_FLAT_BLACK;
+            case TG_UP: return RESOURCE_ID_TRIO_TREND_UP_BLACK;
+            case TG_DOWN: return RESOURCE_ID_TRIO_TREND_DOWN_BLACK;
+            case TG_UR: return RESOURCE_ID_TRIO_TREND_UP45_BLACK;
+            case TG_DR: return RESOURCE_ID_TRIO_TREND_DOWN45_BLACK;
+            case TG_UU: return RESOURCE_ID_TRIO_TREND_DOUBLE_UP_BLACK;
+            case TG_DD: return RESOURCE_ID_TRIO_TREND_DOUBLE_DOWN_BLACK;
+            case TG_TEXT:
+            default: return RESOURCE_ID_TRIO_TREND_NONE_BLACK;
+        }
+    }
+    switch (k) {
+        case TG_RIGHT: return RESOURCE_ID_TRIO_TREND_FLAT;
+        case TG_UP: return RESOURCE_ID_TRIO_TREND_UP;
+        case TG_DOWN: return RESOURCE_ID_TRIO_TREND_DOWN;
+        case TG_UR: return RESOURCE_ID_TRIO_TREND_UP45;
+        case TG_DR: return RESOURCE_ID_TRIO_TREND_DOWN45;
+        case TG_UU: return RESOURCE_ID_TRIO_TREND_DOUBLE_UP;
+        case TG_DD: return RESOURCE_ID_TRIO_TREND_DOUBLE_DOWN;
+        case TG_TEXT:
+        default: return RESOURCE_ID_TRIO_TREND_NONE;
     }
 }
 
-static void fill_fat_dr(GContext *ctx, int cx, int cy, GColor c) {
-    graphics_context_set_fill_color(ctx, c);
-    int i;
-    for (i = 0; i < 5; i++) {
-        graphics_fill_rect(ctx, GRect(cx - 9 + i * 3, cy - 9 + i * 3, 6, 6), 0, GCornerNone);
+void trio_trend_layer_set(const char *utf8, GColor ink, bool light_color_scheme) {
+    char next[16];
+    if (utf8) {
+        strncpy(next, utf8, sizeof(next) - 1);
+        next[sizeof(next) - 1] = '\0';
+    } else {
+        next[0] = '\0';
+    }
+    bool changed = (strcmp(next, s_trend_utf8) != 0) || (light_color_scheme != s_light_color_scheme);
+    strncpy(s_trend_utf8, next, sizeof(s_trend_utf8) - 1);
+    s_trend_utf8[sizeof(s_trend_utf8) - 1] = '\0';
+    s_trend_ink = ink;
+    s_light_color_scheme = light_color_scheme;
+    if (changed) {
+        trio_trend_glyphs_deinit();
     }
 }
 
-static void fill_fat_uu(GContext *ctx, int cx, int cy, GColor c) {
-    fill_fat_up(ctx, cx - 5, cy, c);
-    fill_fat_up(ctx, cx + 5, cy, c);
-}
-
-static void fill_fat_dd(GContext *ctx, int cx, int cy, GColor c) {
-    fill_fat_down(ctx, cx - 5, cy, c);
-    fill_fat_down(ctx, cx + 5, cy, c);
+void trio_trend_glyphs_deinit(void) {
+    if (s_trend_bmp) {
+        gbitmap_destroy(s_trend_bmp);
+        s_trend_bmp = NULL;
+    }
+    s_cached_utf8[0] = '\0';
 }
 
 void trio_trend_glyph_draw(GContext *ctx, GRect bounds, const char *utf8, GColor ink) {
-    int cx = bounds.origin.x + bounds.size.w / 2;
-    int cy = bounds.origin.y + bounds.size.h / 2;
+    (void)ink;
     TrendGlyphKind k = classify_trend(utf8);
+    bool light = s_light_color_scheme;
 
-    switch (k) {
-        case TG_RIGHT:
-            fill_fat_right(ctx, cx, cy, ink);
-            return;
-        case TG_UP:
-            fill_fat_up(ctx, cx, cy, ink);
-            return;
-        case TG_DOWN:
-            fill_fat_down(ctx, cx, cy, ink);
-            return;
-        case TG_UR:
-            fill_fat_ur(ctx, cx, cy, ink);
-            return;
-        case TG_DR:
-            fill_fat_dr(ctx, cx, cy, ink);
-            return;
-        case TG_UU:
-            fill_fat_uu(ctx, cx, cy, ink);
-            return;
-        case TG_DD:
-            fill_fat_dd(ctx, cx, cy, ink);
-            return;
-        case TG_TEXT:
-        default: {
-            graphics_context_set_text_color(ctx, ink);
-            GFont f = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
-            graphics_draw_text(ctx, utf8, f, bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
-            return;
+    if (!s_trend_bmp) {
+        uint32_t rid = resource_for_trend(k, light);
+        s_trend_bmp = gbitmap_create_with_resource(rid);
+        strncpy(s_cached_utf8, utf8 ? utf8 : "", sizeof(s_cached_utf8) - 1);
+        s_cached_utf8[sizeof(s_cached_utf8) - 1] = '\0';
+        s_cached_light = light;
+        if (!s_trend_bmp) {
+            APP_LOG(APP_LOG_LEVEL_ERROR, "trend: gbitmap_create failed id=%lu", (unsigned long)rid);
         }
+    }
+
+    if (s_trend_bmp) {
+        GRect bi = gbitmap_get_bounds(s_trend_bmp);
+        int bw = bi.size.w;
+        int bh = bi.size.h;
+        int dx = bounds.origin.x + (bounds.size.w - bw) / 2;
+        int dy = bounds.origin.y + (bounds.size.h - bh) / 2;
+        GRect dest = GRect(dx, dy, bw, bh);
+        graphics_draw_bitmap_in_rect(ctx, s_trend_bmp, dest);
+        return;
+    }
+
+    if (k == TG_TEXT && utf8 && utf8[0]) {
+        graphics_context_set_text_color(ctx, s_trend_ink);
+        GFont f = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+        graphics_draw_text(ctx, utf8, f, bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
     }
 }
 

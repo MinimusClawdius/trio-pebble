@@ -93,7 +93,7 @@ void face_minimal_update(AppState *state) {
     trend_ink = fg;
 #endif
 
-    trio_trend_layer_set(state->cgm.trend_str, trend_ink);
+    trio_trend_layer_set(state->cgm.trend_str, trend_ink, state->config.color_scheme == COLOR_SCHEME_LIGHT);
     layer_mark_dirty(s_trend_layer);
 
     text_layer_set_text(s_delta, state->cgm.delta_str);

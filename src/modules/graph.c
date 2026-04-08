@@ -157,13 +157,15 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         GColor seg = glucose_color(s_values[i], config);
 #ifdef PBL_COLOR
         if (use_weather_bg) {
-            graphics_context_set_stroke_color(ctx, GColorBlack);
+            /* Single stroke on weather background (no black underlay). */
+            graphics_context_set_stroke_color(ctx, seg);
             graphics_context_set_stroke_width(ctx, 2);
             graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
+        } else {
+            graphics_context_set_stroke_color(ctx, seg);
+            graphics_context_set_stroke_width(ctx, 1);
+            graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
         }
-        graphics_context_set_stroke_color(ctx, seg);
-        graphics_context_set_stroke_width(ctx, 1);
-        graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
 #else
         {
             TrioBwLineKind k0 = glucose_bw_line_kind(s_values[i - 1], config);
@@ -184,12 +186,8 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         int y = map_y(s_values[i], h);
         GColor dot = glucose_color(s_values[i], config);
 #ifdef PBL_COLOR
-        if (use_weather_bg) {
-            graphics_context_set_fill_color(ctx, GColorBlack);
-            graphics_fill_circle(ctx, GPoint(x, y), 3);
-        }
         graphics_context_set_fill_color(ctx, dot);
-        graphics_fill_circle(ctx, GPoint(x, y), 2);
+        graphics_fill_circle(ctx, GPoint(x, y), use_weather_bg ? 3 : 2);
 #else
         graphics_context_set_fill_color(ctx, dot);
         graphics_fill_circle(ctx, GPoint(x, y), 2);
@@ -214,9 +212,7 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
             int y0 = map_y(s_predictions[i - 1], h);
             int x1 = pred_start_x + i * pred_spacing;
             int y1 = map_y(s_predictions[i], h);
-            if (i % 2 == 0) {
-                graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
-            }
+            graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
         }
     }
 }

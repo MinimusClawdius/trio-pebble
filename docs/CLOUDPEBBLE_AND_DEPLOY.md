@@ -1,11 +1,21 @@
 # CloudPebble settings, previews, and phone deployment
 
+**See also:** General Pebble + CloudPebble reference (watchface vs app, SDK, IDE, manifest, troubleshooting): **[CLOUDPEBBLE_COMPREHENSIVE_GUIDE.md](CLOUDPEBBLE_COMPREHENSIVE_GUIDE.md)**.  
+**Watch logs:** **[WATCH_APP_LOGS.md](WATCH_APP_LOGS.md)**.  
+**Learn C on watch:** [Learning C with Pebble](https://pebble.gitbooks.io/learning-c-with-pebble/) (GitBook, project exercises with CloudPebble).
+
+## `package.json`: version, `sdkVersion`, and GitHub import
+
+- **`"version"`** — If CloudPebble import or version display misbehaves with a two-part npm version (e.g. `"2.6"`), use **three-part semver** (e.g. **`"2.6.0"`**).  
+- **`pebble.sdkVersion`** — Must match what **your** CloudPebble host uses (check a **new empty project** on the same site). Example that has worked on Rebble-hosted CloudPebble: **`"4.9.148"`** instead of **`"3"`**.  
+- **Trend / extra PNGs** — This repo lists **many** `pebble.resources.media` entries (trend arrows). Keep the **menu icon** only in **one** place (usually CloudPebble **Resources** UI with `pebble.resources.media` as `[]` for that icon **or** only in JSON—never both). Do **not** duplicate **trend** files in the CloudPebble Resources table if they are already in `package.json`.
+
 ## GitHub-linked CloudPebble: version and preview (why it looked “empty”)
 
 Rebble’s CloudPebble import walks the GitHub zip and picks the **first** valid manifest it finds at the project root. If both `appinfo.json` and `package.json` exist, **whichever appears first in the zip** wins—not necessarily `package.json`.
 
 - **Wrong or missing version in the CloudPebble UI** — For npm-style projects, **`package.json` top-level `"version"`** is what becomes the project semver (e.g. `2.2.5`). If CloudPebble imported **`appinfo.json` first**, it would use **`versionLabel`** from that file and **ignore** npm `version`, and it would **not** load `pebble.messageKeys` from `package.json`. This repo keeps **only `package.json`** at the root. Human-only legacy field reference: **`docs/pebble-legacy-manifest-reference.md`** (not a manifest; do not duplicate resources there).
-- **`RESOURCE_ID_IMAGE_MENU_ICON` redefined / `menu_icon.reso` created twice** — The build runs **two** `reso` tasks for the same PNG when the merged manifest lists **`IMAGE_MENU_ICON` twice** (typical cause: **`pebble.resources.media` in `package.json` plus** the same resource in **CloudPebble → Resources**). This repo ships **`pebble.resources.media` as `[]`** so GitHub-linked CloudPebble only gets the menu icon from **one** place: add it **once** under **Resources** in the IDE (25×25 PNG, “menu image”, path `images/menu_icon.png`). **Remove** any stale duplicate rows in Resources after **GitHub → Pull**. For **local `pebble build` only**, temporarily add the single media object shown under “Local CLI build” below—**do not commit** that change if you also use CloudPebble with the same resource in the UI.
+- **`RESOURCE_ID_IMAGE_MENU_ICON` redefined / `menu_icon.reso` created twice** — The build runs **two** `reso` tasks when **`IMAGE_MENU_ICON`** appears twice (e.g. **`menuIcon` in `package.json`** **and** the same entry in **CloudPebble → Resources**). This repo declares **trend arrow** PNGs in `package.json` only; keep the **launcher menu icon** in **one** place: usually add it **only** under **CloudPebble → Resources** (25×25 PNG, path `images/menu_icon.png`) and **do not** also add a `menuIcon` row in `package.json`. **Remove** stale duplicate rows after **GitHub → Pull**. For **local `pebble build` only**, you may temporarily add the `menuIcon` object to `package.json`—**do not commit** if CloudPebble also defines that icon in the UI.
 - **No emulator / list preview image** — After pulling, define the menu icon **either** only in CloudPebble Resources **or** only in `package.json`—never both. The file should live at **`resources/images/menu_icon.png`** in the repo.
 
 **After changing any of this**, use **GitHub → Pull** in CloudPebble (or re-import the project) so metadata and resources refresh.

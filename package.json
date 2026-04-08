@@ -9,14 +9,30 @@
     "projectType": "native",
     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "sdkVersion": "4.9.148",
-    "description": "Premium CGM watchface for Pebble - Trio, Dexcom Share, Nightscout",
     "enableMultiJS": true,
     "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "emery"],
     "watchapp": {
       "watchface": true
     },
     "resources": {
-      "media": []
+      "media": [
+        { "type": "png", "name": "TRIO_TREND_FLAT", "file": "images/trend_flat.png" },
+        { "type": "png", "name": "TRIO_TREND_FLAT_BLACK", "file": "images/trend_flat_black.png" },
+        { "type": "png", "name": "TRIO_TREND_UP", "file": "images/trend_up.png" },
+        { "type": "png", "name": "TRIO_TREND_UP_BLACK", "file": "images/trend_up_black.png" },
+        { "type": "png", "name": "TRIO_TREND_DOWN", "file": "images/trend_down.png" },
+        { "type": "png", "name": "TRIO_TREND_DOWN_BLACK", "file": "images/trend_down_black.png" },
+        { "type": "png", "name": "TRIO_TREND_UP45", "file": "images/trend_up_45.png" },
+        { "type": "png", "name": "TRIO_TREND_UP45_BLACK", "file": "images/trend_up_45_black.png" },
+        { "type": "png", "name": "TRIO_TREND_DOWN45", "file": "images/trend_down_45.png" },
+        { "type": "png", "name": "TRIO_TREND_DOWN45_BLACK", "file": "images/trend_down_45_black.png" },
+        { "type": "png", "name": "TRIO_TREND_DOUBLE_UP", "file": "images/trend_double_up.png" },
+        { "type": "png", "name": "TRIO_TREND_DOUBLE_UP_BLACK", "file": "images/trend_double_up_black.png" },
+        { "type": "png", "name": "TRIO_TREND_DOUBLE_DOWN", "file": "images/trend_double_down.png" },
+        { "type": "png", "name": "TRIO_TREND_DOUBLE_DOWN_BLACK", "file": "images/trend_double_down_black.png" },
+        { "type": "png", "name": "TRIO_TREND_NONE", "file": "images/trend_none.png" },
+        { "type": "png", "name": "TRIO_TREND_NONE_BLACK", "file": "images/trend_none_black.png" }
+      ]
     },
     "messageKeys": {
       "KEY_GLUCOSE": 0,

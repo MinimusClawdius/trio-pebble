@@ -29,7 +29,7 @@ The bottom bar has **four configurable slots** (phone settings page → Complica
 - Red when below low threshold or above high+60
 - Target range band with dashed threshold lines
 - Urgent low line in red
-- Horizontal “iso-BG” grid (100–300 mg/dL) and stronger vertical hour ticks (Dexcom/T1000-style readability)
+- CGM trace and optional prediction line without extra grid clutter (readable on small screens)
 - Black outline on the glucose trace when a weather sky background is active
 - Prediction line overlay (when available from Trio/Nightscout)
 - Configurable thresholds via settings page
@@ -146,6 +146,19 @@ Phone (HTML)
 - Commands are not available when using Dexcom Share or Nightscout sources
 - Urgent low alerts cannot be disabled
 - This watchface is not FDA approved and should not be used for medical decisions
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [docs/CLOUDPEBBLE_COMPREHENSIVE_GUIDE.md](docs/CLOUDPEBBLE_COMPREHENSIVE_GUIDE.md) | **CloudPebble + Pebble SDK** reference (IDE, manifest, watchface vs app, graphics, AppMessage, checklists)—good for AI context while building. |
+| [docs/CLOUDPEBBLE_AND_DEPLOY.md](docs/CLOUDPEBBLE_AND_DEPLOY.md) | **Trio-specific** CloudPebble import, menu icon, capabilities, phone deploy. |
+| [docs/WATCH_APP_LOGS.md](docs/WATCH_APP_LOGS.md) | How to capture **watchface logs** (`APP_LOG`) for debugging. |
+| [docs/pebble-legacy-manifest-reference.md](docs/pebble-legacy-manifest-reference.md) | Human reference for legacy manifest fields (not authoritative for this repo’s `package.json`). |
+
+**Learn C on Pebble:** [Learning C with Pebble](https://pebble.gitbooks.io/learning-c-with-pebble/) (GitBook)—chapters and CloudPebble-oriented project exercises from variables through UI, graphics, and messaging.
+
+**Trend arrow PNGs** are adapted from the [t1000-pebble-cgm](https://github.com/andrewchilds/t1000-pebble-cgm) project (`resources/images/trend_*.png`); see [docs/T1000_TREND_ASSETS.md](docs/T1000_TREND_ASSETS.md).
 
 ## Requirements
 

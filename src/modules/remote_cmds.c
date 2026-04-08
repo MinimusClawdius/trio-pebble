@@ -199,22 +199,25 @@ void remote_cmds_set_watchface_window(Window *watchface) {
 }
 
 void remote_cmds_try_open(AppState *state) {
-    if (!s_watchface || !window_stack_contains_window(s_watchface)) {
+    if (!s_watchface) {
+        APP_LOG(APP_LOG_LEVEL_WARNING, "remote: s_watchface NULL");
         return;
     }
+    /* Do not use window_stack_contains_window(s_watchface): on some firmware/watchface stacks it
+     * stays false while the face is visible, which blocked the menu entirely. */
     Window *top = window_stack_get_top_window();
     if (top == s_menu_window || top == s_pick_window) {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "remote: already in menu/picker");
         return;
     }
-    /* Older check (top == s_watchface) failed on some devices: get_top_window() was NULL or not the
-     * same pointer while the watchface was visible, so long-press did nothing. Allow when top is NULL
-     * or matches the watchface; block only if another window is clearly on top. */
     if (top != NULL && top != s_watchface) {
+        APP_LOG(APP_LOG_LEVEL_WARNING, "remote: top=%p != watch=%p", top, s_watchface);
         return;
     }
 
     DataSource ds = state->config.data_source;
     if (ds != DATA_SOURCE_TRIO && ds != DATA_SOURCE_APPLE_HEALTH_VIA_TRIO) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "remote: wrong data_source=%d (need Trio)", (int)ds);
         vibes_double_pulse();
         return;
     }
@@ -227,5 +230,6 @@ void remote_cmds_try_open(AppState *state) {
         });
     }
 
+    APP_LOG(APP_LOG_LEVEL_INFO, "remote: pushing menu (top was %p)", top);
     window_stack_push(s_menu_window, true);
 }

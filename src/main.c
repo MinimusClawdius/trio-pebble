@@ -15,6 +15,7 @@
 #include "modules/state_persist.h"
 #include "modules/demo_preview.h"
 #include "modules/trend_normalize.h"
+#include "modules/trend_glyphs.h"
 #include "faces/face_classic.h"
 #include "faces/face_graph_focus.h"
 #include "faces/face_compact.h"
@@ -368,6 +369,8 @@ static void init(void) {
 
 static void deinit(void) {
     state_persist_save(&s_state);
+
+    trio_trend_glyphs_deinit();
 
     accel_tap_service_unsubscribe();
     battery_state_service_unsubscribe();
