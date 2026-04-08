@@ -130,15 +130,20 @@ Phone (HTML)
 
 | Button | Watchface Mode | Alert Active |
 |--------|---------------|--------------|
-| **UP** | Previous face layout | Previous face layout |
+| **UP** | Previous face layout (short press only; hold-repeat is ignored so long-press can complete) | Previous face layout |
 | **UP (hold ~0.7s)** | Remote bolus / carbs menu (Trio source) | Same |
-| **DOWN** | Next face layout | Next face layout |
+| **DOWN** | Next face layout (short press only; hold-repeat ignored) | Next face layout |
 | **DOWN (hold ~0.7s)** | Remote bolus / carbs menu (Trio source) | Same |
+| **SELECT (double-tap)** | Remote menu (fallback when long-press is unreliable) | Same |
 | **SELECT (hold ~0.7s)** | Same menu *if* firmware does not steal Select (see below) | Same |
 | **SELECT (short)** | — | Snooze alerts |
 | **BACK** | Exit watchface | Exit watchface |
 
-**Firmware vs Select long-press (Pebble 2 HR, Time 2, etc.):** The **middle** button long-press is often captured by the OS (Quick Launch, voice, etc.). Use **long Up** or **long Down** (~0.7s, release after the menu appears) for the remote menu. **Pebble 2 HR (diorite):** an older build could not open the menu because it required `window_stack_get_top_window()` to match the watchface pointer exactly — that check is removed; rebuild from current `main`.
+**Why long-press sometimes did nothing (Pebble 2 HR):** `window_single_click_subscribe` on Up/Down includes **hold-to-repeat**. Each repeat was cycling the face via `reload_face()`, which **destroyed the window** and **cancelled** the long-click recognizer before it could fire. Current builds **ignore repeating** Up/Down clicks so only a true short tap changes the face; long press can complete.
+
+**Firmware vs Select long-press (Pebble 2 HR, Time 2, etc.):** The **middle** button long-press is often captured by the OS (Quick Launch, voice, etc.). Prefer **long Up** or **long Down**, or **double-tap Select** (~0.6s between taps). **Rebble “Developer connection” / IP** in the phone app is for **deploying/debugging** from tools over the network; it does **not** replace Trio’s loopback HTTP on the phone or BLE to the watch—you do **not** need a separate companion app just to open this menu.
+
+**Pebble 2 HR (diorite):** an older build could not open the menu because it required `window_stack_get_top_window()` to match the watchface pointer exactly — that check is removed; rebuild from current `main`.
 
 ## Safety
 

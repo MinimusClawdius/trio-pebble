@@ -281,8 +281,12 @@ static void select_click(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void up_click(ClickRecognizerRef recognizer, void *context) {
-    (void)recognizer; (void)context;
-    // Cycle to previous face
+    (void)context;
+    /* SDK single-click includes hold-to-repeat. Each repeat called reload_face(), destroying the
+     * window and cancelling long-click before the remote menu could open (Pebble 2 HR, etc.). */
+    if (click_recognizer_is_repeating(recognizer)) {
+        return;
+    }
     TrioConfig *cfg = config_get();
     cfg->face_type = (cfg->face_type == 0) ? FACE_COUNT - 1 : cfg->face_type - 1;
     config_save();
@@ -290,8 +294,10 @@ static void up_click(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void down_click(ClickRecognizerRef recognizer, void *context) {
-    (void)recognizer; (void)context;
-    // Cycle to next face
+    (void)context;
+    if (click_recognizer_is_repeating(recognizer)) {
+        return;
+    }
     TrioConfig *cfg = config_get();
     cfg->face_type = (cfg->face_type + 1) % FACE_COUNT;
     config_save();
@@ -314,9 +320,18 @@ static void remote_menu_long_up(ClickRecognizerRef recognizer, void *context) {
     (void)context;
 }
 
+/** Fallback when Select long-press is taken by firmware — double-tap Select (Trio source only inside try_open). */
+static void select_double_open_menu(ClickRecognizerRef recognizer, void *context) {
+    (void)recognizer;
+    (void)context;
+    remote_cmds_try_open(&s_state);
+}
+
 static void click_config(void *context) {
     (void)context;
     window_single_click_subscribe(BUTTON_ID_SELECT, select_click);
+    /* Double-tap middle: remote menu (works on Pebble 2 HR when long-press is unreliable). */
+    window_multi_click_subscribe(BUTTON_ID_SELECT, 2, 2, 600, true, select_double_open_menu);
     window_long_click_subscribe(BUTTON_ID_SELECT, REMOTE_MENU_HOLD_MS, remote_menu_long_down, remote_menu_long_up);
     window_single_click_subscribe(BUTTON_ID_UP, up_click);
     window_single_click_subscribe(BUTTON_ID_DOWN, down_click);
