@@ -3,18 +3,10 @@
 #include "weather_background.h"
 #include <string.h>
 
-/* CloudPebble / strict C: callers must not see grid_color before its prototype. */
-static GColor grid_color(TrioConfig *config);
-
 static int16_t s_values[MAX_GRAPH_POINTS];
 static int s_count = 0;
 static int16_t s_predictions[MAX_PREDICTIONS];
 static int s_pred_count = 0;
-static bool s_minimal_style = false;
-
-void graph_set_minimal_style(bool minimal) {
-    s_minimal_style = minimal;
-}
 
 #define GRAPH_MIN 40
 #define GRAPH_MAX 400
@@ -104,44 +96,6 @@ static GColor bg_color(TrioConfig *config) {
     }
 }
 
-static GColor grid_color(TrioConfig *config) {
-#ifdef PBL_COLOR
-    switch (config->color_scheme) {
-        case COLOR_SCHEME_LIGHT: return GColorLightGray;
-        case COLOR_SCHEME_HIGH_CONTRAST: return GColorDarkGray;
-        default: return GColorDarkGray;
-    }
-#else
-    return (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
-#endif
-}
-
-static void draw_horizontal_value_grid(GContext *ctx, int w, int h, TrioConfig *config, bool dim_on_sky) {
-    static const int16_t levels[] = { 100, 150, 200, 250, 300 };
-    GColor gc = grid_color(config);
-    unsigned int gi;
-    int g, y, x;
-#ifdef PBL_COLOR
-    if (dim_on_sky) {
-        gc = GColorBlack;
-    }
-#else
-    (void)dim_on_sky;
-#endif
-    graphics_context_set_stroke_color(ctx, gc);
-    for (gi = 0; gi < sizeof(levels) / sizeof(levels[0]); gi++) {
-        g = levels[gi];
-        if (g < GRAPH_MIN || g > GRAPH_MAX) continue;
-        y = map_y(g, h);
-        for (x = 0; x < w; x += 5) {
-            graphics_draw_pixel(ctx, GPoint(x, y));
-            if (x + 2 < w) {
-                graphics_draw_pixel(ctx, GPoint(x + 1, y));
-            }
-        }
-    }
-}
-
 void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     GRect bounds = layer_get_bounds(layer);
     int w = bounds.size.w;
@@ -161,7 +115,6 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         graphics_fill_rect(ctx, bounds, 0, GCornerNone);
     }
 
-    // Target range band
     int y_high = map_y(config->high_threshold, h);
     int y_low  = map_y(config->low_threshold, h);
 
@@ -183,7 +136,6 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         }
         graphics_fill_rect(ctx, GRect(0, y_high, w, band_h), 0, GCornerNone);
 #else
-        /* Original Pebble: avoid gray fills (1-bit dither); outline target band. */
         GColor ink = (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
         graphics_context_set_stroke_color(ctx, ink);
         graphics_context_set_stroke_width(ctx, 1);
@@ -191,49 +143,11 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
 #endif
     }
 
-    if (!s_minimal_style) {
-        draw_horizontal_value_grid(ctx, w, h, config, use_weather_bg);
-
-        // Threshold lines (dashed effect via short segments)
-        graphics_context_set_stroke_color(ctx, grid_color(config));
-        for (int x = 0; x < w; x += 6) {
-            graphics_draw_line(ctx, GPoint(x, y_high), GPoint(x + 3, y_high));
-            graphics_draw_line(ctx, GPoint(x, y_low), GPoint(x + 3, y_low));
-        }
-
-        // Urgent low line
-        int y_urgent = map_y(config->urgent_low, h);
-#ifdef PBL_COLOR
-        graphics_context_set_stroke_color(ctx, GColorRed);
-#else
-        graphics_context_set_stroke_color(ctx,
-            (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite);
-#endif
-        for (int x = 0; x < w; x += 4) {
-            graphics_draw_line(ctx, GPoint(x, y_urgent), GPoint(x + 2, y_urgent));
-        }
-
-        // Hour markers on X axis (vertical ticks)
-        graphics_context_set_stroke_color(ctx, grid_color(config));
-        if (s_count > 12) {
-            for (int hr = 12; hr < s_count; hr += 12) {
-                int x = (hr * w) / (s_count > 1 ? s_count - 1 : 1);
-                for (int y = 0; y < h; y += 4) {
-                    graphics_draw_pixel(ctx, GPoint(x, y));
-                    if (y + 1 < h) {
-                        graphics_draw_pixel(ctx, GPoint(x, y + 1));
-                    }
-                }
-            }
-        }
-    }
-
     if (s_count < 2) return;
 
     int spacing = (s_count > 1) ? w / (s_count - 1) : w;
     if (spacing < 1) spacing = 1;
 
-    // Draw glucose line segments (outline + fill for CGM-style readability on busy backgrounds)
     for (int i = 1; i < s_count; i++) {
         int x0 = (i - 1) * spacing;
         int y0 = map_y(s_values[i - 1], h);
@@ -262,7 +176,6 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
 #endif
     }
 
-    /* Dots at every sample made the trace look like a thick ribbon; draw current reading only. */
     for (int i = 0; i < s_count; i++) {
         if (s_count > 1 && i != s_count - 1) {
             continue;
@@ -283,7 +196,6 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
 #endif
     }
 
-    // Draw predictions (dashed, different style)
     if (s_pred_count >= 2) {
         int pred_start_x = (s_count > 0) ? (s_count - 1) * spacing : 0;
         int pred_spacing = (w - pred_start_x) / (s_pred_count > 1 ? s_pred_count - 1 : 1);
@@ -302,18 +214,9 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
             int y0 = map_y(s_predictions[i - 1], h);
             int x1 = pred_start_x + i * pred_spacing;
             int y1 = map_y(s_predictions[i], h);
-            // Dashed: draw every other segment
             if (i % 2 == 0) {
                 graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
             }
         }
-    }
-
-    if (!s_minimal_style && s_count > 0) {
-        int last_y = map_y(s_values[s_count - 1], h);
-        GColor last_color = glucose_color(s_values[s_count - 1], config);
-        graphics_context_set_stroke_color(ctx, last_color);
-        graphics_context_set_stroke_width(ctx, 1);
-        graphics_draw_line(ctx, GPoint(w - 20, last_y), GPoint(w, last_y));
     }
 }

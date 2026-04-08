@@ -621,7 +621,7 @@ Pebble.addEventListener('appmessage', function (e) {
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble v2.5 ready');
+    console.log('Trio Pebble v2.6 ready');
     loadSettings();
 
     var msg = {};

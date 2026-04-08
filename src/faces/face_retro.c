@@ -50,7 +50,6 @@ static TextLayer *make_text(Layer *root, GRect frame, const char *font_key, GTex
 
 void face_retro_load(Window *window, Layer *root, GRect bounds) {
     (void)window;
-    graph_set_minimal_style(true);
 
     int w = bounds.size.w;
     int h = bounds.size.h;
@@ -93,7 +92,6 @@ void face_retro_load(Window *window, Layer *root, GRect bounds) {
 }
 
 void face_retro_unload(void) {
-    graph_set_minimal_style(false);
     text_layer_destroy(s_glucose);
     text_layer_destroy(s_clock);
     text_layer_destroy(s_date);
