@@ -1,8 +1,9 @@
 // Face: Classic — LOOP-style layout (Diorite / Emery targets)
-// Header: time left, reading age right ("N MIN AGO").
+// Header: time left, reading age right ("NOW" / "N MIN AGO").
 // Hero: large glucose + trend arrow right.
-// Graph: history window from settings (3–24h on phone); dotted thresholds, color bands on PBL_COLOR.
+// Graph: history window from settings; dotted thresholds, color bands on PBL_COLOR.
 // Footer: complications bar (default: battery, weather, IOB).
+// Light/Dark: rounded black header/footer strips (chrome) + gray center card.
 
 #include "face_classic.h"
 #include "../modules/graph.h"
@@ -12,13 +13,33 @@
 #include "../modules/time_display.h"
 #include "../modules/trend_glyphs.h"
 
-#define LOOP_HEADER_H 22
+#define LOOP_HEADER_H 24
 #define LOOP_HERO_H 54
 #define LOOP_GRAPH_TOP (LOOP_HEADER_H + LOOP_HERO_H)
+#define CLASSIC_CHROME_RADIUS 6
 
 static TextLayer *s_time, *s_age, *s_glucose;
-static Layer *s_graph_layer, *s_comp_layer, *s_trend_layer;
+static Layer *s_classic_chrome_layer, *s_graph_layer, *s_comp_layer, *s_trend_layer;
 static char s_time_buf[16], s_glucose_buf[16], s_age_buf[20];
+
+static void classic_chrome_proc(Layer *layer, GContext *ctx) {
+    GRect wb = layer_get_bounds(layer);
+    TrioConfig *cfg = config_get();
+    if (!trio_classic_draws_chrome(cfg)) {
+        return;
+    }
+    int w = wb.size.w;
+    int h = wb.size.h;
+    GColor panel = trio_classic_panel_bg(cfg);
+    graphics_context_set_fill_color(ctx, panel);
+    graphics_fill_rect(ctx, wb, 0, GCornerNone);
+
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_fill_rect(ctx, GRect(0, 0, w, LOOP_HEADER_H), CLASSIC_CHROME_RADIUS,
+                       (GCornerMask)(GCornerBottomLeft | GCornerBottomRight));
+    graphics_fill_rect(ctx, GRect(0, h - COMPLICATIONS_BAR_HEIGHT, w, COMPLICATIONS_BAR_HEIGHT), CLASSIC_CHROME_RADIUS,
+                       (GCornerMask)(GCornerTopLeft | GCornerTopRight));
+}
 
 static void graph_proc(Layer *layer, GContext *ctx) {
     graph_draw(layer, ctx, config_get());
@@ -46,10 +67,19 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
+    bool chrome = trio_classic_draws_chrome(config_get());
+    GColor hdr_time = chrome ? GColorWhite : fg;
+    GColor hdr_age = chrome ? GColorWhite : fg2;
 
-    s_time = make_text(root, GRect(0, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_18_BOLD, GTextAlignmentLeft, fg);
-    s_age = make_text(root, GRect(w / 2, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_14_BOLD,
-                      GTextAlignmentRight, fg2);
+    s_classic_chrome_layer = layer_create(bounds);
+    layer_set_update_proc(s_classic_chrome_layer, classic_chrome_proc);
+    layer_add_child(root, s_classic_chrome_layer);
+
+    /* Same font + height for aligned baselines in the header row */
+    s_time = make_text(root, GRect(0, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentLeft,
+                       hdr_time);
+    s_age = make_text(root, GRect(w / 2, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentRight,
+                      hdr_age);
 
     int gw = w * 54 / 100;
 #ifdef PBL_COLOR
@@ -57,7 +87,12 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
 #else
     const char *glucose_font = FONT_KEY_BITHAM_42_BOLD;
 #endif
-    s_glucose = make_text(root, GRect(0, LOOP_HEADER_H, gw, LOOP_HERO_H), glucose_font, GTextAlignmentLeft, fg);
+    GColor hero_glucose = fg;
+    if (chrome) {
+        hero_glucose = light ? GColorBlack : GColorWhite;
+    }
+    s_glucose = make_text(root, GRect(0, LOOP_HEADER_H, gw, LOOP_HERO_H), glucose_font, GTextAlignmentLeft,
+                          hero_glucose);
     text_layer_set_text(s_glucose, "--");
 
     s_trend_layer = layer_create(GRect(gw, LOOP_HEADER_H, w - gw, LOOP_HERO_H));
@@ -82,6 +117,7 @@ void face_classic_unload(void) {
     text_layer_destroy(s_time);
     text_layer_destroy(s_age);
     text_layer_destroy(s_glucose);
+    layer_destroy(s_classic_chrome_layer);
     layer_destroy(s_trend_layer);
     layer_destroy(s_graph_layer);
     layer_destroy(s_comp_layer);
@@ -92,12 +128,21 @@ void face_classic_update(AppState *state) {
     bool light = state->config.color_scheme == COLOR_SCHEME_LIGHT;
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor trend_ink = fg;
+    bool chrome = trio_classic_draws_chrome(&state->config);
 
     trio_format_clock(s_time_buf, sizeof(s_time_buf), now, state->config.clock_24h);
     text_layer_set_text(s_time, s_time_buf);
 
     format_reading_age_upper(s_age_buf, sizeof(s_age_buf), state->cgm.last_reading_time, now);
     text_layer_set_text(s_age, s_age_buf);
+
+    if (chrome) {
+        text_layer_set_text_color(s_time, GColorWhite);
+        text_layer_set_text_color(s_age, GColorWhite);
+    } else {
+        text_layer_set_text_color(s_time, fg);
+        text_layer_set_text_color(s_age, trio_secondary_fg(&state->config));
+    }
 
     format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose, state->config.is_mmol);
     text_layer_set_text(s_glucose, s_glucose_buf);
@@ -118,6 +163,16 @@ void face_classic_update(AppState *state) {
         text_layer_set_text_color(s_glucose, gc);
         trend_ink = gc;
     } else {
+        if (chrome) {
+            text_layer_set_text_color(s_glucose, light ? GColorBlack : GColorWhite);
+        } else {
+            text_layer_set_text_color(s_glucose, fg);
+        }
+    }
+#else
+    if (chrome) {
+        text_layer_set_text_color(s_glucose, light ? GColorBlack : GColorWhite);
+    } else {
         text_layer_set_text_color(s_glucose, fg);
     }
 #endif
@@ -125,6 +180,7 @@ void face_classic_update(AppState *state) {
     trio_trend_layer_set(state->cgm.trend_str, trend_ink, state->config.color_scheme == COLOR_SCHEME_LIGHT);
     layer_mark_dirty(s_trend_layer);
 
+    layer_mark_dirty(s_classic_chrome_layer);
     layer_mark_dirty(s_graph_layer);
     layer_mark_dirty(s_comp_layer);
 }

@@ -169,6 +169,13 @@ static GColor bg_color(TrioConfig *config) {
     }
 }
 
+static GColor graph_panel_bg(TrioConfig *config) {
+    if (trio_classic_draws_chrome(config)) {
+        return trio_classic_panel_bg(config);
+    }
+    return bg_color(config);
+}
+
 static GColor graph_ink(TrioConfig *config) {
     return (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
 }
@@ -211,11 +218,14 @@ static void draw_graph_threshold_labels(GContext *ctx, TrioConfig *config, int w
     GRect r_hi = GRect(2, hi_y, 36, 16);
     graphics_draw_text(ctx, hi_lbl, f, r_hi, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
 
-    int lo_y = y_lo + 2;
-    if (lo_y > h - 14) {
-        lo_y = h - 14;
+    int lo_y = y_lo + 4;
+    if (lo_y + 15 > h) {
+        lo_y = h - 15;
     }
-    GRect r_lo = GRect(2, lo_y, 36, 16);
+    if (lo_y < y_lo + 2) {
+        lo_y = y_lo + 2;
+    }
+    GRect r_lo = GRect(2, lo_y, 40, 16);
     graphics_draw_text(ctx, lo_lbl, f, r_lo, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
 }
 
@@ -235,7 +245,7 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     int16_t g_min, g_max;
     compute_graph_y_range(config, &g_min, &g_max);
 
-    graphics_context_set_fill_color(ctx, bg_color(config));
+    graphics_context_set_fill_color(ctx, graph_panel_bg(config));
     graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
     int y_high = map_y_sc(config->high_threshold, h, g_min, g_max);
@@ -275,7 +285,7 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         if (s_count == 1) {
             int x = graph_x_for_point(0, w, s_count);
             int y = map_y_sc(s_values[0], h, g_min, g_max);
-            GColor inner = bg_color(config);
+            GColor inner = graph_panel_bg(config);
 #ifdef PBL_COLOR
             inner = GColorWhite;
 #endif
@@ -303,7 +313,7 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         int x = i * spacing;
         int y = map_y_sc(s_values[i], h, g_min, g_max);
         if (i == s_count - 1) {
-            GColor inner = bg_color(config);
+            GColor inner = graph_panel_bg(config);
 #ifdef PBL_COLOR
             inner = GColorWhite;
 #endif

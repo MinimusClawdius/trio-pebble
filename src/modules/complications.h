@@ -2,7 +2,7 @@
 #include "../trio_types.h"
 
 /** Height of the bottom complications strip (battery bar + icons + text). */
-#define COMPLICATIONS_BAR_HEIGHT 22
+#define COMPLICATIONS_BAR_HEIGHT 24
 
 void complications_init(void);
 void complications_update_battery(void);

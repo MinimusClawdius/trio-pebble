@@ -69,9 +69,7 @@ static void slot_icon_text_split(GRect cell, GRect *out_icon, GRect *out_text, b
 static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, AppState *state, TrioConfig *config,
                           GColor fg) {
     char buf[24];
-    GFont font_main = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-    GFont font_side = fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
-    GFont font_aux = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+    GFont font_footer = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 
     graphics_context_set_text_color(ctx, fg);
 
@@ -80,14 +78,14 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             return;
         case COMP_SLOT_WATCH_BATTERY: {
             GRect ir, tr;
-            slot_icon_text_split_pct(cell, &ir, &tr, true, 32);
+            slot_icon_text_split_pct(cell, &ir, &tr, true, 40);
             trio_draw_footer_battery_bar(ctx, ir, state->comp.watch_battery, state->comp.watch_charging, fg, config);
             if (state->comp.watch_charging) {
                 snprintf(buf, sizeof(buf), "%d+", state->comp.watch_battery);
             } else {
                 snprintf(buf, sizeof(buf), "%d%%", state->comp.watch_battery);
             }
-            graphics_draw_text(ctx, buf, font_aux, tr, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
+            graphics_draw_text(ctx, buf, font_footer, tr, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
             return;
         }
         case COMP_SLOT_PHONE_BATTERY:
@@ -96,7 +94,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "P%d%%", state->comp.phone_battery);
             }
-            graphics_draw_text(ctx, buf, font_aux, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+            graphics_draw_text(ctx, buf, font_footer, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
                                NULL);
             return;
         case COMP_SLOT_STEPS: {
@@ -106,7 +104,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d", (int)st);
             }
-            graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+            graphics_draw_text(ctx, buf, font_footer, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
                                NULL);
             return;
         }
@@ -116,7 +114,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d", state->comp.heart_rate);
             }
-            graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+            graphics_draw_text(ctx, buf, font_footer, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
                                NULL);
             return;
         case COMP_SLOT_WEATHER: {
@@ -132,7 +130,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d°", state->comp.weather_temp);
             }
-            graphics_draw_text(ctx, buf, font_side, tr, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+            graphics_draw_text(ctx, buf, font_footer, tr, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
                                NULL);
             return;
         }
@@ -145,7 +143,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%s", state->loop.iob);
             }
-            graphics_draw_text(ctx, buf, font_side, tr, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            graphics_draw_text(ctx, buf, font_footer, tr, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
         }
         default:
@@ -160,10 +158,23 @@ void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConf
     int aw = area.size.w;
     int slot_w = aw / TRIO_COMP_BAR_COLUMNS;
 
+    GColor fg;
 #if TRIO_DISPLAY_COLOR
-    GColor fg = (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorDarkGray : GColorLightGray;
+    if (trio_classic_draws_chrome(config)) {
+        fg = GColorWhite;
+    } else if (config->color_scheme == COLOR_SCHEME_LIGHT) {
+        fg = GColorDarkGray;
+    } else {
+        fg = GColorLightGray;
+    }
 #else
-    GColor fg = (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
+    if (trio_classic_draws_chrome(config)) {
+        fg = GColorWhite;
+    } else if (config->color_scheme == COLOR_SCHEME_LIGHT) {
+        fg = GColorBlack;
+    } else {
+        fg = GColorWhite;
+    }
 #endif
 
     for (int i = 0; i < TRIO_COMP_BAR_COLUMNS; i++) {

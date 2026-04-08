@@ -52,3 +52,17 @@ static inline GColor trio_secondary_fg(const TrioConfig *cfg) {
     return GColorWhite;
 #endif
 }
+
+/** Classic face: black header/footer bars with rounded joins (Light / Dark only). */
+static inline bool trio_classic_draws_chrome(const TrioConfig *cfg) {
+    return cfg->face_type == FACE_CLASSIC
+        && (cfg->color_scheme == COLOR_SCHEME_LIGHT || cfg->color_scheme == COLOR_SCHEME_DARK);
+}
+
+/** Fill behind glucose + graph + trend on Classic chrome layout. */
+static inline GColor trio_classic_panel_bg(const TrioConfig *cfg) {
+    if (cfg->color_scheme == COLOR_SCHEME_LIGHT) {
+        return GColorLightGray;
+    }
+    return GColorDarkGray;
+}
