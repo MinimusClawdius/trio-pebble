@@ -53,16 +53,25 @@ static inline GColor trio_secondary_fg(const TrioConfig *cfg) {
 #endif
 }
 
-/** Classic face: black header/footer bars with rounded joins (Light / Dark only). */
-static inline bool trio_classic_draws_chrome(const TrioConfig *cfg) {
-    return cfg->face_type == FACE_CLASSIC
-        && (cfg->color_scheme == COLOR_SCHEME_LIGHT || cfg->color_scheme == COLOR_SCHEME_DARK);
+/** Classic face: custom chrome (not High Contrast). */
+static inline bool trio_classic_chrome_active(const TrioConfig *cfg) {
+    return cfg->face_type == FACE_CLASSIC && cfg->color_scheme != COLOR_SCHEME_HIGH_CONTRAST;
 }
 
-/** Fill behind glucose + graph + trend on Classic chrome layout. */
-static inline GColor trio_classic_panel_bg(const TrioConfig *cfg) {
-    if (cfg->color_scheme == COLOR_SCHEME_LIGHT) {
-        return GColorLightGray;
+/** Light: black header/footer pills on white body. Dark: black stripes + white inverted card. */
+static inline bool trio_classic_light_pills(const TrioConfig *cfg) {
+    return cfg->face_type == FACE_CLASSIC && cfg->color_scheme == COLOR_SCHEME_LIGHT;
+}
+
+/** Trend PNG set: *_BLACK variants on white panel. */
+static inline bool trio_trend_light_background_assets(const TrioConfig *cfg) {
+    if (cfg->face_type == FACE_CLASSIC && cfg->color_scheme != COLOR_SCHEME_HIGH_CONTRAST) {
+        return true;
     }
-    return GColorDarkGray;
+    return cfg->color_scheme == COLOR_SCHEME_LIGHT;
+}
+
+/** Footer / header label ink on black bars (Classic Light or Dark). */
+static inline bool trio_classic_black_strip_footer(const TrioConfig *cfg) {
+    return cfg->face_type == FACE_CLASSIC && cfg->color_scheme != COLOR_SCHEME_HIGH_CONTRAST;
 }

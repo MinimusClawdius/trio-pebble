@@ -66,6 +66,15 @@ static void slot_icon_text_split(GRect cell, GRect *out_icon, GRect *out_text, b
     slot_icon_text_split_pct(cell, out_icon, out_text, with_icon, 46);
 }
 
+/** Vertical center a single-line footer label within a sub-rect. */
+static GRect footer_text_band_vcenter(GRect subcol, int text_h) {
+    int pad = (subcol.size.h - text_h) / 2;
+    if (pad < 0) {
+        pad = 0;
+    }
+    return GRect(subcol.origin.x, subcol.origin.y + pad, subcol.size.w, text_h);
+}
+
 static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, AppState *state, TrioConfig *config,
                           GColor fg) {
     char buf[24];
@@ -85,7 +94,10 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d%%", state->comp.watch_battery);
             }
-            graphics_draw_text(ctx, buf, font_footer, tr, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
+            {
+                GRect tb = footer_text_band_vcenter(tr, 16);
+                graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
+            }
             return;
         }
         case COMP_SLOT_PHONE_BATTERY:
@@ -94,8 +106,8 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "P%d%%", state->comp.phone_battery);
             }
-            graphics_draw_text(ctx, buf, font_footer, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
-                               NULL);
+            graphics_draw_text(ctx, buf, font_footer, footer_text_band_vcenter(cell, 16),
+                               GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
         case COMP_SLOT_STEPS: {
             int32_t st = state->comp.steps;
@@ -104,8 +116,8 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d", (int)st);
             }
-            graphics_draw_text(ctx, buf, font_footer, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
-                               NULL);
+            graphics_draw_text(ctx, buf, font_footer, footer_text_band_vcenter(cell, 16),
+                               GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
         }
         case COMP_SLOT_HEART_RATE:
@@ -114,8 +126,8 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d", state->comp.heart_rate);
             }
-            graphics_draw_text(ctx, buf, font_footer, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
-                               NULL);
+            graphics_draw_text(ctx, buf, font_footer, footer_text_band_vcenter(cell, 16),
+                               GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
         case COMP_SLOT_WEATHER: {
             GRect ir, tr;
@@ -130,8 +142,11 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d°", state->comp.weather_temp);
             }
-            graphics_draw_text(ctx, buf, font_footer, tr, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
-                               NULL);
+            {
+                GRect tb = footer_text_band_vcenter(tr, 16);
+                graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+                                   NULL);
+            }
             return;
         }
         case COMP_SLOT_IOB: {
@@ -143,7 +158,11 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%s", state->loop.iob);
             }
-            graphics_draw_text(ctx, buf, font_footer, tr, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            {
+                GRect tb = footer_text_band_vcenter(tr, 16);
+                graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+                                   NULL);
+            }
             return;
         }
         default:
@@ -160,7 +179,7 @@ void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConf
 
     GColor fg;
 #if TRIO_DISPLAY_COLOR
-    if (trio_classic_draws_chrome(config)) {
+    if (trio_classic_black_strip_footer(config)) {
         fg = GColorWhite;
     } else if (config->color_scheme == COLOR_SCHEME_LIGHT) {
         fg = GColorDarkGray;
@@ -168,7 +187,7 @@ void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConf
         fg = GColorLightGray;
     }
 #else
-    if (trio_classic_draws_chrome(config)) {
+    if (trio_classic_black_strip_footer(config)) {
         fg = GColorWhite;
     } else if (config->color_scheme == COLOR_SCHEME_LIGHT) {
         fg = GColorBlack;

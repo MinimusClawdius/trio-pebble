@@ -1,9 +1,7 @@
 // Face: Classic — LOOP-style layout (Diorite / Emery targets)
-// Header: time left, reading age right ("NOW" / "N MIN AGO").
-// Hero: large glucose + trend arrow right.
-// Graph: history window from settings; dotted thresholds, color bands on PBL_COLOR.
-// Footer: complications bar (default: battery, weather, IOB).
-// Light/Dark: rounded black header/footer strips (chrome) + gray center card.
+// Light: black header/footer with outer-corner rounding on black strips; solid white center.
+// Dark: black header/footer (seamless frame); white rounded card for hero + graph (inverted content).
+// High contrast: no chrome layer (flat legacy layout).
 
 #include "face_classic.h"
 #include "../modules/graph.h"
@@ -17,6 +15,9 @@
 #define LOOP_HERO_H 54
 #define LOOP_GRAPH_TOP (LOOP_HEADER_H + LOOP_HERO_H)
 #define CLASSIC_CHROME_RADIUS 6
+#define CLASSIC_CARD_INSET 2
+#define CLASSIC_CARD_RADIUS 5
+#define CLASSIC_TIME_PAD_LEFT 6
 
 static TextLayer *s_time, *s_age, *s_glucose;
 static Layer *s_classic_chrome_layer, *s_graph_layer, *s_comp_layer, *s_trend_layer;
@@ -25,20 +26,34 @@ static char s_time_buf[16], s_glucose_buf[16], s_age_buf[20];
 static void classic_chrome_proc(Layer *layer, GContext *ctx) {
     GRect wb = layer_get_bounds(layer);
     TrioConfig *cfg = config_get();
-    if (!trio_classic_draws_chrome(cfg)) {
+    if (!trio_classic_chrome_active(cfg)) {
         return;
     }
     int w = wb.size.w;
     int h = wb.size.h;
-    GColor panel = trio_classic_panel_bg(cfg);
-    graphics_context_set_fill_color(ctx, panel);
-    graphics_fill_rect(ctx, wb, 0, GCornerNone);
+    const int R = CLASSIC_CHROME_RADIUS;
 
+    if (trio_classic_light_pills(cfg)) {
+        graphics_context_set_fill_color(ctx, GColorWhite);
+        graphics_fill_rect(ctx, wb, 0, GCornerNone);
+        graphics_context_set_fill_color(ctx, GColorBlack);
+        /* Round the outer top of the header and outer bottom of the footer (toward bezel). */
+        graphics_fill_rect(ctx, GRect(0, 0, w, LOOP_HEADER_H), R,
+                           (GCornerMask)(GCornerTopLeft | GCornerTopRight));
+        graphics_fill_rect(ctx, GRect(0, h - COMPLICATIONS_BAR_HEIGHT, w, COMPLICATIONS_BAR_HEIGHT), R,
+                           (GCornerMask)(GCornerBottomLeft | GCornerBottomRight));
+        return;
+    }
+    /* Dark: black full screen, white inverted card behind hero + graph */
     graphics_context_set_fill_color(ctx, GColorBlack);
-    graphics_fill_rect(ctx, GRect(0, 0, w, LOOP_HEADER_H), CLASSIC_CHROME_RADIUS,
-                       (GCornerMask)(GCornerBottomLeft | GCornerBottomRight));
-    graphics_fill_rect(ctx, GRect(0, h - COMPLICATIONS_BAR_HEIGHT, w, COMPLICATIONS_BAR_HEIGHT), CLASSIC_CHROME_RADIUS,
-                       (GCornerMask)(GCornerTopLeft | GCornerTopRight));
+    graphics_fill_rect(ctx, wb, 0, GCornerNone);
+    {
+        int cy = LOOP_HEADER_H;
+        int ch = h - LOOP_HEADER_H - COMPLICATIONS_BAR_HEIGHT;
+        graphics_context_set_fill_color(ctx, GColorWhite);
+        graphics_fill_rect(ctx, GRect(CLASSIC_CARD_INSET, cy, w - 2 * CLASSIC_CARD_INSET, ch), CLASSIC_CARD_RADIUS,
+                           (GCornerMask)(GCornerTopLeft | GCornerTopRight | GCornerBottomLeft | GCornerBottomRight));
+    }
 }
 
 static void graph_proc(Layer *layer, GContext *ctx) {
@@ -67,7 +82,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
-    bool chrome = trio_classic_draws_chrome(config_get());
+    bool chrome = trio_classic_chrome_active(config_get());
     GColor hdr_time = chrome ? GColorWhite : fg;
     GColor hdr_age = chrome ? GColorWhite : fg2;
 
@@ -75,13 +90,16 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_classic_chrome_layer, classic_chrome_proc);
     layer_add_child(root, s_classic_chrome_layer);
 
-    /* Same font + height for aligned baselines in the header row */
-    s_time = make_text(root, GRect(0, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentLeft,
-                       hdr_time);
+    s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, 0, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, LOOP_HEADER_H),
+                       FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentLeft, hdr_time);
     s_age = make_text(root, GRect(w / 2, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentRight,
                       hdr_age);
 
-    int gw = w * 54 / 100;
+    /* Wider glucose column so "10.2" mmol does not ellipsize */
+    int gw = w * 62 / 100;
+    if (gw > w - 44) {
+        gw = w - 44;
+    }
 #ifdef PBL_COLOR
     const char *glucose_font = FONT_KEY_ROBOTO_BOLD_SUBSET_49;
 #else
@@ -89,7 +107,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
 #endif
     GColor hero_glucose = fg;
     if (chrome) {
-        hero_glucose = light ? GColorBlack : GColorWhite;
+        hero_glucose = GColorBlack;
     }
     s_glucose = make_text(root, GRect(0, LOOP_HEADER_H, gw, LOOP_HERO_H), glucose_font, GTextAlignmentLeft,
                           hero_glucose);
@@ -128,7 +146,7 @@ void face_classic_update(AppState *state) {
     bool light = state->config.color_scheme == COLOR_SCHEME_LIGHT;
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor trend_ink = fg;
-    bool chrome = trio_classic_draws_chrome(&state->config);
+    bool chrome = trio_classic_chrome_active(&state->config);
 
     trio_format_clock(s_time_buf, sizeof(s_time_buf), now, state->config.clock_24h);
     text_layer_set_text(s_time, s_time_buf);
@@ -163,21 +181,13 @@ void face_classic_update(AppState *state) {
         text_layer_set_text_color(s_glucose, gc);
         trend_ink = gc;
     } else {
-        if (chrome) {
-            text_layer_set_text_color(s_glucose, light ? GColorBlack : GColorWhite);
-        } else {
-            text_layer_set_text_color(s_glucose, fg);
-        }
+        text_layer_set_text_color(s_glucose, chrome ? GColorBlack : fg);
     }
 #else
-    if (chrome) {
-        text_layer_set_text_color(s_glucose, light ? GColorBlack : GColorWhite);
-    } else {
-        text_layer_set_text_color(s_glucose, fg);
-    }
+    text_layer_set_text_color(s_glucose, chrome ? GColorBlack : fg);
 #endif
 
-    trio_trend_layer_set(state->cgm.trend_str, trend_ink, state->config.color_scheme == COLOR_SCHEME_LIGHT);
+    trio_trend_layer_set(state->cgm.trend_str, trend_ink, trio_trend_light_background_assets(&state->config));
     layer_mark_dirty(s_trend_layer);
 
     layer_mark_dirty(s_classic_chrome_layer);

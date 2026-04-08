@@ -125,8 +125,8 @@ static void draw_bitmap_nn_scaled(GContext *ctx, const GBitmap *bmp, GRect conta
         return;
     }
 
-    int dw = sw * 6 / 5;
-    int dh = sh * 6 / 5;
+    int dw = sw * 17 / 10;
+    int dh = sh * 17 / 10;
     if (dw > container.size.w && sw > 0) {
         dh = dh * container.size.w / dw;
         dw = container.size.w;
@@ -222,8 +222,8 @@ void trio_trend_glyph_draw(GContext *ctx, GRect bounds, const char *utf8, GColor
     {
         TrioConfig *cfg = config_get();
         GColor bg;
-        if (trio_classic_draws_chrome(cfg)) {
-            bg = trio_classic_panel_bg(cfg);
+        if (trio_classic_chrome_active(cfg)) {
+            bg = GColorWhite;
         } else {
             switch (cfg->color_scheme) {
                 case COLOR_SCHEME_LIGHT:

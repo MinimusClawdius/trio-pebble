@@ -169,22 +169,34 @@ static GColor bg_color(TrioConfig *config) {
     }
 }
 
+/** Horizontal space reserved for threshold text; dotted lines start to the right. */
+#define GRAPH_THRESHOLD_LABEL_RESERVE 44
+
 static GColor graph_panel_bg(TrioConfig *config) {
-    if (trio_classic_draws_chrome(config)) {
-        return trio_classic_panel_bg(config);
+    if (trio_classic_chrome_active(config)) {
+        return GColorWhite;
     }
     return bg_color(config);
 }
 
 static GColor graph_ink(TrioConfig *config) {
+    if (trio_classic_chrome_active(config)) {
+        return GColorBlack;
+    }
     return (config->color_scheme == COLOR_SCHEME_LIGHT) ? GColorBlack : GColorWhite;
 }
 
 static int graph_x_for_point(int i, int w, int count) {
-    if (count <= 1) {
-        return w / 2;
+    int r = GRAPH_THRESHOLD_LABEL_RESERVE;
+    int uw = w - r;
+    if (uw < 16) {
+        r = 0;
+        uw = w;
     }
-    return i * w / (count - 1);
+    if (count <= 1) {
+        return r + uw / 2;
+    }
+    return r + i * (uw - 1) / (count - 1);
 }
 
 static void draw_dotted_horizontal(GContext *ctx, int y, int x0, int x1, int h, GColor c) {
@@ -211,21 +223,25 @@ static void draw_graph_threshold_labels(GContext *ctx, TrioConfig *config, int w
     graphics_context_set_text_color(ctx, ink);
     GFont f = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 
-    int hi_y = y_hi - 15;
+    /* Keep labels off the dashed line; slightly smaller than bold 14. */
+    int hi_y = y_hi - 13;
     if (hi_y < 0) {
         hi_y = 0;
     }
-    GRect r_hi = GRect(2, hi_y, 36, 16);
+    if (hi_y + 11 >= y_hi && y_hi > 12) {
+        hi_y = y_hi - 12;
+    }
+    GRect r_hi = GRect(2, hi_y, GRAPH_THRESHOLD_LABEL_RESERVE - 4, 12);
     graphics_draw_text(ctx, hi_lbl, f, r_hi, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
 
-    int lo_y = y_lo + 4;
-    if (lo_y + 15 > h) {
-        lo_y = h - 15;
+    int lo_y = y_lo + 3;
+    if (lo_y + 12 > h) {
+        lo_y = h - 12;
     }
-    if (lo_y < y_lo + 2) {
+    if (lo_y <= y_lo) {
         lo_y = y_lo + 2;
     }
-    GRect r_lo = GRect(2, lo_y, 40, 16);
+    GRect r_lo = GRect(2, lo_y, GRAPH_THRESHOLD_LABEL_RESERVE - 4, 12);
     graphics_draw_text(ctx, lo_lbl, f, r_lo, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
 }
 
@@ -277,8 +293,8 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
 #else
     GColor dash = ink;
 #endif
-    draw_dotted_horizontal(ctx, y_high, 0, w, h, dash);
-    draw_dotted_horizontal(ctx, y_low, 0, w, h, dash);
+    draw_dotted_horizontal(ctx, y_high, GRAPH_THRESHOLD_LABEL_RESERVE, w, h, dash);
+    draw_dotted_horizontal(ctx, y_low, GRAPH_THRESHOLD_LABEL_RESERVE, w, h, dash);
     draw_graph_threshold_labels(ctx, config, w, h, y_high, y_low);
 
     if (s_count < 2) {
@@ -294,23 +310,18 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
         goto draw_predictions;
     }
 
-    int spacing = w / (s_count - 1);
-    if (spacing < 1) {
-        spacing = 1;
-    }
-
     graphics_context_set_stroke_color(ctx, ink);
     graphics_context_set_stroke_width(ctx, 2);
     for (int i = 1; i < s_count; i++) {
-        int x0 = (i - 1) * spacing;
+        int x0 = graph_x_for_point(i - 1, w, s_count);
         int y0 = map_y_sc(s_values[i - 1], h, g_min, g_max);
-        int x1 = i * spacing;
+        int x1 = graph_x_for_point(i, w, s_count);
         int y1 = map_y_sc(s_values[i], h, g_min, g_max);
         graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
     }
 
     for (int i = 0; i < s_count; i++) {
-        int x = i * spacing;
+        int x = graph_x_for_point(i, w, s_count);
         int y = map_y_sc(s_values[i], h, g_min, g_max);
         if (i == s_count - 1) {
             GColor inner = graph_panel_bg(config);
@@ -329,8 +340,12 @@ draw_predictions:
         return;
     }
 
-    int pred_start_x = (s_count > 0) ? graph_x_for_point(s_count - 1, w, s_count) : 0;
-    int pred_spacing = (w - pred_start_x) / (s_pred_count > 1 ? s_pred_count - 1 : 1);
+    int pred_start_x = (s_count > 0) ? graph_x_for_point(s_count - 1, w, s_count) : GRAPH_THRESHOLD_LABEL_RESERVE;
+    int pred_span = w - pred_start_x;
+    if (pred_span < 4) {
+        pred_span = 4;
+    }
+    int pred_spacing = pred_span / (s_pred_count > 1 ? s_pred_count - 1 : 1);
     if (pred_spacing < 1) {
         pred_spacing = 1;
     }
