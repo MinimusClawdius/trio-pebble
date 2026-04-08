@@ -18,8 +18,8 @@ Switch between **six** face designs via buttons or the config page:
 
 The bottom bar has **four configurable slots** (phone settings page → Complications). Defaults match the old layout: watch battery, steps, heart rate, weather. Set any slot to **Empty** to skip it.
 
-### Data Sources (Configurable)
-- **Trio** - Polls local HTTP API on `127.0.0.1:8080` (requires Trio iOS app with Pebble integration enabled)
+### Data sources (configurable)
+- **Trio** — **Primary path:** PebbleKit JS polls Trio’s loopback HTTP API (`GET /api/all` or `/api/pebble/v1/snapshot`, default port `8080`). Optional native iOS Bluetooth push exists in Trio but is **off by default**; see Trio doc `docs/PEBBLE_JS_PRIMARY_ARCHITECTURE.md`.
 - **Dexcom Share** - Direct connection to Dexcom Share servers (US and international)
 - **Nightscout** - Connects to any Nightscout instance with optional API token auth
 

@@ -1,14 +1,17 @@
 // ============================================================
-// Trio Pebble v2.0 - PebbleKit JS Bridge
-// Multi-source data fetching, configuration, weather, commands
+// Trio Pebble — PebbleKit JS Bridge (primary transport)
 // ============================================================
+//
+// **Supported data path:** HTTP GET Trio's loopback snapshot (`/api/all` or `/api/pebble/v1/snapshot`),
+// then Pebble.sendAppMessage → watch C `inbox_received`. Community workflows extend this JS layer.
+//
+// Trio's optional native iOS PebbleKit BLE push is **off by default**. We no longer slow polling when
+// `blePushActive` is true — that caused stale UI when native BLE was flaky.
 
-var POLL_INTERVAL_MS = 30000;
-var POLL_INTERVAL_BLE_MS = 300000; // 5 min — backoff when native BLE push is active
+var POLL_INTERVAL_MS = 20000;
 var WEATHER_INTERVAL_MS = 1800000; // 30 min
 
-// When the Trio iOS app has an active BLE connection to the watch (PebbleKit iOS),
-// data is pushed directly over Bluetooth. JS polling becomes a low-frequency backup.
+/** Informational: Trio reports whether native iOS BLE push is active (does not throttle polling). */
 var blePushActive = false;
 var pollTimer = null;
 
@@ -131,8 +134,10 @@ function fetchTrio(callback) {
             var wasActive = blePushActive;
             blePushActive = parsed.blePushActive === true;
             if (blePushActive !== wasActive) {
-                console.log('Trio: BLE push ' + (blePushActive ? 'active — slowing JS poll' : 'inactive — resuming normal poll'));
-                reschedulePolling();
+                console.log('Trio: native iOS BLE push (informational): ' + blePushActive);
+            }
+            if (parsed.stateRevision !== undefined) {
+                console.log('Trio: stateRevision=' + parsed.stateRevision + ' proto=' + (parsed.pebbleProtocolVersion || 0));
             }
             callback(normalizeTrio(parsed));
         } catch (e) {
@@ -672,7 +677,7 @@ Pebble.addEventListener('appmessage', function (e) {
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble v2.6 ready');
+    console.log('Trio Pebble pkjs v2.7 (JS-primary transport) ready');
     loadSettings();
 
     var msg = {};
@@ -712,8 +717,7 @@ Pebble.addEventListener('ready', function () {
 
 function reschedulePolling() {
     if (pollTimer) clearInterval(pollTimer);
-    var interval = blePushActive ? POLL_INTERVAL_BLE_MS : POLL_INTERVAL_MS;
-    pollTimer = setInterval(fetchData, interval);
+    pollTimer = setInterval(fetchData, POLL_INTERVAL_MS);
 }
 
 // ---------- HTTP Helpers ----------
