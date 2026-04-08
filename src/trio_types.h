@@ -5,7 +5,7 @@
 // Trio Pebble - Shared Types & Constants
 // ============================================================
 
-#define APP_VERSION "2.13.0"
+#define APP_VERSION "2.14.0"
 #define MAX_GRAPH_POINTS 48
 #define MAX_PREDICTIONS 24
 
@@ -59,6 +59,8 @@ typedef enum {
     KEY_CONFIG_GRAPH_SCALE_MODE,
     /** 0=3h, 1=6h, 2=12h, 3=24h — phone fetches & down-samples to 48 points */
     KEY_CONFIG_GRAPH_TIME_RANGE,
+    /** PebbleKit JS: short Trio/HTTP status (e.g. "No phone"); cleared on CGM update */
+    KEY_TRIO_LINK,
     KEY_COUNT
 } AppMessageKey;
 
@@ -181,6 +183,8 @@ typedef struct {
     char iob[16];
     char cob[16];
     char last_loop_time[16];
+    /** When non-empty, dashboard shows this instead of last_loop_time (HTTP link hint from JS). */
+    char trio_link[16];
     char loop_status[32];
     char pump_status[16];
     int8_t reservoir;           // percentage or units

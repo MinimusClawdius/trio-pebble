@@ -1,4 +1,4 @@
-# Trio Pebble v2.2
+# Trio Pebble v2.14
 
 A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**, **Dexcom Share**, and **Nightscout** data sources.
 

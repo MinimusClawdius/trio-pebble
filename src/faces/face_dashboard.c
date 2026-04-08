@@ -149,7 +149,8 @@ void face_dashboard_update(AppState *state) {
     text_layer_set_text(s_delta, state->cgm.delta_str);
     text_layer_set_text(s_iob, state->loop.iob);
     text_layer_set_text(s_cob, state->loop.cob);
-    text_layer_set_text(s_loop, state->loop.last_loop_time);
+    text_layer_set_text(s_loop,
+                        (state->loop.trio_link[0] != '\0') ? state->loop.trio_link : state->loop.last_loop_time);
 
     snprintf(s_pump_buf, sizeof(s_pump_buf), "%s %s", state->loop.pump_status, state->loop.sensor_age);
     text_layer_set_text(s_pump, s_pump_buf);

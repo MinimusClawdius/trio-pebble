@@ -15,8 +15,9 @@
 #define PERSIST_KEY_VERSION    0x5005
 
 /* Bump when struct layout changes to invalidate stale blobs. */
-/* v2: mmol/mg/dL CGM fix. v3: CGMState.trend_str widened + trend normalization. */
-#define PERSIST_STATE_VERSION  3
+/* v2: mmol/mg/dL CGM fix. v3: CGMState.trend_str widened + trend normalization.
+ * v4: LoopState.trio_link for PebbleKit JS HTTP status. */
+#define PERSIST_STATE_VERSION  4
 
 /* ── Graph persistence ───────────────────────────────────────────
  * GraphData contains up to 48 × int16 values + 24 × int16 predictions +

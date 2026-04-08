@@ -162,6 +162,12 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     t = dict_find(iter, KEY_SENSOR_AGE);
     if (t) strncpy(s_state.loop.sensor_age, t->value->cstring, sizeof(s_state.loop.sensor_age) - 1);
 
+    t = dict_find(iter, KEY_TRIO_LINK);
+    if (t) {
+        strncpy(s_state.loop.trio_link, t->value->cstring, sizeof(s_state.loop.trio_link) - 1);
+        s_state.loop.trio_link[sizeof(s_state.loop.trio_link) - 1] = '\0';
+    }
+
     // Graph data
     Tuple *graph_data = dict_find(iter, KEY_GRAPH_DATA);
     Tuple *graph_count = dict_find(iter, KEY_GRAPH_COUNT);
@@ -199,6 +205,11 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     t = dict_find(iter, KEY_CMD_STATUS);
     if (t) {
         APP_LOG(APP_LOG_LEVEL_INFO, "Cmd status: %s", t->value->cstring);
+    }
+
+    /* Successful CGM snapshot clears JS link warning */
+    if (dict_find(iter, KEY_GLUCOSE)) {
+        s_state.loop.trio_link[0] = '\0';
     }
 
     // Persist state so data survives watchface restart / BLE disconnection

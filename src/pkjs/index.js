@@ -9,10 +9,16 @@
 // `blePushActive` is true — that caused stale UI when native BLE was flaky.
 
 var POLL_INTERVAL_MS = 20000;
+var POLL_JITTER_MS = 4000;
+var POLL_BACKOFF_CAP_MS = 120000;
 var WEATHER_INTERVAL_MS = 1800000; // 30 min
 
 /** Informational: Trio reports whether native iOS BLE push is active (does not throttle polling). */
 var blePushActive = false;
+/** Consecutive failed Trio HTTP snapshots (reset on success). */
+var failStreak = 0;
+/** Last time `fetchTrio` returned usable data (ms since epoch). */
+var lastTrioOkAt = 0;
 var pollTimer = null;
 
 // AppMessage keys (must match C enums)
@@ -36,7 +42,8 @@ var K = {
     CONFIG_COMP_SLOT_2: 39, CONFIG_COMP_SLOT_3: 40,
     CONFIG_CLOCK_24H: 41,
     CONFIG_GRAPH_SCALE_MODE: 42,
-    CONFIG_GRAPH_TIME_RANGE: 43
+    CONFIG_GRAPH_TIME_RANGE: 43,
+    TRIO_LINK: 44
 };
 
 // ---------- Settings ----------
@@ -434,18 +441,85 @@ function directionToArrow(direction) {
 }
 
 // ---------- Fetch Dispatcher ----------
-function fetchData() {
+function isTrioDataSource() {
+    var d = settings.dataSource | 0;
+    return d === 0 || d === 3;
+}
+
+function sendTrioLinkHint(text) {
+    var msg = {};
+    msg[K.TRIO_LINK] = text;
+    Pebble.sendAppMessage(msg,
+        function () { },
+        function (e) { console.log('Trio: link hint send failed: ' + JSON.stringify(e)); }
+    );
+}
+
+/** `done` optional — called after fetch attempt finishes (success or failure). */
+function fetchData(done) {
+    var finish = typeof done === 'function' ? done : function () {};
     var fetcher;
     switch (settings.dataSource) {
         case 1:  fetcher = fetchDexcom; break;
         case 2:  fetcher = fetchNightscout; break;
-        case 3:  fetcher = fetchTrio; break; // Apple Health / CGM via Trio — same local API
+        case 3:  fetcher = fetchTrio; break;
         default: fetcher = fetchTrio; break;
     }
 
     fetcher(function (data) {
-        if (data) sendToWatch(data);
+        if (data) {
+            lastTrioOkAt = Date.now();
+            failStreak = 0;
+            sendToWatch(data);
+            finish();
+            return;
+        }
+        if (isTrioDataSource()) {
+            failStreak++;
+            httpPing(settings.trioHost + '/api/pebble/v1/ping', function (pingOk) {
+                if (failStreak >= 2) {
+                    var hint = '';
+                    if (!pingOk) {
+                        hint = 'No phone';
+                    } else if (lastTrioOkAt > 0) {
+                        var m = Math.min(99, Math.floor((Date.now() - lastTrioOkAt) / 60000));
+                        hint = m > 0 ? ('Old ' + m + 'm') : 'Busy?';
+                    } else {
+                        hint = 'Trio?';
+                    }
+                    if (hint.length > 15) hint = hint.substring(0, 15);
+                    sendTrioLinkHint(hint);
+                }
+                finish();
+            });
+            return;
+        }
+        finish();
     });
+}
+
+function fetchDataThenSchedule() {
+    fetchData(function () { scheduleNextPoll(); });
+}
+
+function msUntilNextPoll() {
+    var jitter = Math.floor(Math.random() * POLL_JITTER_MS);
+    if (failStreak === 0) {
+        return POLL_INTERVAL_MS + jitter;
+    }
+    var backoff = Math.min(POLL_BACKOFF_CAP_MS, 8000 + failStreak * 11000);
+    return backoff + jitter;
+}
+
+function scheduleNextPoll() {
+    if (pollTimer) clearTimeout(pollTimer);
+    pollTimer = setTimeout(function () {
+        runPollTick();
+    }, msUntilNextPoll());
+}
+
+function runPollTick() {
+    fetchData(function () { scheduleNextPoll(); });
 }
 
 // ---------- Send to Watch ----------
@@ -644,7 +718,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
             }
             Pebble.sendAppMessage(msg);
 
-            fetchData();
+            fetchDataThenSchedule();
             if (settings.weatherEnabled) fetchWeather();
             else {
                 var w = {};
@@ -668,16 +742,16 @@ Pebble.addEventListener('appmessage', function (e) {
         sendCommand(cmdType | 0, cmdAmt | 0);
     } else if (p[K.TAP_ACTION] !== undefined) {
         /* Includes watch tick refresh (KEY_TAP_ACTION = refresh) — do not use KEY_GLUCOSE (0) for pings */
-        if (p[K.TAP_ACTION] === 4) fetchData();
+        if (p[K.TAP_ACTION] === 4) fetchDataThenSchedule();
     } else {
         /* Legacy firmware used dict key 0 for poll; never treat as CGM update */
-        fetchData();
+        fetchDataThenSchedule();
     }
 });
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble pkjs v2.7 (JS-primary transport) ready');
+    console.log('Trio Pebble pkjs v2.14 (ping + adaptive poll) ready');
     loadSettings();
 
     var msg = {};
@@ -701,7 +775,7 @@ Pebble.addEventListener('ready', function () {
     msg[K.UNITS] = displayUnitsForWatch();
     Pebble.sendAppMessage(msg);
 
-    fetchData();
+    runPollTick();
     if (settings.weatherEnabled) fetchWeather();
     else {
         var w = {};
@@ -709,18 +783,24 @@ Pebble.addEventListener('ready', function () {
         w[K.WEATHER_ICON] = 'off';
         Pebble.sendAppMessage(w);
     }
-    reschedulePolling();
     setInterval(function () {
         if (settings.weatherEnabled) fetchWeather();
     }, WEATHER_INTERVAL_MS);
 });
 
-function reschedulePolling() {
-    if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(fetchData, POLL_INTERVAL_MS);
+// ---------- HTTP Helpers ----------
+function httpPing(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.timeout = 4000;
+    xhr.onload = function () {
+        callback(xhr.status === 200);
+    };
+    xhr.onerror = function () { callback(false); };
+    xhr.ontimeout = function () { callback(false); };
+    xhr.send();
 }
 
-// ---------- HTTP Helpers ----------
 function httpGet(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);

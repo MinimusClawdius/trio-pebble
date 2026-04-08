@@ -43,6 +43,7 @@ void trio_demo_preview_apply(AppState *state) {
     strncpy(state->loop.iob, "1.8U", sizeof(state->loop.iob) - 1);
     strncpy(state->loop.cob, "12g", sizeof(state->loop.cob) - 1);
     strncpy(state->loop.last_loop_time, "Loop 2m", sizeof(state->loop.last_loop_time) - 1);
+    state->loop.trio_link[0] = '\0';
     strncpy(state->loop.loop_status, "Enacted", sizeof(state->loop.loop_status) - 1);
     strncpy(state->loop.pump_status, "Pod", sizeof(state->loop.pump_status) - 1);
     state->loop.reservoir = 72;
