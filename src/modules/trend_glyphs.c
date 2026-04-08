@@ -144,7 +144,7 @@ void trio_trend_glyph_draw(GContext *ctx, GRect bounds, const char *utf8, GColor
 
     if (k == TG_TEXT && utf8 && utf8[0]) {
         graphics_context_set_text_color(ctx, s_trend_ink);
-        GFont f = fonts_get_system_font(FONT_KEY_GOTHIC_34);
+        GFont f = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
         graphics_draw_text(ctx, utf8, f, bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
     }
 }
