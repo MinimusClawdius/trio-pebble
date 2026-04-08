@@ -98,6 +98,14 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             }
             graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
+        case COMP_SLOT_IOB:
+            if (state->loop.iob[0] == '\0') {
+                snprintf(buf, sizeof(buf), "--");
+            } else {
+                snprintf(buf, sizeof(buf), "%s", state->loop.iob);
+            }
+            graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            return;
         default:
             return;
     }
@@ -122,7 +130,7 @@ void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConf
 
     for (int i = 0; i < TRIO_COMP_SLOT_COUNT; i++) {
         ComplicationSlotKind k = (ComplicationSlotKind)config->comp_slot[i];
-        if (k > COMP_SLOT_WEATHER) {
+        if (k > COMP_SLOT_IOB) {
             k = COMP_SLOT_NONE;
         }
         GRect cell = GRect(x + i * slot_w, y - 1, slot_w, row_h + 2);

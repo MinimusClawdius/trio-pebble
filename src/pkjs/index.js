@@ -56,9 +56,9 @@ var settings = {
     glucoseUnits: 'mgdl',  // 'mgdl' | 'mmol' — watchface display + threshold entry
     /* Bottom bar left→right; values match watch ComplicationSlotKind */
     compSlot0: 1,
-    compSlot1: 3,
-    compSlot2: 4,
-    compSlot3: 5,
+    compSlot1: 5,
+    compSlot2: 6,
+    compSlot3: 0,
     clock24h: true
 };
 

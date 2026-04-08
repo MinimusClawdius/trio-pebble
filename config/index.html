@@ -198,7 +198,7 @@
 
 <button class="btn btn-save" onclick="saveAndReturn()">Save Settings</button>
 
-<div class="version">Trio Pebble config v2.6 &middot; MinimusClawdius</div>
+<div class="version">Trio Pebble config v2.6.1 &middot; MinimusClawdius</div>
 
 <script>
 var COMP_SLOT_OPTIONS = [
@@ -207,7 +207,8 @@ var COMP_SLOT_OPTIONS = [
     { v: 2, t: 'Phone battery %' },
     { v: 3, t: 'Steps (today)' },
     { v: 4, t: 'Heart rate' },
-    { v: 5, t: 'Weather temperature' }
+    { v: 5, t: 'Weather temperature' },
+    { v: 6, t: 'IOB (Loop / insulin on board)' }
 ];
 function fillCompSlotSelects() {
     for (var s = 0; s < 4; s++) {
@@ -319,9 +320,9 @@ function populateForm() {
     setChecked('weatherEnabled', s.weatherEnabled);
     setValue('weatherUnits', s.weatherUnits);
     setValue('compSlot0', s.compSlot0 !== undefined ? s.compSlot0 : 1);
-    setValue('compSlot1', s.compSlot1 !== undefined ? s.compSlot1 : 3);
-    setValue('compSlot2', s.compSlot2 !== undefined ? s.compSlot2 : 4);
-    setValue('compSlot3', s.compSlot3 !== undefined ? s.compSlot3 : 5);
+    setValue('compSlot1', s.compSlot1 !== undefined ? s.compSlot1 : 5);
+    setValue('compSlot2', s.compSlot2 !== undefined ? s.compSlot2 : 6);
+    setValue('compSlot3', s.compSlot3 !== undefined ? s.compSlot3 : 0);
     toggleSourceFields();
 }
 

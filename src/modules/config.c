@@ -19,9 +19,9 @@ static void set_defaults(void) {
     s_config.is_mmol = false;
     s_config.weather_enabled = true;
     s_config.comp_slot[0] = COMP_SLOT_WATCH_BATTERY;
-    s_config.comp_slot[1] = COMP_SLOT_STEPS;
-    s_config.comp_slot[2] = COMP_SLOT_HEART_RATE;
-    s_config.comp_slot[3] = COMP_SLOT_WEATHER;
+    s_config.comp_slot[1] = COMP_SLOT_WEATHER;
+    s_config.comp_slot[2] = COMP_SLOT_IOB;
+    s_config.comp_slot[3] = COMP_SLOT_NONE;
     s_config.clock_24h = true;
 #if !TRIO_DISPLAY_COLOR
     /* Sky/gradient art is color-first; B&W keeps a clean graph. Temp still available if user enables weather. */
@@ -40,7 +40,7 @@ void config_save(void) {
 
 static void sanitize_comp_slots(void) {
     for (int i = 0; i < TRIO_COMP_SLOT_COUNT; i++) {
-        if (s_config.comp_slot[i] > COMP_SLOT_WEATHER) {
+        if (s_config.comp_slot[i] > COMP_SLOT_IOB) {
             s_config.comp_slot[i] = COMP_SLOT_NONE;
         }
     }
@@ -96,22 +96,22 @@ void config_apply_message(DictionaryIterator *iter) {
     t = dict_find(iter, KEY_CONFIG_COMP_SLOT_0);
     if (t) {
         int32_t v = t->value->int32;
-        s_config.comp_slot[0] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_WEATHER) ? (uint8_t)v : COMP_SLOT_NONE;
+        s_config.comp_slot[0] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_IOB) ? (uint8_t)v : COMP_SLOT_NONE;
     }
     t = dict_find(iter, KEY_CONFIG_COMP_SLOT_1);
     if (t) {
         int32_t v = t->value->int32;
-        s_config.comp_slot[1] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_WEATHER) ? (uint8_t)v : COMP_SLOT_NONE;
+        s_config.comp_slot[1] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_IOB) ? (uint8_t)v : COMP_SLOT_NONE;
     }
     t = dict_find(iter, KEY_CONFIG_COMP_SLOT_2);
     if (t) {
         int32_t v = t->value->int32;
-        s_config.comp_slot[2] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_WEATHER) ? (uint8_t)v : COMP_SLOT_NONE;
+        s_config.comp_slot[2] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_IOB) ? (uint8_t)v : COMP_SLOT_NONE;
     }
     t = dict_find(iter, KEY_CONFIG_COMP_SLOT_3);
     if (t) {
         int32_t v = t->value->int32;
-        s_config.comp_slot[3] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_WEATHER) ? (uint8_t)v : COMP_SLOT_NONE;
+        s_config.comp_slot[3] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_IOB) ? (uint8_t)v : COMP_SLOT_NONE;
     }
 
     t = dict_find(iter, KEY_CONFIG_CLOCK_24H);

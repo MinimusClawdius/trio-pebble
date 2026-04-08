@@ -5,7 +5,7 @@
 // Trio Pebble - Shared Types & Constants
 // ============================================================
 
-#define APP_VERSION "2.6.0"
+#define APP_VERSION "2.6.1"
 #define MAX_GRAPH_POINTS 48
 #define MAX_PREDICTIONS 24
 
@@ -117,7 +117,9 @@ typedef enum {
     COMP_SLOT_PHONE_BATTERY,
     COMP_SLOT_STEPS,
     COMP_SLOT_HEART_RATE,
-    COMP_SLOT_WEATHER
+    COMP_SLOT_WEATHER,
+    /** Loop / pump IOB string (e.g. 45u) — footer matches LOOP watchface spec */
+    COMP_SLOT_IOB = 6
 } ComplicationSlotKind;
 
 #define TRIO_COMP_SLOT_COUNT 4
