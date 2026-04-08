@@ -143,12 +143,15 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     }
 
 #ifdef PBL_COLOR
-    /* Pebble Time 2 / color: muted high / in-range / low bands (no vertical grid). */
-    graphics_context_set_fill_color(ctx, GColorVeryLightYellow);
+    /*
+     * Color targets (Emery etc.): high / in-range / low bands — no vertical grid.
+     * Use only GColor names present in CloudPebble / SDK 3 palette (no GColorVeryLightYellow, etc.).
+     */
+    graphics_context_set_fill_color(ctx, GColorYellow);
     graphics_fill_rect(ctx, GRect(0, 0, w, y_high), 0, GCornerNone);
     graphics_context_set_fill_color(ctx, GColorMintGreen);
     graphics_fill_rect(ctx, GRect(0, y_high, w, y_low - y_high), 0, GCornerNone);
-    graphics_context_set_fill_color(ctx, GColorRoseVale);
+    graphics_context_set_fill_color(ctx, GColorRed);
     graphics_fill_rect(ctx, GRect(0, y_low, w, h - y_low), 0, GCornerNone);
 #endif
 
