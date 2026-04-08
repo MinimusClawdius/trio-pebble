@@ -7,7 +7,7 @@
 ## `package.json`: version, `sdkVersion`, and GitHub import
 
 - **`"version"`** — If CloudPebble import or version display misbehaves with a two-part npm version (e.g. `"2.6"`), use **three-part semver** (e.g. **`"2.7.0"`**).  
-- **Release numbering (this repo)** — Iterate **`2.7.0` → `2.8.0` → `2.9.0` → `3.0.0`** for user-facing drops; the final **`.0`** is a fixed placeholder (patch digit unused unless we adopt patches later). Keep **`APP_VERSION`** in `trio_types.h`, **`package.json`** `"version"`, and the config page footer in sync.  
+- **Release numbering (this repo)** — Iterate **`2.8.0` → `2.9.0` → `3.0.0`** (then `3.1.0`, …) for user-facing drops; the final **`.0`** is a fixed placeholder (patch digit unused unless we adopt patches later). Keep **`APP_VERSION`** in `trio_types.h`, **`package.json`** `"version"`, and the config page footer in sync.  
 - **`pebble.sdkVersion`** — Must match what **your** CloudPebble host uses (check a **new empty project** on the same site). Example that has worked on Rebble-hosted CloudPebble: **`"4.9.148"`** instead of **`"3"`**.  
 - **Trend / extra PNGs** — This repo lists **many** `pebble.resources.media` entries (trend arrows). Keep the **menu icon** only in **one** place (usually CloudPebble **Resources** UI with `pebble.resources.media` as `[]` for that icon **or** only in JSON—never both). Do **not** duplicate **trend** files in the CloudPebble Resources table if they are already in `package.json`.
 

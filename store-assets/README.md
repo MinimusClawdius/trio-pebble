@@ -7,6 +7,8 @@
 
 So: commit **screenshot PNGs here** (optional) for version control and designer handoff, then attach those files when you publish the watchface.
 
+You can also keep listing shots under **`resources/images/store_screenshots/`** (see that folder’s `README.md`) if you prefer them next to other image assets in the repo layout.
+
 ## Simulated graph + BG for screenshots
 
 The firmware can show **fake but realistic** CGM data (graph, glucose, IOB/COB, complications) **without a phone**:

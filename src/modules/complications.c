@@ -1,5 +1,7 @@
 #include "complications.h"
+#include "complication_icons.h"
 #include "platform_compat.h"
+#include <stdio.h>
 
 void complications_init(void) {
     complications_update_battery();
@@ -43,10 +45,28 @@ void complications_apply_message(DictionaryIterator *iter, AppState *state) {
     if (t) state->comp.heart_rate = (int16_t)t->value->int32;
 }
 
+static void slot_icon_text_split(GRect cell, GRect *out_icon, GRect *out_text, bool with_icon) {
+    if (!with_icon) {
+        *out_icon = GRect(cell.origin.x, cell.origin.y, 0, 0);
+        *out_text = cell;
+        return;
+    }
+    int iw = cell.size.w * 46 / 100;
+    if (iw < 22) {
+        iw = 22;
+    }
+    if (iw > cell.size.w - 18) {
+        iw = cell.size.w - 18;
+    }
+    *out_icon = GRect(cell.origin.x, cell.origin.y, iw, cell.size.h);
+    *out_text = GRect(cell.origin.x + iw, cell.origin.y, cell.size.w - iw, cell.size.h);
+}
+
 static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, AppState *state, TrioConfig *config,
                           GColor fg) {
     char buf[24];
     GFont font_main = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+    GFont font_side = fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
     GFont font_aux = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 
     graphics_context_set_text_color(ctx, fg);
@@ -54,21 +74,26 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
     switch (kind) {
         case COMP_SLOT_NONE:
             return;
-        case COMP_SLOT_WATCH_BATTERY:
+        case COMP_SLOT_WATCH_BATTERY: {
+            GRect ir, tr;
+            slot_icon_text_split(cell, &ir, &tr, true);
+            trio_draw_footer_battery_bar(ctx, ir, state->comp.watch_battery, state->comp.watch_charging, fg, config);
             if (state->comp.watch_charging) {
                 snprintf(buf, sizeof(buf), "%d%%+", state->comp.watch_battery);
             } else {
                 snprintf(buf, sizeof(buf), "%d%%", state->comp.watch_battery);
             }
-            graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            graphics_draw_text(ctx, buf, font_side, tr, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
+        }
         case COMP_SLOT_PHONE_BATTERY:
             if (state->comp.phone_battery <= 0) {
                 snprintf(buf, sizeof(buf), "--");
             } else {
                 snprintf(buf, sizeof(buf), "P%d%%", state->comp.phone_battery);
             }
-            graphics_draw_text(ctx, buf, font_aux, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            graphics_draw_text(ctx, buf, font_aux, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+                               NULL);
             return;
         case COMP_SLOT_STEPS: {
             int32_t st = state->comp.steps;
@@ -77,7 +102,8 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d", (int)st);
             }
-            graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+                               NULL);
             return;
         }
         case COMP_SLOT_HEART_RATE:
@@ -86,9 +112,15 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d", state->comp.heart_rate);
             }
-            graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+                               NULL);
             return;
-        case COMP_SLOT_WEATHER:
+        case COMP_SLOT_WEATHER: {
+            GRect ir, tr;
+            slot_icon_text_split(cell, &ir, &tr, true);
+            if (config->weather_enabled && state->comp.weather_icon[0] && state->comp.weather_icon[0] != '\0') {
+                trio_draw_footer_weather_icon(ctx, ir, state->comp.weather_icon, config);
+            }
             if (!config->weather_enabled) {
                 snprintf(buf, sizeof(buf), "off");
             } else if (state->comp.weather_temp == 0) {
@@ -96,30 +128,32 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d°", state->comp.weather_temp);
             }
-            graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            graphics_draw_text(ctx, buf, font_side, tr, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+                               NULL);
             return;
-        case COMP_SLOT_IOB:
+        }
+        case COMP_SLOT_IOB: {
+            GRect ir, tr;
+            slot_icon_text_split(cell, &ir, &tr, true);
+            trio_draw_footer_iob_icon(ctx, ir, fg);
             if (state->loop.iob[0] == '\0') {
                 snprintf(buf, sizeof(buf), "--");
             } else {
                 snprintf(buf, sizeof(buf), "%s", state->loop.iob);
             }
-            graphics_draw_text(ctx, buf, font_main, cell, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            graphics_draw_text(ctx, buf, font_side, tr, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
+        }
         default:
             return;
     }
 }
 
-/*
- * Four equal columns; each maps to comp_slot[0..3] (see phone config HTML).
- * Data: watch battery, phone % (from phone), steps, HR (Health), weather (when enabled + fetched).
- */
 void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConfig *config) {
-    int x = area.origin.x + 2;
+    int x = area.origin.x;
     int y = area.origin.y;
     int row_h = area.size.h;
-    int aw = area.size.w - 4;
+    int aw = area.size.w;
     int slot_w = aw / TRIO_COMP_SLOT_COUNT;
 
 #if TRIO_DISPLAY_COLOR
@@ -133,7 +167,7 @@ void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConf
         if (k > COMP_SLOT_IOB) {
             k = COMP_SLOT_NONE;
         }
-        GRect cell = GRect(x + i * slot_w, y - 1, slot_w, row_h + 2);
+        GRect cell = GRect(x + i * slot_w, y, slot_w, row_h);
         draw_one_slot(ctx, cell, k, state, config, fg);
     }
 }

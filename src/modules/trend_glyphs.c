@@ -124,16 +124,27 @@ void trio_trend_glyph_draw(GContext *ctx, GRect bounds, const char *utf8, GColor
         GRect bi = gbitmap_get_bounds(s_trend_bmp);
         int bw = bi.size.w;
         int bh = bi.size.h;
-        int dx = bounds.origin.x + (bounds.size.w - bw) / 2;
-        int dy = bounds.origin.y + (bounds.size.h - bh) / 2;
-        GRect dest = GRect(dx, dy, bw, bh);
+        /* ~1.4× scale, clamped to layer (LOOP-style large arrow). */
+        int dw = bw * 14 / 10;
+        int dh = bh * 14 / 10;
+        if (dw > bounds.size.w && bw > 0) {
+            dh = dh * bounds.size.w / dw;
+            dw = bounds.size.w;
+        }
+        if (dh > bounds.size.h && dh > 0) {
+            dw = dw * bounds.size.h / dh;
+            dh = bounds.size.h;
+        }
+        int dx = bounds.origin.x + (bounds.size.w - dw) / 2;
+        int dy = bounds.origin.y + (bounds.size.h - dh) / 2;
+        GRect dest = GRect(dx, dy, dw, dh);
         graphics_draw_bitmap_in_rect(ctx, s_trend_bmp, dest);
         return;
     }
 
     if (k == TG_TEXT && utf8 && utf8[0]) {
         graphics_context_set_text_color(ctx, s_trend_ink);
-        GFont f = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+        GFont f = fonts_get_system_font(FONT_KEY_GOTHIC_34);
         graphics_draw_text(ctx, utf8, f, bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
     }
 }

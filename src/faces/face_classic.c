@@ -12,8 +12,8 @@
 #include "../modules/time_display.h"
 #include "../modules/trend_glyphs.h"
 
-#define LOOP_HEADER_H 28
-#define LOOP_HERO_H 46
+#define LOOP_HEADER_H 30
+#define LOOP_HERO_H 54
 #define LOOP_GRAPH_TOP (LOOP_HEADER_H + LOOP_HERO_H)
 
 static TextLayer *s_time, *s_age, *s_glucose;
@@ -47,17 +47,20 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    s_time = make_text(root, GRect(4, 2, w / 2 - 8, LOOP_HEADER_H - 2), FONT_KEY_GOTHIC_28_BOLD,
-                       GTextAlignmentLeft, fg);
-    s_age = make_text(root, GRect(w / 2, 2, w / 2 - 6, LOOP_HEADER_H - 2), FONT_KEY_GOTHIC_14_BOLD,
+    s_time = make_text(root, GRect(0, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentLeft, fg);
+    s_age = make_text(root, GRect(w / 2, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_14_BOLD,
                       GTextAlignmentRight, fg2);
 
-    int gw = w * 58 / 100;
-    s_glucose = make_text(root, GRect(2, LOOP_HEADER_H - 2, gw, LOOP_HERO_H), FONT_KEY_BITHAM_42_BOLD,
-                          GTextAlignmentLeft, fg);
+    int gw = w * 54 / 100;
+#ifdef PBL_COLOR
+    const char *glucose_font = FONT_KEY_ROBOTO_BOLD_SUBSET_49;
+#else
+    const char *glucose_font = FONT_KEY_BITHAM_42_BOLD;
+#endif
+    s_glucose = make_text(root, GRect(0, LOOP_HEADER_H, gw, LOOP_HERO_H), glucose_font, GTextAlignmentLeft, fg);
     text_layer_set_text(s_glucose, "--");
 
-    s_trend_layer = layer_create(GRect(gw, LOOP_HEADER_H, w - gw - 2, LOOP_HERO_H));
+    s_trend_layer = layer_create(GRect(gw, LOOP_HEADER_H, w - gw, LOOP_HERO_H));
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
@@ -65,13 +68,11 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     if (graph_h < 24) {
         graph_h = 24;
     }
-    s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, LOOP_GRAPH_TOP, graph_h));
+    s_graph_layer = layer_create(GRect(0, LOOP_GRAPH_TOP, w, graph_h));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
 
-    s_comp_layer = layer_create(
-        GRect(TRIO_GRAPH_SIDE_INSET, h - COMPLICATIONS_BAR_HEIGHT, w - 2 * TRIO_GRAPH_SIDE_INSET,
-              COMPLICATIONS_BAR_HEIGHT));
+    s_comp_layer = layer_create(GRect(0, h - COMPLICATIONS_BAR_HEIGHT, w, COMPLICATIONS_BAR_HEIGHT));
     layer_set_update_proc(s_comp_layer, comp_proc);
     layer_add_child(root, s_comp_layer);
 }

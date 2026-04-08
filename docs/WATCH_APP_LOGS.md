@@ -1,34 +1,54 @@
-# Capturing watchface logs from Trio (for debugging)
+# Capturing watchface logs (Trio / remote menu debugging)
 
-Trio uses Pebble **`APP_LOG(...)`** in C (e.g. `main.c`, `remote_cmds.c`, `trend_glyphs.c`). To capture lines for analysis:
+Trio logs with **`APP_LOG(...)`** from native C (see `remote_cmds.c`, `main.c`, `trend_glyphs.c`). Filter for **`remote:`** when diagnosing the **UP/DOWN long-press menu**.
 
-## CloudPebble (browser)
+## CloudPebble (easiest)
 
-1. Build and install to a **phone** or **emulator** with the dev bridge active.  
-2. Open the **Compilation** pane.  
-3. Use **Show Phone Logs** (or **Show Emulator Logs** if using QEMU).  
-4. Reproduce the issue (e.g. **long-press UP/DOWN** for the remote menu).  
-5. Copy the log text (filter for `remote:` or `trend:` if you added recent builds).
+1. Build and run on **emulator** or **phone** with the dev connection active.  
+2. **Compilation** (or project) pane → **Show Phone Logs** / **Show Emulator Logs**.  
+3. Reproduce the issue (e.g. long-press **UP** or **DOWN** for the remote menu).  
+4. Copy a **20–40 s** slice of the log.
 
-Logs only appear when the app is running and the bridge is connected.
+## Rebble app on Android
 
-## Local Pebble tool + hardware
+Logs usually appear in **logcat** when the phone is connected via USB with **USB debugging** enabled.
 
-If you use the **Pebble CLI** with a physical watch:
+1. Install [adb](https://developer.android.com/studio/command-line/adb) or use Android Studio **Logcat**.  
+2. Connect the phone, run:  
+   `adb logcat | findstr /i "pebble rebble trio"`  
+   (PowerShell: `adb logcat | Select-String -Pattern "pebble|rebble|trio"`.)  
+3. Open the watchface, trigger the menu, then save the matching lines.
 
-```bash
-pebble install --phone <ip>
-pebble logs --phone <ip>
-```
+Exact process name varies by Rebble build; widening the filter to **`pebble`** helps.
 
-Or enable logging in the phone’s developer / debug UI for the connected app (varies by Rebble app version).
+## Rebble app on iOS
 
-## What to send
+There is no logcat. Options:
 
-- A **short window** around the action (e.g. 10–30 seconds).  
-- Note **watch model** (e.g. Pebble Time 2), **Rebble app** platform (iOS/Android), and **data source** (Trio vs Dexcom vs Nightscout).  
-- For **remote menu**: confirm data source is **Trio** (or Apple Health via Trio); other sources intentionally double-vibe and do not open the menu.
+1. **Xcode → Window → Devices and Simulators** → select the iPhone → **Open Console** while the Rebble app and watchface run.  
+2. Or **macOS Console.app** (search for **Pebble** / **Rebble** / the app name).
 
-## Build with logging enabled
+Apple restricts low-level logs; if nothing appears, rely on **CloudPebble** logs when the project is sideloaded from there, or temporarily add more **`APP_LOG`** lines and rebuild.
 
-`APP_LOG` is included in normal debug-oriented builds; if you ever strip logs, revert that for diagnosis.
+## What the remote menu logs mean
+
+From **`remote_cmds_try_open()`** (`remote_cmds.c`):
+
+| Message | Meaning |
+|--------|---------|
+| `remote: s_watchface NULL` | Window pointer not set (init order bug). |
+| `remote: already in menu/picker` | Menu or amount picker is already on top. |
+| `remote: top=… != watch=…` | Another window is above the watchface (system UI, notification, etc.); menu is **not** pushed so we do not corrupt the stack. |
+| `remote: wrong data_source=… (need Trio)` | Menu only works for **Trio** or **Apple Health via Trio**; other sources double-vibe by design. |
+| `remote: pushing menu` | Menu should open. |
+
+If you see **`top != watch`** while the face looks visible, note **watch model** and **firmware** — some stacks report a different top window than expected.
+
+## Build with logging
+
+`APP_LOG` is enabled in normal release builds. Do not strip logs while diagnosing.
+
+## References
+
+- Rebble C tutorial — **battery / Bluetooth** (patterns similar to our footer battery bar): [Part 3 — Battery Meter and Bluetooth](https://developer.repebble.com/tutorials/watchface-tutorial/part3/).  
+- **Phone ↔ watch** flow and AppMessage: [Part 4 — Adding Weather](https://developer.repebble.com/tutorials/watchface-tutorial/part4/).
