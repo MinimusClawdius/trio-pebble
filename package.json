@@ -1,6 +1,6 @@
 {
   "name": "Trio",
-  "version": "2.14.3",
+  "version": "2.15.0",
   "description": "Premium CGM watchface for Pebble - Trio, Dexcom Share, Nightscout",
   "author": "MinimusClawdius",
   "license": "MIT",
@@ -8,7 +8,7 @@
     "displayName": "Trio Pebble",
     "projectType": "native",
     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "sdkVersion": "4.9.148",
+    "sdkVersion": "3",
     "enableMultiJS": true,
     "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "emery"],
     "watchapp": {
