@@ -12,6 +12,7 @@
 #include "modules/complications.h"
 #include "modules/tap_framework.h"
 #include "modules/remote_cmds.h"
+#include "modules/remote_send_ui.h"
 #include "modules/state_persist.h"
 #include "modules/demo_preview.h"
 #include "modules/trend_normalize.h"
@@ -201,13 +202,15 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     // Complications from phone
     complications_apply_message(iter, &s_state);
 
-    // Command status feedback
+    Tuple *sug = dict_find(iter, KEY_SUGGESTED_BOLUS_TENTHS);
+    bool sug_opens_bolus = sug && sug->value->int32 > 0;
+
     t = dict_find(iter, KEY_CMD_STATUS);
-    if (t) {
+    if (t && t->type == TUPLE_CSTRING) {
         APP_LOG(APP_LOG_LEVEL_INFO, "Cmd status: %s", t->value->cstring);
+        remote_send_ui_on_cmd_status(t->value->cstring, sug_opens_bolus);
     }
 
-    Tuple *sug = dict_find(iter, KEY_SUGGESTED_BOLUS_TENTHS);
     if (sug) {
         int32_t tenths = sug->value->int32;
         if (tenths > 0) {
@@ -243,6 +246,7 @@ static void outbox_sent(DictionaryIterator *iter, void *context) {
 static void outbox_failed(DictionaryIterator *iter, AppMessageResult reason, void *context) {
     (void)iter; (void)context;
     APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox failed: %d", reason);
+    remote_send_ui_on_outbox_failed();
 }
 
 // ---------- Timer & Tick ----------

@@ -1,4 +1,5 @@
 #include "remote_cmds.h"
+#include "remote_send_ui.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -18,16 +19,15 @@ static TextLayer *s_pick_hint;
 static int32_t s_pick_cmd_type;
 static int32_t s_pick_amount;
 
-static void send_watch_command(int32_t cmd_type, int32_t amount) {
+void remote_cmds_send_to_phone(int32_t cmd_type, int32_t amount) {
     DictionaryIterator *iter;
     if (app_message_outbox_begin(&iter) != APP_MSG_OK) {
-        vibes_double_pulse();
+        remote_send_ui_on_prepare_send_failed();
         return;
     }
     dict_write_int32(iter, KEY_CMD_TYPE, cmd_type);
     dict_write_int32(iter, KEY_CMD_AMOUNT, amount);
     app_message_outbox_send();
-    vibes_short_pulse();
 }
 
 static void picker_refresh_value_text(void) {
@@ -50,8 +50,7 @@ static void picker_back_handler(ClickRecognizerRef recognizer, void *context) {
 static void picker_select_handler(ClickRecognizerRef recognizer, void *context) {
     (void)recognizer;
     (void)context;
-    send_watch_command(s_pick_cmd_type, s_pick_amount);
-    window_stack_pop(true);
+    remote_send_ui_push_confirm(s_pick_cmd_type, s_pick_amount);
 }
 
 static void picker_up_handler(ClickRecognizerRef recognizer, void *context) {
@@ -114,7 +113,7 @@ static void pick_window_load(Window *window) {
     text_layer_set_background_color(s_pick_hint, GColorClear);
     text_layer_set_text_alignment(s_pick_hint, GTextAlignmentCenter);
     text_layer_set_font(s_pick_hint, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-    text_layer_set_text(s_pick_hint, "UP/DOWN adjust\nSELECT send");
+    text_layer_set_text(s_pick_hint, "UP/DOWN adjust\nSELECT review");
     layer_add_child(root, text_layer_get_layer(s_pick_hint));
 
     window_set_click_config_provider(window, picker_click_config);
@@ -227,8 +226,9 @@ void remote_cmds_try_open(AppState *state) {
      * the top window pointer can differ from the watchface we created even while the face is
      * visible — that check prevented the remote menu from ever opening. */
     if ((s_menu_window && window_stack_contains_window(s_menu_window)) ||
-        (s_pick_window && window_stack_contains_window(s_pick_window))) {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "remote: already in menu/picker");
+        (s_pick_window && window_stack_contains_window(s_pick_window)) ||
+        remote_send_ui_blocks_remote()) {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "remote: already in menu/picker/send UI");
         return;
     }
 
