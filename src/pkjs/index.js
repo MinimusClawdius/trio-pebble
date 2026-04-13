@@ -42,8 +42,9 @@ var K = {
     CONFIG_COMP_SLOT_2: 39, CONFIG_COMP_SLOT_3: 40,
     CONFIG_CLOCK_24H: 41,
     CONFIG_GRAPH_SCALE_MODE: 42,
-    CONFIG_GRAPH_TIME_RANGE: 43,
-    TRIO_LINK: 44
+    CONFIG_    GRAPH_TIME_RANGE: 43,
+    TRIO_LINK: 44,
+    SUGGESTED_BOLUS_TENTHS: 45
 };
 
 // ---------- Settings ----------
@@ -647,6 +648,52 @@ function payloadGet(p, keyNum) {
     return undefined;
 }
 
+function trioStatusFromHttpResponse(resp, fallbackOk) {
+    if (resp == null) {
+        return 'Trio unreachable';
+    }
+    try {
+        var r = JSON.parse(resp || '{}');
+        if (r.status === 'delivered') {
+            if (r.type === 'carbEntry') {
+                return 'Carbs saved';
+            }
+            if (r.type === 'bolus') {
+                return 'Bolus sent';
+            }
+        }
+        return r.message || r.status || fallbackOk;
+    } catch (e) {
+        return fallbackOk;
+    }
+}
+
+function sendCarbsThenSuggestBolus(amountGrams) {
+    var host = settings.trioHost;
+    var recUrl = host + '/api/pebble/v1/bolus_recommendation?grams=' + encodeURIComponent(amountGrams);
+    httpGet(recUrl, function (recBody) {
+        var tenths = 0;
+        if (recBody) {
+            try {
+                var jr = JSON.parse(recBody);
+                if (typeof jr.recommendedUnitsTenths === 'number') {
+                    tenths = jr.recommendedUnitsTenths | 0;
+                }
+            } catch (e1) { /* ignore */ }
+        }
+        var carbBody = JSON.stringify({ grams: amountGrams, absorptionHours: 3 });
+        httpPost(host + '/api/carbs', carbBody, function (resp) {
+            var statusMsg = trioStatusFromHttpResponse(resp, 'Sent');
+            var msg = {};
+            msg[K.CMD_STATUS] = statusMsg.substring(0, 63);
+            if (tenths > 0) {
+                msg[K.SUGGESTED_BOLUS_TENTHS] = tenths;
+            }
+            Pebble.sendAppMessage(msg);
+        });
+    });
+}
+
 function sendCommand(type, amount) {
     if (settings.dataSource !== 0 && settings.dataSource !== 3) {
         var msg = {};
@@ -655,22 +702,16 @@ function sendCommand(type, amount) {
         return;
     }
 
-    var endpoint = type === 1 ? '/api/bolus' : '/api/carbs';
-    var body = type === 1
-        ? JSON.stringify({ units: amount / 10.0 })
-        : JSON.stringify({ grams: amount, absorptionHours: 3 });
+    if ((type | 0) === 2) {
+        sendCarbsThenSuggestBolus(amount | 0);
+        return;
+    }
+
+    var endpoint = '/api/bolus';
+    var body = JSON.stringify({ units: amount / 10.0 });
 
     httpPost(settings.trioHost + endpoint, body, function (resp) {
-        var statusMsg;
-        if (resp == null) {
-            statusMsg = 'Trio unreachable';
-        } else {
-            statusMsg = 'Sent';
-            try {
-                var r = JSON.parse(resp || '{}');
-                statusMsg = r.message || r.status || statusMsg;
-            } catch (e) { /* ok */ }
-        }
+        var statusMsg = trioStatusFromHttpResponse(resp, 'Sent');
         var msg = {};
         msg[K.CMD_STATUS] = statusMsg.substring(0, 63);
         Pebble.sendAppMessage(msg);
@@ -761,7 +802,7 @@ Pebble.addEventListener('appmessage', function (e) {
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble pkjs v2.14 (ping + adaptive poll) ready');
+    console.log('Trio Pebble pkjs v2.16 (direct delivery + carb bolus hint) ready');
     loadSettings();
 
     var msg = {};

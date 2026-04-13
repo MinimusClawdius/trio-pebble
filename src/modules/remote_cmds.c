@@ -106,14 +106,15 @@ static void pick_window_load(Window *window) {
     s_pick_value = text_layer_create(GRect(0, 48, b.size.w, 44));
     text_layer_set_background_color(s_pick_value, GColorClear);
     text_layer_set_text_alignment(s_pick_value, GTextAlignmentCenter);
-    text_layer_set_font(s_pick_value, fonts_get_system_font(FONT_KEY_BITHAM_34_MEDIUM_NUMBERS));
+    /* BITHAM_34_MEDIUM_NUMBERS has no "U" / "g" — use Gothic so units render (fixes "XX" tofu). */
+    text_layer_set_font(s_pick_value, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
     layer_add_child(root, text_layer_get_layer(s_pick_value));
 
     s_pick_hint = text_layer_create(GRect(8, b.size.h - 44, b.size.w - 16, 40));
     text_layer_set_background_color(s_pick_hint, GColorClear);
     text_layer_set_text_alignment(s_pick_hint, GTextAlignmentCenter);
     text_layer_set_font(s_pick_hint, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-    text_layer_set_text(s_pick_hint, "UP/DOWN adjust\nSELECT send (confirm iPhone)");
+    text_layer_set_text(s_pick_hint, "UP/DOWN adjust\nSELECT send");
     layer_add_child(root, text_layer_get_layer(s_pick_hint));
 
     window_set_click_config_provider(window, picker_click_config);
@@ -128,13 +129,10 @@ static void pick_window_unload(Window *window) {
     s_pick_title = s_pick_value = s_pick_hint = NULL;
 }
 
-static void open_amount_picker(int32_t cmd_type) {
+/** Push bolus (1) or carb (2) amount picker with initial amount. */
+static void push_amount_picker(int32_t cmd_type, int32_t amount) {
     s_pick_cmd_type = cmd_type;
-    if (cmd_type == 1) {
-        s_pick_amount = 20;
-    } else {
-        s_pick_amount = 15;
-    }
+    s_pick_amount = amount;
 
     if (!s_pick_window) {
         s_pick_window = window_create();
@@ -144,6 +142,27 @@ static void open_amount_picker(int32_t cmd_type) {
         });
     }
     window_stack_push(s_pick_window, true);
+}
+
+static void open_amount_picker(int32_t cmd_type) {
+    if (cmd_type == 1) {
+        push_amount_picker(1, 20);
+    } else {
+        push_amount_picker(2, 15);
+    }
+}
+
+void remote_cmds_open_bolus_picker_preset(int32_t tenths) {
+    if (tenths < 1) {
+        return;
+    }
+    if (s_pick_window && window_stack_contains_window(s_pick_window)) {
+        s_pick_cmd_type = 1;
+        s_pick_amount = tenths;
+        picker_refresh_value_text();
+        return;
+    }
+    push_amount_picker(1, tenths);
 }
 
 static void menu_select_cb(int index, void *context) {
@@ -162,12 +181,12 @@ static void menu_window_load(Window *window) {
 
     s_menu_items[0] = (SimpleMenuItem){
         .title = "Remote bolus",
-        .subtitle = "0.1 U steps",
+        .subtitle = "0.1 U",
         .callback = menu_select_cb,
     };
     s_menu_items[1] = (SimpleMenuItem){
         .title = "Remote carbs",
-        .subtitle = "5 g steps",
+        .subtitle = "5 g",
         .callback = menu_select_cb,
     };
     s_menu_items[2] = (SimpleMenuItem){
@@ -177,7 +196,7 @@ static void menu_window_load(Window *window) {
     };
 
     s_menu_section = (SimpleMenuSection){
-        .title = "Trio (phone confirms)",
+        .title = "Trio remote",
         .num_items = REMOTE_MENU_ITEMS,
         .items = s_menu_items,
     };

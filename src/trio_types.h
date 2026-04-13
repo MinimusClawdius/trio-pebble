@@ -5,7 +5,7 @@
 // Trio Pebble - Shared Types & Constants
 // ============================================================
 
-#define APP_VERSION "2.15.0"
+#define APP_VERSION "2.16.0"
 #define MAX_GRAPH_POINTS 48
 #define MAX_PREDICTIONS 24
 
@@ -61,6 +61,8 @@ typedef enum {
     KEY_CONFIG_GRAPH_TIME_RANGE,
     /** PebbleKit JS: short Trio/HTTP status (e.g. "No phone"); cleared on CGM update */
     KEY_TRIO_LINK,
+    /** After carb POST, pkjs may send recommended bolus in tenths U to open the bolus picker (Trio HTTP). */
+    KEY_SUGGESTED_BOLUS_TENTHS,
     KEY_COUNT
 } AppMessageKey;
 

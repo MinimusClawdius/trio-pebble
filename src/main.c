@@ -207,6 +207,13 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
         APP_LOG(APP_LOG_LEVEL_INFO, "Cmd status: %s", t->value->cstring);
     }
 
+    Tuple *sug = dict_find(iter, KEY_SUGGESTED_BOLUS_TENTHS);
+    if (sug) {
+        int32_t tenths = sug->value->int32;
+        if (tenths > 0) {
+            remote_cmds_open_bolus_picker_preset(tenths);
+        }
+    }
     /* Successful CGM snapshot clears JS link warning */
     if (dict_find(iter, KEY_GLUCOSE)) {
         s_state.loop.trio_link[0] = '\0';
