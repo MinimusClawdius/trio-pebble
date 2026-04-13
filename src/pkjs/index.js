@@ -182,9 +182,9 @@ function trioInferSourceIsMmol(unitsStr, glucoseRaw, historyArr) {
 
 function dexcomTrendToArrow(trend) {
     var map = {
-        'DoubleUp': '↑↑', 'SingleUp': '↑', 'FortyFiveUp': '↗',
+        'TripleUp': '↑↑', 'DoubleUp': '↑↑', 'SingleUp': '↑', 'FortyFiveUp': '↗',
         'Flat': '→', 'FortyFiveDown': '↘', 'SingleDown': '↓',
-        'DoubleDown': '↓↓', 'None': '--', 'NotComputable': '?',
+        'DoubleDown': '↓↓', 'TripleDown': '↓↓', 'None': '--', 'NotComputable': '?',
         'RateOutOfRange': '⚠'
     };
     if (typeof trend === 'number') {
@@ -211,10 +211,12 @@ function trioTrendToArrow(raw) {
         flat: 'Flat',
         singleup: 'SingleUp',
         doubleup: 'DoubleUp',
+        tripleup: 'TripleUp',
         fortyfiveup: 'FortyFiveUp',
         fortyfivedown: 'FortyFiveDown',
         singledown: 'SingleDown',
         doubledown: 'DoubleDown',
+        tripledown: 'TripleDown',
         none: 'None',
         notcomputable: 'NotComputable',
         rateoutofrange: 'RateOutOfRange',
@@ -247,11 +249,13 @@ function normalizeTrio(data) {
     var pump = data.pump || {};
     var reservoir = 0;
     var pumpBattery = 0;
-    if (pump.reservoir != null && pump.reservoir !== '') {
-        reservoir = Math.round(Number(pump.reservoir));
+    var resNum = Number(pump.reservoir);
+    if (isFinite(resNum) && resNum >= 0) {
+        reservoir = Math.round(resNum);
     }
-    if (pump.battery != null && pump.battery !== '') {
-        pumpBattery = Math.round(Number(pump.battery));
+    var batNum = Number(pump.battery);
+    if (isFinite(batNum) && batNum >= 0) {
+        pumpBattery = Math.round(batNum);
     }
 
     var gNum = trioParseGlucoseNumber(cgm.glucose);
@@ -555,8 +559,14 @@ function sendToWatch(data) {
     if (data.sensorAge) msg[K.SENSOR_AGE] = data.sensorAge.substring(0, 15);
 
     msg[K.GLUCOSE_STALE] = data.isStale ? 1 : 0;
-    if (data.reservoir) msg[K.RESERVOIR] = data.reservoir;
-    if (data.pumpBattery) msg[K.PUMP_BATTERY] = data.pumpBattery;
+    var resN = Number(data.reservoir);
+    if (isFinite(resN) && resN >= 0) {
+        msg[K.RESERVOIR] = Math.round(resN);
+    }
+    var batN = Number(data.pumpBattery);
+    if (isFinite(batN) && batN >= 0) {
+        msg[K.PUMP_BATTERY] = Math.round(batN);
+    }
 
     // Graph: mg/dL uint16 LE (already converted in normalizeTrio)
     var history = downsampleGraphHistory(data.history || [], GRAPH_SEND_MAX);

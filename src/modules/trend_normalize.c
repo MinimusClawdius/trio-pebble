@@ -90,6 +90,10 @@ void trio_normalize_trend_str(char *buf, size_t cap) {
         set_out(ARR_UU, buf, cap);
         return;
     }
+    if (strcmp(key, "tripleup") == 0) {
+        set_out(ARR_UU, buf, cap);
+        return;
+    }
     if (strcmp(key, "fortyfiveup") == 0) {
         set_out(ARR_UR, buf, cap);
         return;
@@ -99,6 +103,10 @@ void trio_normalize_trend_str(char *buf, size_t cap) {
         return;
     }
     if (strcmp(key, "doubledown") == 0) {
+        set_out(ARR_DD, buf, cap);
+        return;
+    }
+    if (strcmp(key, "tripledown") == 0) {
         set_out(ARR_DD, buf, cap);
         return;
     }
