@@ -33,10 +33,7 @@
         { "type": "png", "name": "TRIO_TREND_DOUBLE_DOWN", "file": "images/trend_double_down.png" },
         { "type": "png", "name": "TRIO_TREND_DOUBLE_DOWN_BLACK", "file": "images/trend_double_down_black.png" },
         { "type": "png", "name": "TRIO_TREND_NONE", "file": "images/trend_none.png" },
-        { "type": "png", "name": "TRIO_TREND_NONE_BLACK", "file": "images/trend_none_black.png" },
-        { "type": "png", "name": "REMOTE_DIALOG_TICK", "file": "images/remote_dialog_tick.png", "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "emery"] },
-        { "type": "png", "name": "REMOTE_DIALOG_CROSS", "file": "images/remote_dialog_cross.png", "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "emery"] },
-        { "type": "png", "name": "REMOTE_DIALOG_CONFIRM", "file": "images/remote_dialog_confirm.png", "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "emery"] }
+        { "type": "png", "name": "TRIO_TREND_NONE_BLACK", "file": "images/trend_none_black.png" }
       ]
     },
     "messageKeys": {

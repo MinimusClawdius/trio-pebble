@@ -14,8 +14,5 @@
 void remote_cmds_set_watchface_window(Window *watchface);
 void remote_cmds_try_open(AppState *state);
 
-/** AppMessage to phone: remote command (used by remote_send_ui after confirm). */
-void remote_cmds_send_to_phone(int32_t cmd_type, int32_t amount);
-
 /** After carbs, phone JS may send KEY_SUGGESTED_BOLUS_TENTHS to open bolus picker pre-filled (Loop-style). */
 void remote_cmds_open_bolus_picker_preset(int32_t tenths);
