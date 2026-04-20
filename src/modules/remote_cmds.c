@@ -1,4 +1,5 @@
 #include "remote_cmds.h"
+#include "bolus_loading.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -28,6 +29,11 @@ static void send_watch_command(int32_t cmd_type, int32_t amount) {
     dict_write_int32(iter, KEY_CMD_AMOUNT, amount);
     app_message_outbox_send();
     vibes_short_pulse();
+
+    /* If it's a bolus command (1), show the loading animation */
+    if (cmd_type == 1) {
+        bolus_loading_show();
+    }
 }
 
 static void picker_refresh_value_text(void) {

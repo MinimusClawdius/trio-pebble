@@ -12,6 +12,7 @@
 #include "modules/complications.h"
 #include "modules/tap_framework.h"
 #include "modules/remote_cmds.h"
+#include "modules/bolus_loading.h"
 #include "modules/state_persist.h"
 #include "modules/demo_preview.h"
 #include "modules/trend_normalize.h"
@@ -205,6 +206,8 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     t = dict_find(iter, KEY_CMD_STATUS);
     if (t) {
         APP_LOG(APP_LOG_LEVEL_INFO, "Cmd status: %s", t->value->cstring);
+        /* Dismiss loading screen if a command status is received */
+        bolus_loading_hide();
     }
 
     Tuple *sug = dict_find(iter, KEY_SUGGESTED_BOLUS_TENTHS);
