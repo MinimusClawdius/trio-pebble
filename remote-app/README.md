@@ -1,18 +1,61 @@
-# Trio Remote (inside `trio-pebble` monorepo)
+# Trio Pebble Remote App
 
-This folder is the **Trio Remote** watch app for **local `pebble build`** next to the watchface.
+Companion watch app for the Trio Pebble CGM watchface. Use hardware buttons to send bolus/carb commands to Trio.
 
-**CloudPebble:** there is no way to point a project at this subfolder. Use a **second GitHub repository** — **`trio-pebble-remote`** — and import **that** repo in CloudPebble. See the parent [README.md](../README.md) and [docs/CLOUDPEBBLE_AND_DEPLOY.md](../docs/CLOUDPEBBLE_AND_DEPLOY.md).
+## Quick Start
 
-After editing here, sync the standalone repo (sibling folder):
+### Prerequisites
+- Pebble SDK 3 installed ([CloudPebble](https://cloudpebble.net) or local SDK)
+- Pebble watch connected
+- Phone with Rebble app
 
-`pwsh -File ../trio-pebble/scripts/sync-trio-pebble-remote.ps1`
-
-Then add **`resources/images/menu_icon.png`** in `trio-pebble-remote` if you only synced sources.
-
-## Local build
+### Local Build (No Docker)
 
 ```bash
+cd /home/jt/.openclaw/workspace/trio-pebble/remote-app
 pebble build
-pebble install --phone <ip>
+pebble install --phone <your-phone-ip>
 ```
+
+**Build output:** Creates `trio-pebble-remote.zip` for installation.
+
+### CloudPebble Build
+
+1. Go to [CloudPebble](https://cloudpebble.net)
+2. Import: `https://github.com/MinimusClawdius/trio-pebble-remote`
+3. Enable capabilities: **Configurable**, **Uses health**, **Uses location**
+4. Build and install
+
+## Installation
+
+After building:
+1. Open Rebble app on your phone
+2. Select your Pebble watch
+3. Find "Trio Remote" in the project list
+4. Install the `.zip` file
+
+## Usage
+
+- **UP/DOWN buttons:** Navigate menu
+- **SELECT (double-tap):** Confirm action
+- **BACK:** Exit
+
+Assign Trio Remote to a Quick Launch shortcut on your watch for quick access.
+
+## Architecture
+
+- `main.c` - App lifecycle and menu logic
+- `remote_menu.c/.h` - Bolus/carb menu implementation
+- `pkjs/` - PebbleKit JS for data fetching
+
+## Configuration
+
+- Menu icon: `resources/images/menu_icon.png` (25×25px PNG)
+- UUID: `fdd1d4b6-f2f2-4819-a26b-8ccad4264feb`
+- SDK version: 3
+
+## Notes
+
+- Only works with **Trio** as the data source
+- iPhone confirmation required for bolus commands
+- Not available with Dexcom Share or Nightscout
