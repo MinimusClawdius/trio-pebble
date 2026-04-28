@@ -208,6 +208,8 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
         APP_LOG(APP_LOG_LEVEL_INFO, "Cmd status: %s", t->value->cstring);
         /* Dismiss loading screen if a command status is received */
         bolus_loading_hide();
+        /* Also notify remote_cmds module for status display */
+        remote_cmds_set_status(t->value->cstring);
     }
 
     Tuple *sug = dict_find(iter, KEY_SUGGESTED_BOLUS_TENTHS);

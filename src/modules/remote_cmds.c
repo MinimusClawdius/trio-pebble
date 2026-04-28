@@ -2,6 +2,7 @@
 #include "bolus_loading.h"
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 
 static Window *s_watchface;
 static Window *s_menu_window;
@@ -19,6 +20,41 @@ static TextLayer *s_pick_hint;
 static int32_t s_pick_cmd_type;
 static int32_t s_pick_amount;
 
+/** Last command status message received from phone. */
+static char s_last_status[64] = "";
+static bool s_command_pending = false;
+
+/** Set the command status to display. */
+void remote_cmds_set_status(const char *status) {
+    if (!status) {
+        s_last_status[0] = '\0';
+        return;
+    }
+    strncpy(s_last_status, status, sizeof(s_last_status) - 1);
+    s_last_status[sizeof(s_last_status) - 1] = '\0';
+    s_command_pending = false;
+
+    /* Refresh the menu window if it's visible to show the new status */
+    if (s_menu_window && window_stack_contains_window(s_menu_window)) {
+        simple_menu_layer_set_sections(s_menu_layer, &s_menu_section, 1);
+    }
+}
+
+/** Get the current command status. */
+const char *remote_cmds_get_status(void) {
+    return s_last_status;
+}
+
+/** Mark a command as pending. */
+void remote_cmds_command_pending(void) {
+    s_command_pending = true;
+}
+
+/** Check if a command is waiting for status. */
+bool remote_cmds_is_command_pending(void) {
+    return s_command_pending;
+}
+
 static void send_watch_command(int32_t cmd_type, int32_t amount) {
     DictionaryIterator *iter;
     if (app_message_outbox_begin(&iter) != APP_MSG_OK) {
@@ -29,6 +65,10 @@ static void send_watch_command(int32_t cmd_type, int32_t amount) {
     dict_write_int32(iter, KEY_CMD_AMOUNT, amount);
     app_message_outbox_send();
     vibes_short_pulse();
+
+    /* Mark command as pending and clear previous status */
+    s_command_pending = true;
+    s_last_status[0] = '\0';
 
     /* If it's a bolus command (1), show the loading animation */
     if (cmd_type == 1) {
@@ -45,6 +85,13 @@ static void picker_refresh_value_text(void) {
         snprintf(buf, sizeof(buf), "%ld g", (long)s_pick_amount);
     }
     text_layer_set_text(s_pick_value, buf);
+
+    /* Update hint text if command is pending */
+    if (s_command_pending) {
+        text_layer_set_text(s_pick_hint, "Waiting for Trio...");
+    } else {
+        text_layer_set_text(s_pick_hint, "UP/DOWN adjust\nSELECT send");
+    }
 }
 
 static void picker_back_handler(ClickRecognizerRef recognizer, void *context) {
@@ -56,6 +103,8 @@ static void picker_back_handler(ClickRecognizerRef recognizer, void *context) {
 static void picker_select_handler(ClickRecognizerRef recognizer, void *context) {
     (void)recognizer;
     (void)context;
+    /* Mark as pending BEFORE sending so status updates properly */
+    s_command_pending = true;
     send_watch_command(s_pick_cmd_type, s_pick_amount);
     window_stack_pop(true);
 }
@@ -120,7 +169,7 @@ static void pick_window_load(Window *window) {
     text_layer_set_background_color(s_pick_hint, GColorClear);
     text_layer_set_text_alignment(s_pick_hint, GTextAlignmentCenter);
     text_layer_set_font(s_pick_hint, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-    text_layer_set_text(s_pick_hint, "UP/DOWN adjust\nSELECT send");
+    text_layer_set_text(s_pick_hint, s_command_pending ? "Waiting for Trio..." : "UP/DOWN adjust\nSELECT send");
     layer_add_child(root, text_layer_get_layer(s_pick_hint));
 
     window_set_click_config_provider(window, picker_click_config);
@@ -196,8 +245,8 @@ static void menu_window_load(Window *window) {
         .callback = menu_select_cb,
     };
     s_menu_items[2] = (SimpleMenuItem){
-        .title = "Cancel",
-        .subtitle = NULL,
+        .title = s_command_pending ? "Waiting..." : "Cancel",
+        .subtitle = s_last_status[0] ? s_last_status : NULL,
         .callback = menu_select_cb,
     };
 

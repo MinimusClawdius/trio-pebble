@@ -16,3 +16,15 @@ void remote_cmds_try_open(AppState *state);
 
 /** After carbs, phone JS may send KEY_SUGGESTED_BOLUS_TENTHS to open bolus picker pre-filled (Loop-style). */
 void remote_cmds_open_bolus_picker_preset(int32_t tenths);
+
+/** Set the command status to display (called from main.c when KEY_CMD_STATUS received). */
+void remote_cmds_set_status(const char *status);
+
+/** Get the current command status. */
+const char *remote_cmds_get_status(void);
+
+/** Mark a command as pending. */
+void remote_cmds_command_pending(void);
+
+/** Check if a command is waiting for status. */
+bool remote_cmds_is_command_pending(void);
