@@ -1,7 +1,7 @@
 #include "config.h"
 #include "platform_compat.h"
 
-#define CONFIG_KEY 0x54726F39u  /* v9: graph_time_range; TrioConfig grew */
+#define CONFIG_KEY 0x54726F3Au  /* v10: graph_smooth, header_size */
 
 static TrioConfig s_config;
 
@@ -25,6 +25,8 @@ static void set_defaults(void) {
     s_config.clock_24h = true;
     s_config.graph_scale_mode = GRAPH_SCALE_AUTO;
     s_config.graph_time_range = GRAPH_TIME_3H;
+    s_config.graph_smooth = false;
+    s_config.header_size = 0;  /* 0 small */
 #if !TRIO_DISPLAY_COLOR
     /* Sky/gradient art is color-first; B&W keeps a clean graph. Temp still available if user enables weather. */
     s_config.color_scheme = COLOR_SCHEME_HIGH_CONTRAST;
@@ -66,6 +68,7 @@ void config_load(void) {
         sanitize_comp_slots();
         sanitize_graph_scale_mode();
         sanitize_graph_time_range();
+        if (s_config.header_size > 2) s_config.header_size = 1;
     }
 }
 
@@ -145,8 +148,18 @@ void config_apply_message(DictionaryIterator *iter) {
         s_config.graph_time_range = (v >= GRAPH_TIME_3H && v <= GRAPH_TIME_24H) ? (uint8_t)v : GRAPH_TIME_3H;
     }
 
+    t = dict_find(iter, KEY_CONFIG_GRAPH_SMOOTH);
+    if (t) s_config.graph_smooth = t->value->int32 != 0;
+
+    t = dict_find(iter, KEY_CONFIG_HEADER_SIZE);
+    if (t) {
+        int32_t v = t->value->int32;
+        s_config.header_size = (v >= 0 && v <= 2) ? (uint8_t)v : 0;
+    }
+
     sanitize_graph_scale_mode();
     sanitize_graph_time_range();
+    if (s_config.header_size > 2) s_config.header_size = 1;
     config_save();
 }
 

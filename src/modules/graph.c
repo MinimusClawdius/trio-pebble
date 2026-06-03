@@ -301,7 +301,7 @@ void graph_draw(Layer *layer, GContext *ctx, TrioConfig *config) {
     }
 
     graphics_context_set_stroke_color(ctx, ink);
-    graphics_context_set_stroke_width(ctx, 2);
+    graphics_context_set_stroke_width(ctx, config->graph_smooth ? 3 : 2);
     for (int i = 1; i < s_count; i++) {
         int x0 = graph_x_for_point(i - 1, w, s_count);
         int y0 = map_y_sc(s_values[i - 1], h, g_min, g_max);

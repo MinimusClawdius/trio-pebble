@@ -36,19 +36,23 @@ void face_minimal_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = light ? GColorDarkGray : GColorLightGray;
 
-    // Glucose above — prominent
-    s_glucose = make_text(root, GRect(0, h / 2 - 66, w, 28), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter, fg);
+    int center_y = h / 2;
+    int top_h = trio_hero_height(bounds);
+    int trend_sz = trio_trend_size(bounds);
+
+    // Glucose above — prominent, adaptive
+    s_glucose = make_text(root, GRect(0, center_y - top_h, w, top_h), trio_glucose_font(TRIO_DISPLAY_COLOR), GTextAlignmentCenter, fg);
     text_layer_set_text(s_glucose, "--");
 
     /* Large clock (SIMPLE CGM–style): full width for 12h + AM/PM */
-    s_time = make_text(root, GRect(4, h / 2 - 34, w - 8, 36), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter, fg);
+    s_time = make_text(root, GRect(4, center_y - top_h/2, w - 8, top_h), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter, fg);
 
-    s_trend_layer = layer_create(GRect(w / 2 - 40, h / 2 + 8, 36, 34));
+    s_trend_layer = layer_create(GRect(w / 2 - trend_sz/2, center_y + 4, trend_sz, trend_sz));
     layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
-    s_delta = make_text(root, GRect(w / 2 + 4, h / 2 + 12, w / 2 - 12, 22), FONT_KEY_GOTHIC_18, GTextAlignmentLeft, fg2);
+    s_delta = make_text(root, GRect(w / 2 + trend_sz/2 + 4, center_y + 8, w / 2 - trend_sz/2 - 8, 22), FONT_KEY_GOTHIC_18, GTextAlignmentLeft, fg2);
 
     // Thin sparkline at bottom
     s_sparkline_layer = layer_create(trio_graph_layer_bounds(bounds, h - 30, 24));

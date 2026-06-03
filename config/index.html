@@ -84,6 +84,23 @@
     <option value="3">24 hours</option>
   </select>
   <p class="data-source-note">The phone fetches CGM history for this window and sends up to 48 points to the watch (evenly sampled). Wider windows use coarser effective resolution.</p>
+  <label>Graph line style</label>
+  <div class="toggle-row">
+    <span class="toggle-label-text">Smooth graph lines (all faces)</span>
+    <label class="toggle-switch" for="graphSmooth">
+      <input type="checkbox" id="graphSmooth">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <p class="data-source-note">Draws slightly thicker lines for a smoother appearance (no true curves on Pebble hardware).</p>
+
+  <label>Header &amp; footer text size (classic layout)</label>
+  <select id="headerSize">
+    <option value="0">Small (default, fits more)</option>
+    <option value="1">Medium</option>
+    <option value="2">Large (easier to read on Pebble Time 2)</option>
+  </select>
+
   <label>Show glucose on watch as</label>
   <select id="glucoseUnits" onfocus="this.dataset.prevUnit=this.value" onchange="onGlucoseUnitsChange()">
     <option value="mmol">mmol/L (one decimal)</option>
@@ -313,6 +330,8 @@ function populateForm() {
     setChecked('clock24h', s.clock24h !== false);
     setValue('graphScaleMode', s.graphScaleMode !== undefined ? s.graphScaleMode : 0);
     setValue('graphTimeRange', s.graphTimeRange !== undefined ? s.graphTimeRange : 0);
+    setChecked('graphSmooth', s.graphSmooth !== undefined ? s.graphSmooth : false);
+    setValue('headerSize', s.headerSize !== undefined ? s.headerSize : 0);
     setValue('dataSource', s.dataSource !== undefined ? s.dataSource : 0);
     setValue('trioHost', s.trioHost);
     setValue('nightscoutUrl', s.nightscoutUrl);
@@ -348,6 +367,8 @@ function saveAndReturn() {
         clock24h: boolVal('clock24h'),
         graphScaleMode: intVal('graphScaleMode'),
         graphTimeRange: intVal('graphTimeRange'),
+        graphSmooth: checkedVal('graphSmooth'),
+        headerSize: intVal('headerSize'),
         dataSource: intVal('dataSource'),
         trioHost: strVal('trioHost'),
         nightscoutUrl: strVal('nightscoutUrl'),

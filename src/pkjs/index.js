@@ -74,7 +74,9 @@ var settings = {
     compSlot3: 0,
     clock24h: true,
     graphScaleMode: 0,
-    graphTimeRange: 0
+    graphTimeRange: 0,
+    graphSmooth: false,
+    headerSize: 0  /* 0 small, 1 medium, 2 large */
 };
 
 var GRAPH_SEND_MAX = 48;
@@ -762,6 +764,12 @@ Pebble.addEventListener('webviewclosed', function (e) {
             msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
             msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
             msg[K.CONFIG_GRAPH_TIME_RANGE] = settings.graphTimeRange | 0;
+    msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
+    msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
+            msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
+            msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
+            msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
+            msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
             msg[K.UNITS] = displayUnitsForWatch();
             if (!settings.weatherEnabled) {
                 msg[K.WEATHER_TEMP] = 0;
@@ -823,6 +831,10 @@ Pebble.addEventListener('ready', function () {
     msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
     msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
     msg[K.CONFIG_GRAPH_TIME_RANGE] = settings.graphTimeRange | 0;
+    msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
+    msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
+    msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
+    msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
     msg[K.UNITS] = displayUnitsForWatch();
     Pebble.sendAppMessage(msg);
 

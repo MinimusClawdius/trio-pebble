@@ -59,6 +59,8 @@ typedef enum {
     KEY_CONFIG_GRAPH_SCALE_MODE,
     /** 0=3h, 1=6h, 2=12h, 3=24h — phone fetches & down-samples to 48 points */
     KEY_CONFIG_GRAPH_TIME_RANGE,
+    KEY_CONFIG_GRAPH_SMOOTH,
+    KEY_CONFIG_HEADER_SIZE,
     /** PebbleKit JS: short Trio/HTTP status (e.g. "No phone"); cleared on CGM update */
     KEY_TRIO_LINK,
     /** After carb POST, pkjs may send recommended bolus in tenths U to open the bolus picker (Trio HTTP). */
@@ -167,6 +169,8 @@ typedef struct {
     bool clock_24h;             /* true = 24h clock, false = 12h (no AM/PM on watch) */
     uint8_t graph_scale_mode;   /* GraphScaleMode */
     uint8_t graph_time_range;     /* GraphTimeRange */
+    bool graph_smooth;
+    uint8_t header_size;          /* 0=small(14), 1=medium(18), 2=large for classic header/footer */
 } TrioConfig;
 
 // ---------- CGM State ----------

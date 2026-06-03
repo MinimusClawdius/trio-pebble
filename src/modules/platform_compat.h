@@ -72,3 +72,46 @@ static inline bool trio_trend_light_background_assets(const TrioConfig *cfg) {
 static inline bool trio_classic_footer_light_ink(const TrioConfig *cfg) {
     return trio_classic_chrome_active(cfg) && trio_classic_light_pills(cfg);
 }
+
+/* ============================================================
+ * Emery / large screen (Pebble Time 2) adaptations
+ * emery: 200x228 (SDK), classic rect: 144x168. Layouts were
+ * originally 144px; use these to prevent cramped/overlapping
+ * elements and undersized glyphs on larger hardware.
+ * ============================================================ */
+
+/** True on emery and other wide rect screens (>=180px). */
+static inline bool trio_large_rect(GRect bounds) {
+    return bounds.size.w >= 180;
+}
+
+/** Hero area height (glucose + trend) for classic/retro style. */
+static inline int trio_hero_height(GRect bounds) {
+    return trio_large_rect(bounds) ? 66 : 54;
+}
+
+/** Header strip height (time/age row). */
+static inline int trio_header_height(GRect bounds) {
+    return trio_large_rect(bounds) ? 28 : 24;
+}
+
+/** Square size for trend glyph layer (larger on big screens so arrows don't look tiny). */
+static inline int trio_trend_size(GRect bounds) {
+    if (trio_large_rect(bounds)) {
+        return 52;
+    }
+    return 34;
+}
+
+/** Glucose number font. On color we use the bold subset; could pick larger variant if SDK provides. */
+static inline const char *trio_glucose_font(bool is_color) {
+    if (is_color) {
+        return FONT_KEY_ROBOTO_BOLD_SUBSET_49;
+    }
+    return FONT_KEY_BITHAM_42_BOLD;
+}
+
+/** Scale factor hint for manual NN trend bitmap (bigger preferred size on large screens). */
+static inline int trio_trend_scale_numer(void) {
+    return 17;  /* 17/10 = 1.7x base; caller can override for large */
+}
