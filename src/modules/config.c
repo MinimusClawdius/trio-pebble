@@ -73,16 +73,24 @@ void config_load(void) {
 }
 
 void config_apply_message(DictionaryIterator *iter) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "config_apply_message() called");
+
     Tuple *t;
 
     t = dict_find(iter, KEY_CONFIG_FACE_TYPE);
-    if (t) s_config.face_type = (FaceType)t->value->int32;
+    if (t) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Got KEY_CONFIG_FACE_TYPE = %d", (int)t->value->int32);
+        s_config.face_type = (FaceType)t->value->int32;
+    }
 
     t = dict_find(iter, KEY_CONFIG_DATA_SOURCE);
     if (t) s_config.data_source = (DataSource)t->value->int32;
 
     t = dict_find(iter, KEY_CONFIG_HIGH_THRESHOLD);
-    if (t) s_config.high_threshold = (int16_t)t->value->int32;
+    if (t) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Got KEY_CONFIG_HIGH_THRESHOLD = %d", (int)t->value->int32);
+        s_config.high_threshold = (int16_t)t->value->int32;
+    }
 
     t = dict_find(iter, KEY_CONFIG_LOW_THRESHOLD);
     if (t) s_config.low_threshold = (int16_t)t->value->int32;
@@ -100,7 +108,10 @@ void config_apply_message(DictionaryIterator *iter) {
     if (t) s_config.alert_snooze_min = (uint8_t)t->value->int32;
 
     t = dict_find(iter, KEY_CONFIG_COLOR_SCHEME);
-    if (t) s_config.color_scheme = (ColorScheme)t->value->int32;
+    if (t) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Got KEY_CONFIG_COLOR_SCHEME = %d", (int)t->value->int32);
+        s_config.color_scheme = (ColorScheme)t->value->int32;
+    }
 
     t = dict_find(iter, KEY_UNITS);
     if (t) {

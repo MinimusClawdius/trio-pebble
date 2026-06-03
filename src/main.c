@@ -102,10 +102,21 @@ static void reload_face(void) {
 // ---------- AppMessage Handlers ----------
 static void inbox_received(DictionaryIterator *iter, void *context) {
     (void)context;
+    APP_LOG(APP_LOG_LEVEL_INFO, "=== INBOX RECEIVED ===");
+
+    // Log all keys received (for debugging)
+    DictionaryIterator *debug_iter;
+    if (dict_read_begin(iter) == DICT_OK) {
+        Tuple *t;
+        while ((t = dict_read_next(iter)) != NULL) {
+            APP_LOG(APP_LOG_LEVEL_DEBUG, "Received key: %d", (int)t->key);
+        }
+    }
 
     // Check for config changes first
     Tuple *config_changed = dict_find(iter, KEY_CONFIG_CHANGED);
     if (config_changed) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Config changed flag received");
         config_apply_message(iter);
         s_state.config = *config_get();
         reload_face();
