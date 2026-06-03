@@ -46,7 +46,7 @@ static void animation_timer_callback(void *context) {
     }
 
     layer_mark_dirty(s_animation_layer);
-    s_timer = app_timer_register(app_timer_range(100, 200), animation_timer_callback, NULL);
+    s_timer = app_timer_register(150, animation_timer_callback, NULL);
 }
 
 static void animation_layer_update(Layer *layer, GContext *ctx) {
@@ -62,8 +62,9 @@ static void animation_layer_update(Layer *layer, GContext *ctx) {
 
     // Needle
     GRect needle = GRect(center_x - (NEEDLE_WIDTH / 2), barrel.origin.y + SYRINGE_HEIGHT, NEEDLE_WIDTH, NEEDLE_HEIGHT);
-    graphics_draw_line(ctx, needle.origin.x + (NEEDLE_WIDTH / 2), needle.origin.y, 
-                      needle.origin.x + (NEEDLE_WIDTH / 2), needle.origin.y + NEEDLE_HEIGHT);
+    graphics_draw_line(ctx, 
+        GPoint(needle.origin.x + (NEEDLE_WIDTH / 2), needle.origin.y),
+        GPoint(needle.origin.x + (NEEDLE_WIDTH / 2), needle.origin.y + NEEDLE_HEIGHT));
 
     // The Drip
     if (s_drip_radius > 0) {
@@ -71,19 +72,19 @@ static void animation_layer_update(Layer *layer, GContext *ctx) {
         int drip_y = needle.origin.y + NEEDLE_HEIGHT + s_drip_y;
         // Use a small ellipse for a circle
         GRect drip_rect = GRect(drip_x - s_drip_radius, drip_y - s_drip_radius, s_drip_radius * 2, s_drip_radius * 2);
-        graphics_fill_ellipse(ctx, drip_rect, GCornerNone);
+        graphics_fill_circle(ctx, GPoint(drip_x, drip_y), s_drip_radius);
     }
 }
 
 static void loading_window_load(Window *window) {
     Layer *root = window_get_root_layer(window);
-    s_animation_layer = layer_create(root);
+    s_animation_layer = layer_create(layer_get_bounds(root));
     layer_set_update_proc(s_animation_layer, animation_layer_update);
     
     s_drip_phase = 0;
     s_drip_y = 0;
     s_drip_radius = 0;
-    s_timer = app_timer_register(app_timer_range(100, 200), animation_timer_callback, NULL);
+    s_timer = app_timer_register(150, animation_timer_callback, NULL);
 }
 
 static void loading_window_unload(Window *window) {

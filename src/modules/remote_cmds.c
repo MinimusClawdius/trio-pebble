@@ -36,7 +36,7 @@ void remote_cmds_set_status(const char *status) {
 
     /* Refresh the menu window if it's visible to show the new status */
     if (s_menu_window && window_stack_contains_window(s_menu_window)) {
-        simple_menu_layer_set_sections(s_menu_layer, &s_menu_section, 1);
+        layer_mark_dirty(simple_menu_layer_get_layer(s_menu_layer));
     }
 }
 
