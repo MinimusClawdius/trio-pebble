@@ -71,7 +71,7 @@ static void animation_layer_update(Layer *layer, GContext *ctx) {
         int drip_x = center_x;
         int drip_y = needle.origin.y + NEEDLE_HEIGHT + s_drip_y;
         // Use a small ellipse for a circle
-        GRect drip_rect = GRect(drip_x - s_drip_radius, drip_y - s_drip_radius, s_drip_radius * 2, s_drip_radius * 2);
+        // drip_rect was removed to fix unused variable warning
         graphics_fill_circle(ctx, GPoint(drip_x, drip_y), s_drip_radius);
     }
 }
