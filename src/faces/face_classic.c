@@ -178,8 +178,13 @@ void face_classic_update(AppState *state) {
         } else {
             gc = GColorGreen;
         }
-        text_layer_set_text_color(s_glucose, gc);
-        trend_ink = gc;
+        if (light) {
+            text_layer_set_text_color(s_glucose, GColorBlack);
+            trend_ink = GColorBlack;
+        } else {
+            text_layer_set_text_color(s_glucose, gc);
+            trend_ink = gc;
+        }
     } else {
         text_layer_set_text_color(s_glucose, chrome ? (light ? GColorBlack : GColorWhite) : fg);
     }
