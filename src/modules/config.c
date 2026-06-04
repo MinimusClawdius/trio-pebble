@@ -171,7 +171,6 @@ void config_apply_message(DictionaryIterator *iter) {
     sanitize_graph_scale_mode();
     sanitize_graph_time_range();
     if (s_config.header_size > 3) s_config.header_size = 3;
-    config_save();
 }
 
 TrioConfig *config_get(void) {
