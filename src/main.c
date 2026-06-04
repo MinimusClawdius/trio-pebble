@@ -128,8 +128,6 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     s_state.config = *config_get();
 
     // CGM data
-    Tuple *t;
-
     t = dict_find(iter, KEY_GLUCOSE);
     if (t) {
         s_state.cgm.glucose = (int16_t)t->value->int32;
