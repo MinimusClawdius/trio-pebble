@@ -132,6 +132,7 @@ function loadSettings() {
 }
 
 function saveSettings() {
+    console.log('[TrioPeble] saveSettings() called - sending config to watch');
     localStorage.setItem('trio_settings', JSON.stringify(settings));
 
     // Also push to watch when settings are saved
@@ -638,7 +639,10 @@ function fetchWeather() {
                     var msg = {};
                     msg[K.WEATHER_TEMP] = Math.round(w.current_weather.temperature);
                     msg[K.WEATHER_ICON] = weatherCodeToIcon(w.current_weather.weathercode);
-                    Pebble.sendAppMessage(msg);
+                    Pebble.sendAppMessage(msg, 
+                function() { console.log('[TrioPeble] Config sent to watch successfully'); },
+                function(e) { console.log('[TrioPeble] Failed to send config:', JSON.stringify(e)); }
+            );
                 }
             } catch (e) {
                 console.log('Trio: weather parse error: ' + e);
@@ -714,7 +718,10 @@ function sendCarbsThenSuggestBolus(amountGrams) {
             if (tenths > 0) {
                 msg[K.SUGGESTED_BOLUS_TENTHS] = tenths;
             }
-            Pebble.sendAppMessage(msg);
+            Pebble.sendAppMessage(msg, 
+                function() { console.log('[TrioPeble] Config sent to watch successfully'); },
+                function(e) { console.log('[TrioPeble] Failed to send config:', JSON.stringify(e)); }
+            );
         });
     });
 }
@@ -764,7 +771,8 @@ Pebble.addEventListener('webviewclosed', function (e) {
             for (var key in newSettings) {
                 if (newSettings.hasOwnProperty(key)) settings[key] = newSettings[key];
             }
-            saveSettings();           // This now sends CONFIG_CHANGED + full config
+            console.log('[TrioPeble] webviewclosed received, calling saveSettings()');
+            saveSettings();
             dexcomSessionId = null;
 
             fetchDataThenSchedule();
