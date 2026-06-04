@@ -833,8 +833,6 @@ Pebble.addEventListener('ready', function () {
     msg[K.CONFIG_GRAPH_TIME_RANGE] = settings.graphTimeRange | 0;
     msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
     msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
-    msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
-    msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
     msg[K.UNITS] = displayUnitsForWatch();
     Pebble.sendAppMessage(msg);
 
