@@ -21,6 +21,8 @@ var failStreak = 0;
 var lastTrioOkAt = 0;
 var pollTimer = null;
 
+console.log('[TrioPeble] JS environment loaded - file parsed successfully');
+
 // AppMessage keys (must match C enums)
 var K = {
     GLUCOSE: 0, TREND: 1, DELTA: 2, IOB: 3, COB: 4,
