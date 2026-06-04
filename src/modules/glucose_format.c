@@ -45,5 +45,26 @@ void format_glucose_display(char *buf, size_t buflen, int16_t mg_dl, bool is_mmo
     if (tenths < 0) tenths = 0;
     int whole = tenths / 10;
     int frac = tenths % 10;
-    snprintf(buf, buflen, "%d.%d", whole, frac);
+    snprintf(buf, buflen, "%d%c%d", whole, 0xB7, frac);
+}
+
+bool glucose_shows_decimal(bool is_mmol) {
+    return is_mmol;
+}
+
+void format_glucose_parts(int16_t mg_dl, bool is_mmol, int *whole, int *frac) {
+    if (mg_dl <= 0) {
+        *whole = 0;
+        *frac = 0;
+        return;
+    }
+    if (!is_mmol) {
+        *whole = mg_dl;
+        *frac = 0;
+        return;
+    }
+    int tenths = ((int)mg_dl * 10 + 9) / 18;
+    if (tenths < 0) tenths = 0;
+    *whole = tenths / 10;
+    *frac = tenths % 10;
 }
