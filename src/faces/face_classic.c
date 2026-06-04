@@ -103,7 +103,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
         hero_glucose = light ? GColorBlack : GColorWhite;
     }
     int hero_h = trio_hero_height(bounds);
-    s_glucose = make_text(root, GRect(0, header_h, gw, hero_h), glucose_font, GTextAlignmentLeft,
+    s_glucose = make_text(root, GRect(6, header_h, gw, hero_h), glucose_font, GTextAlignmentLeft,
                           hero_glucose);
     text_layer_set_text(s_glucose, "--");
 

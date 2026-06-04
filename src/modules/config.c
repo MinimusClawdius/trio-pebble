@@ -68,7 +68,7 @@ void config_load(void) {
         sanitize_comp_slots();
         sanitize_graph_scale_mode();
         sanitize_graph_time_range();
-        if (s_config.header_size > 2) s_config.header_size = 1;
+        if (s_config.header_size > 3) s_config.header_size = 3;
     }
 }
 
@@ -165,12 +165,12 @@ void config_apply_message(DictionaryIterator *iter) {
     t = dict_find(iter, KEY_CONFIG_HEADER_SIZE);
     if (t) {
         int32_t v = t->value->int32;
-        s_config.header_size = (v >= 0 && v <= 2) ? (uint8_t)v : 0;
+        s_config.header_size = (v >= 0 && v <= 3) ? (uint8_t)v : 0;
     }
 
     sanitize_graph_scale_mode();
     sanitize_graph_time_range();
-    if (s_config.header_size > 2) s_config.header_size = 1;
+    if (s_config.header_size > 3) s_config.header_size = 3;
     config_save();
 }
 
