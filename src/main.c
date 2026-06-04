@@ -104,13 +104,11 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     (void)context;
     APP_LOG(APP_LOG_LEVEL_INFO, "=== INBOX RECEIVED ===");
 
-    // Log all keys received (for debugging)
-    DictionaryIterator *debug_iter;
-    if (dict_read_begin(iter) == DICT_OK) {
-        Tuple *t;
-        while ((t = dict_read_next(iter)) != NULL) {
-            APP_LOG(APP_LOG_LEVEL_DEBUG, "Received key: %d", (int)t->key);
-        }
+    // Log keys without breaking the iterator
+    Tuple *t = dict_read_first(iter);
+    while (t != NULL) {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "Received key: %d", (int)t->key);
+        t = dict_read_next(iter);
     }
 
     // Check for config changes first
