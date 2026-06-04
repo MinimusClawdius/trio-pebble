@@ -116,7 +116,6 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     if (config_changed) {
         APP_LOG(APP_LOG_LEVEL_INFO, "Config changed flag received");
         config_apply_message(iter);
-        config_save();
         s_state.config = *config_get();
         reload_face();
         return;
