@@ -127,6 +127,12 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     config_save();
     s_state.config = *config_get();
 
+    // Live update for header size changes (Classic face)
+    if (dict_find(iter, KEY_CONFIG_HEADER_SIZE)) {
+        reload_face();
+        return;
+    }
+
     // CGM data
     t = dict_find(iter, KEY_GLUCOSE);
     if (t) {
