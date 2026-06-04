@@ -133,6 +133,29 @@ function loadSettings() {
 
 function saveSettings() {
     localStorage.setItem('trio_settings', JSON.stringify(settings));
+
+    // Also push to watch when settings are saved
+    var msg = {};
+    msg[K.CONFIG_CHANGED] = 1;
+    msg[K.CONFIG_FACE_TYPE] = settings.faceType;
+    msg[K.CONFIG_DATA_SOURCE] = settings.dataSource;
+    msg[K.CONFIG_HIGH_THRESHOLD] = settings.highThreshold;
+    msg[K.CONFIG_LOW_THRESHOLD] = settings.lowThreshold;
+    msg[K.CONFIG_ALERT_URGENT_LOW] = settings.urgentLow;
+    msg[K.CONFIG_ALERT_HIGH_ENABLED] = settings.alertHighEnabled ? 1 : 0;
+    msg[K.CONFIG_ALERT_LOW_ENABLED] = settings.alertLowEnabled ? 1 : 0;
+    msg[K.CONFIG_ALERT_SNOOZE_MIN] = settings.alertSnoozeMin;
+    msg[K.CONFIG_COLOR_SCHEME] = settings.colorScheme;
+    msg[K.CONFIG_WEATHER_ENABLED] = settings.weatherEnabled ? 1 : 0;
+    msg[K.CONFIG_COMP_SLOT_0] = settings.compSlot0 | 0;
+    msg[K.CONFIG_COMP_SLOT_1] = settings.compSlot1 | 0;
+    msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
+    msg[K.CONFIG_COMP_SLOT_3] = 0;
+    msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
+    msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
+    msg[K.CONFIG_GRAPH_TIME_RANGE] = settings.graphTimeRange | 0;
+    msg[K.UNITS] = displayUnitsForWatch();
+    Pebble.sendAppMessage(msg);
 }
 
 // ---------- Data Source: Trio Local API ----------
