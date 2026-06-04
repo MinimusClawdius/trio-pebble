@@ -200,3 +200,14 @@ Phone (HTML)
 ## License
 
 MIT
+
+
+## Versioning
+
+- `package.json` is the single source of truth for the version.
+- Before committing changes that affect the settings page, run:
+  ```bash
+  node scripts/sync-version.js
+  ```
+- This updates the version string shown in the settings footer.
+
