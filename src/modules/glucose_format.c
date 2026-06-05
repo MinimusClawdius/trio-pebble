@@ -31,12 +31,14 @@ void format_threshold_label(char *buf, size_t buflen, int16_t threshold_mg_dl, b
 }
 
 void format_glucose_display(char *buf, size_t buflen, int16_t mg_dl, bool is_mmol) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[GLUCOSE] format_glucose_display ENTER mg_dl=%d is_mmol=%d", mg_dl, is_mmol);
     if (buflen < 4) return;
     if (mg_dl <= 0) {
         snprintf(buf, buflen, "--");
         return;
     }
     if (!is_mmol) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "[GLUCOSE] mg/dL path -> %d", mg_dl);
         snprintf(buf, buflen, "%d", (int)mg_dl);
         return;
     }
@@ -45,5 +47,27 @@ void format_glucose_display(char *buf, size_t buflen, int16_t mg_dl, bool is_mmo
     if (tenths < 0) tenths = 0;
     int whole = tenths / 10;
     int frac = tenths % 10;
-    snprintf(buf, buflen, "%d.%d", whole, frac);
+    APP_LOG(APP_LOG_LEVEL_INFO, "[GLUCOSE] mmol path whole=%d frac=%d", whole, frac);
+    snprintf(buf, buflen, "%d.%d", whole, frac);  // plain dot for maximum font compatibility
+}
+
+bool glucose_shows_decimal(bool is_mmol) {
+    return is_mmol;
+}
+
+void format_glucose_parts(int16_t mg_dl, bool is_mmol, int *whole, int *frac) {
+    if (mg_dl <= 0) {
+        *whole = 0;
+        *frac = 0;
+        return;
+    }
+    if (!is_mmol) {
+        *whole = mg_dl;
+        *frac = 0;
+        return;
+    }
+    int tenths = ((int)mg_dl * 10 + 9) / 18;
+    if (tenths < 0) tenths = 0;
+    *whole = tenths / 10;
+    *frac = tenths % 10;
 }

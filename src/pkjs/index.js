@@ -21,6 +21,8 @@ var failStreak = 0;
 var lastTrioOkAt = 0;
 var pollTimer = null;
 
+console.log('[TrioPeble] JS environment loaded - file parsed successfully');
+
 // AppMessage keys (must match C enums)
 var K = {
     GLUCOSE: 0, TREND: 1, DELTA: 2, IOB: 3, COB: 4,
@@ -43,8 +45,10 @@ var K = {
     CONFIG_CLOCK_24H: 41,
     CONFIG_GRAPH_SCALE_MODE: 42,
     CONFIG_GRAPH_TIME_RANGE: 43,
-    TRIO_LINK: 44,
-    SUGGESTED_BOLUS_TENTHS: 45
+    CONFIG_GRAPH_SMOOTH: 44,
+    CONFIG_HEADER_SIZE: 45,
+    TRIO_LINK: 46,
+    SUGGESTED_BOLUS_TENTHS: 47
 };
 
 // ---------- Settings ----------
@@ -132,7 +136,33 @@ function loadSettings() {
 }
 
 function saveSettings() {
+    console.log('[TrioPeble] saveSettings() called - sending config to watch');
     localStorage.setItem('trio_settings', JSON.stringify(settings));
+
+    // Also push to watch when settings are saved
+    var msg = {};
+    msg[K.CONFIG_CHANGED] = 1;
+    msg[K.CONFIG_FACE_TYPE] = settings.faceType;
+    msg[K.CONFIG_DATA_SOURCE] = settings.dataSource;
+    msg[K.CONFIG_HIGH_THRESHOLD] = settings.highThreshold;
+    msg[K.CONFIG_LOW_THRESHOLD] = settings.lowThreshold;
+    msg[K.CONFIG_ALERT_URGENT_LOW] = settings.urgentLow;
+    msg[K.CONFIG_ALERT_HIGH_ENABLED] = settings.alertHighEnabled ? 1 : 0;
+    msg[K.CONFIG_ALERT_LOW_ENABLED] = settings.alertLowEnabled ? 1 : 0;
+    msg[K.CONFIG_ALERT_SNOOZE_MIN] = settings.alertSnoozeMin;
+    msg[K.CONFIG_COLOR_SCHEME] = settings.colorScheme;
+    msg[K.CONFIG_WEATHER_ENABLED] = settings.weatherEnabled ? 1 : 0;
+    msg[K.CONFIG_COMP_SLOT_0] = settings.compSlot0 | 0;
+    msg[K.CONFIG_COMP_SLOT_1] = settings.compSlot1 | 0;
+    msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
+    msg[K.CONFIG_COMP_SLOT_3] = 0;
+    msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
+    msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
+    msg[K.CONFIG_GRAPH_TIME_RANGE] = settings.graphTimeRange | 0;
+    msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
+    msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
+    msg[K.UNITS] = displayUnitsForWatch();
+    Pebble.sendAppMessage(msg);
 }
 
 // ---------- Data Source: Trio Local API ----------
@@ -615,7 +645,10 @@ function fetchWeather() {
                     var msg = {};
                     msg[K.WEATHER_TEMP] = Math.round(w.current_weather.temperature);
                     msg[K.WEATHER_ICON] = weatherCodeToIcon(w.current_weather.weathercode);
-                    Pebble.sendAppMessage(msg);
+                    Pebble.sendAppMessage(msg, 
+                function() { console.log('[TrioPeble] Config sent to watch successfully'); },
+                function(e) { console.log('[TrioPeble] Failed to send config:', JSON.stringify(e)); }
+            );
                 }
             } catch (e) {
                 console.log('Trio: weather parse error: ' + e);
@@ -691,7 +724,10 @@ function sendCarbsThenSuggestBolus(amountGrams) {
             if (tenths > 0) {
                 msg[K.SUGGESTED_BOLUS_TENTHS] = tenths;
             }
-            Pebble.sendAppMessage(msg);
+            Pebble.sendAppMessage(msg, 
+                function() { console.log('[TrioPeble] Config sent to watch successfully'); },
+                function(e) { console.log('[TrioPeble] Failed to send config:', JSON.stringify(e)); }
+            );
         });
     });
 }
@@ -741,41 +777,9 @@ Pebble.addEventListener('webviewclosed', function (e) {
             for (var key in newSettings) {
                 if (newSettings.hasOwnProperty(key)) settings[key] = newSettings[key];
             }
+            console.log('[TrioPeble] webviewclosed received, calling saveSettings()');
             saveSettings();
-            dexcomSessionId = null; // reset on credential change
-
-            // Push config to watch
-            var msg = {};
-            msg[K.CONFIG_CHANGED] = 1;
-            msg[K.CONFIG_FACE_TYPE] = settings.faceType;
-            msg[K.CONFIG_DATA_SOURCE] = settings.dataSource;
-            msg[K.CONFIG_HIGH_THRESHOLD] = settings.highThreshold;
-            msg[K.CONFIG_LOW_THRESHOLD] = settings.lowThreshold;
-            msg[K.CONFIG_ALERT_URGENT_LOW] = settings.urgentLow;
-            msg[K.CONFIG_ALERT_HIGH_ENABLED] = settings.alertHighEnabled ? 1 : 0;
-            msg[K.CONFIG_ALERT_LOW_ENABLED] = settings.alertLowEnabled ? 1 : 0;
-            msg[K.CONFIG_ALERT_SNOOZE_MIN] = settings.alertSnoozeMin;
-            msg[K.CONFIG_COLOR_SCHEME] = settings.colorScheme;
-            msg[K.CONFIG_WEATHER_ENABLED] = settings.weatherEnabled ? 1 : 0;
-            msg[K.CONFIG_COMP_SLOT_0] = settings.compSlot0 | 0;
-            msg[K.CONFIG_COMP_SLOT_1] = settings.compSlot1 | 0;
-            msg[K.CONFIG_COMP_SLOT_2] = settings.compSlot2 | 0;
-            msg[K.CONFIG_COMP_SLOT_3] = 0;
-            msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
-            msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
-            msg[K.CONFIG_GRAPH_TIME_RANGE] = settings.graphTimeRange | 0;
-    msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
-    msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
-            msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
-            msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
-            msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
-            msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
-            msg[K.UNITS] = displayUnitsForWatch();
-            if (!settings.weatherEnabled) {
-                msg[K.WEATHER_TEMP] = 0;
-                msg[K.WEATHER_ICON] = 'off';
-            }
-            Pebble.sendAppMessage(msg);
+            dexcomSessionId = null;
 
             fetchDataThenSchedule();
             if (settings.weatherEnabled) fetchWeather();
@@ -831,8 +835,6 @@ Pebble.addEventListener('ready', function () {
     msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
     msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
     msg[K.CONFIG_GRAPH_TIME_RANGE] = settings.graphTimeRange | 0;
-    msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
-    msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
     msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
     msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
     msg[K.UNITS] = displayUnitsForWatch();

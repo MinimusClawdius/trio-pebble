@@ -1,7 +1,7 @@
 #include "config.h"
 #include "platform_compat.h"
 
-#define CONFIG_KEY 0x54726F3Au  /* v10: graph_smooth, header_size */
+#define CONFIG_KEY 0x54726F3Bu  /* v11: double-free recovery */ 
 
 static TrioConfig s_config;
 
@@ -35,6 +35,12 @@ static void set_defaults(void) {
 
 void config_init(void) {
     set_defaults();
+
+    // One-time migration: clear any old persisted config under previous keys
+    // to recover from double-free caused by struct evolution.
+    persist_delete(0x54726F39u); // v9
+    persist_delete(0x54726F3Au); // v10
+
     config_load();
 }
 
@@ -43,6 +49,7 @@ void config_save(void) {
 }
 
 static void sanitize_comp_slots(void) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[SANITIZE] sanitize_comp_slots ENTER");
     for (int i = 0; i < TRIO_COMP_SLOT_COUNT; i++) {
         if (s_config.comp_slot[i] > COMP_SLOT_IOB) {
             s_config.comp_slot[i] = COMP_SLOT_NONE;
@@ -51,12 +58,14 @@ static void sanitize_comp_slots(void) {
 }
 
 static void sanitize_graph_scale_mode(void) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[SANITIZE] sanitize_graph_scale_mode ENTER");
     if (s_config.graph_scale_mode > GRAPH_SCALE_LEGACY) {
         s_config.graph_scale_mode = GRAPH_SCALE_LEGACY;
     }
 }
 
 static void sanitize_graph_time_range(void) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[SANITIZE] sanitize_graph_time_range ENTER");
     if (s_config.graph_time_range > GRAPH_TIME_24H) {
         s_config.graph_time_range = GRAPH_TIME_24H;
     }
@@ -65,21 +74,21 @@ static void sanitize_graph_time_range(void) {
 void config_load(void) {
     if (persist_exists(CONFIG_KEY)) {
         persist_read_data(CONFIG_KEY, &s_config, sizeof(TrioConfig));
-        sanitize_comp_slots();
-        sanitize_graph_scale_mode();
-        sanitize_graph_time_range();
-        if (s_config.header_size > 2) s_config.header_size = 1;
+    // sanitize_comp_slots();  // TEMP DEBUG
+    // sanitize_graph_scale_mode();  // TEMP DEBUG
+    // sanitize_graph_time_range();  // TEMP DEBUG
+        if (s_config.header_size > 3) s_config.header_size = 3;
     }
 }
 
 void config_apply_message(DictionaryIterator *iter) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "config_apply_message() called");
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] config_apply_message() ENTER");
 
     Tuple *t;
 
     t = dict_find(iter, KEY_CONFIG_FACE_TYPE);
     if (t) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Got KEY_CONFIG_FACE_TYPE = %d", (int)t->value->int32);
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_CONFIG_FACE_TYPE = %ld", (long)t->value->int32);
         s_config.face_type = (FaceType)t->value->int32;
     }
 
@@ -88,7 +97,7 @@ void config_apply_message(DictionaryIterator *iter) {
 
     t = dict_find(iter, KEY_CONFIG_HIGH_THRESHOLD);
     if (t) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Got KEY_CONFIG_HIGH_THRESHOLD = %d", (int)t->value->int32);
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_CONFIG_HIGH_THRESHOLD = %ld", (long)t->value->int32);
         s_config.high_threshold = (int16_t)t->value->int32;
     }
 
@@ -109,55 +118,30 @@ void config_apply_message(DictionaryIterator *iter) {
 
     t = dict_find(iter, KEY_CONFIG_COLOR_SCHEME);
     if (t) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Got KEY_CONFIG_COLOR_SCHEME = %d", (int)t->value->int32);
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_CONFIG_COLOR_SCHEME = %ld", (long)t->value->int32);
         s_config.color_scheme = (ColorScheme)t->value->int32;
-    }
-
-    t = dict_find(iter, KEY_UNITS);
-    if (t) {
-        const char *u = t->value->cstring;
-        /* "mmol" / "mmol/L" style */
-        s_config.is_mmol = (u && u[0] == 'm' && u[1] == 'm' && u[2] == 'o');
     }
 
     t = dict_find(iter, KEY_CONFIG_WEATHER_ENABLED);
     if (t) s_config.weather_enabled = t->value->int32 != 0;
 
     t = dict_find(iter, KEY_CONFIG_COMP_SLOT_0);
-    if (t) {
-        int32_t v = t->value->int32;
-        s_config.comp_slot[0] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_IOB) ? (uint8_t)v : COMP_SLOT_NONE;
-    }
+    if (t) s_config.comp_slot[0] = (uint8_t)t->value->int32;
     t = dict_find(iter, KEY_CONFIG_COMP_SLOT_1);
-    if (t) {
-        int32_t v = t->value->int32;
-        s_config.comp_slot[1] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_IOB) ? (uint8_t)v : COMP_SLOT_NONE;
-    }
+    if (t) s_config.comp_slot[1] = (uint8_t)t->value->int32;
     t = dict_find(iter, KEY_CONFIG_COMP_SLOT_2);
-    if (t) {
-        int32_t v = t->value->int32;
-        s_config.comp_slot[2] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_IOB) ? (uint8_t)v : COMP_SLOT_NONE;
-    }
+    if (t) s_config.comp_slot[2] = (uint8_t)t->value->int32;
     t = dict_find(iter, KEY_CONFIG_COMP_SLOT_3);
-    if (t) {
-        int32_t v = t->value->int32;
-        s_config.comp_slot[3] = (v >= COMP_SLOT_NONE && v <= COMP_SLOT_IOB) ? (uint8_t)v : COMP_SLOT_NONE;
-    }
+    if (t) s_config.comp_slot[3] = (uint8_t)t->value->int32;
 
     t = dict_find(iter, KEY_CONFIG_CLOCK_24H);
     if (t) s_config.clock_24h = t->value->int32 != 0;
 
     t = dict_find(iter, KEY_CONFIG_GRAPH_SCALE_MODE);
-    if (t) {
-        int32_t v = t->value->int32;
-        s_config.graph_scale_mode = (v >= GRAPH_SCALE_AUTO && v <= GRAPH_SCALE_LEGACY) ? (uint8_t)v : GRAPH_SCALE_LEGACY;
-    }
+    if (t) s_config.graph_scale_mode = (uint8_t)t->value->int32;
 
     t = dict_find(iter, KEY_CONFIG_GRAPH_TIME_RANGE);
-    if (t) {
-        int32_t v = t->value->int32;
-        s_config.graph_time_range = (v >= GRAPH_TIME_3H && v <= GRAPH_TIME_24H) ? (uint8_t)v : GRAPH_TIME_3H;
-    }
+    if (t) s_config.graph_time_range = (uint8_t)t->value->int32;
 
     t = dict_find(iter, KEY_CONFIG_GRAPH_SMOOTH);
     if (t) s_config.graph_smooth = t->value->int32 != 0;
@@ -165,15 +149,26 @@ void config_apply_message(DictionaryIterator *iter) {
     t = dict_find(iter, KEY_CONFIG_HEADER_SIZE);
     if (t) {
         int32_t v = t->value->int32;
-        s_config.header_size = (v >= 0 && v <= 2) ? (uint8_t)v : 0;
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_CONFIG_HEADER_SIZE = %ld (before clamp)", (long)v);
+        s_config.header_size = (v >= 0 && v <= 3) ? (uint8_t)v : 0;
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] header_size after clamp = %u", s_config.header_size);
     }
 
-    sanitize_graph_scale_mode();
-    sanitize_graph_time_range();
-    if (s_config.header_size > 2) s_config.header_size = 1;
-    config_save();
+    t = dict_find(iter, KEY_UNITS);
+    if (t) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_UNITS = %s", t->value->cstring);
+        s_config.is_mmol = (strcmp(t->value->cstring, "mmol") == 0 || strcmp(t->value->cstring, "mmol/L") == 0);
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] is_mmol set to %d", s_config.is_mmol);
+    }
+
+    // sanitize_graph_scale_mode();
+    // sanitize_graph_time_range();
+    if (s_config.header_size > 3) s_config.header_size = 3;
+
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] config_apply_message() EXIT (header_size=%u)", s_config.header_size);
 }
 
 TrioConfig *config_get(void) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] config_get() called");
     return &s_config;
 }

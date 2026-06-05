@@ -1,4 +1,4 @@
-# Trio Pebble v2.14.2
+# Trio Pebble v2.16.0
 
 A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**, **Dexcom Share**, and **Nightscout** data sources.
 
@@ -200,3 +200,14 @@ Phone (HTML)
 ## License
 
 MIT
+
+
+## Versioning
+
+- `package.json` is the single source of truth for the version.
+- Before committing changes that affect the settings page, run:
+  ```bash
+  node scripts/sync-version.js
+  ```
+- This updates the version string shown in the settings footer.
+

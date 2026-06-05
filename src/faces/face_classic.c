@@ -163,6 +163,8 @@ void face_classic_update(AppState *state) {
     format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose, state->config.is_mmol);
     text_layer_set_text(s_glucose, s_glucose_buf);
 
+    }
+
 #ifdef PBL_COLOR
     if (state->cgm.glucose > 0) {
         TrioConfig *cfg = &state->config;
@@ -176,8 +178,13 @@ void face_classic_update(AppState *state) {
         } else {
             gc = GColorGreen;
         }
-        text_layer_set_text_color(s_glucose, gc);
-        trend_ink = gc;
+        if (light) {
+            text_layer_set_text_color(s_glucose, GColorBlack);
+            trend_ink = GColorBlack;
+        } else {
+            text_layer_set_text_color(s_glucose, gc);
+            trend_ink = gc;
+        }
     } else {
         text_layer_set_text_color(s_glucose, chrome ? (light ? GColorBlack : GColorWhite) : fg);
     }

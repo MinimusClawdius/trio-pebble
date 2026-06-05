@@ -228,7 +228,7 @@
 
 <button class="btn btn-save" onclick="saveAndReturn()">Save Settings</button>
 
-<div class="version">Trio Pebble config v2.13.0 &middot; MinimusClawdius</div>
+<div class="version">Trio Pebble config v2.16.0 &middot; MinimusClawdius</div>
 
 <script>
 var COMP_SLOT_OPTIONS = [
@@ -323,6 +323,7 @@ function onGlucoseUnitsChange() {
 }
 
 function populateForm() {
+    console.log("[SETTINGS] populateForm() called with settings:", s);
     var s = getSettings();
     fillCompSlotSelects();
     setValue('faceType', s.faceType);
@@ -331,6 +332,7 @@ function populateForm() {
     setValue('graphScaleMode', s.graphScaleMode !== undefined ? s.graphScaleMode : 0);
     setValue('graphTimeRange', s.graphTimeRange !== undefined ? s.graphTimeRange : 0);
     setChecked('graphSmooth', s.graphSmooth !== undefined ? s.graphSmooth : false);
+    console.log("[SETTINGS] Setting headerSize to", s.headerSize);
     setValue('headerSize', s.headerSize !== undefined ? s.headerSize : 0);
     setValue('dataSource', s.dataSource !== undefined ? s.dataSource : 0);
     setValue('trioHost', s.trioHost);
@@ -360,6 +362,13 @@ function populateForm() {
 }
 
 function saveAndReturn() {
+    console.log("[SETTINGS] saveAndReturn() called");
+
+    var headerVal = intVal('headerSize');
+    console.log("[SETTINGS] headerSize raw value =", headerVal);
+
+    var glucoseUnitVal = strVal('glucoseUnits');
+    console.log("[SETTINGS] glucoseUnits raw value =", glucoseUnitVal);
     var t = thresholdMgdlFromInputs();
     var result = {
         faceType: intVal('faceType'),
@@ -367,7 +376,7 @@ function saveAndReturn() {
         clock24h: boolVal('clock24h'),
         graphScaleMode: intVal('graphScaleMode'),
         graphTimeRange: intVal('graphTimeRange'),
-        graphSmooth: checkedVal('graphSmooth'),
+        graphSmooth: boolVal('graphSmooth'),
         headerSize: intVal('headerSize'),
         dataSource: intVal('dataSource'),
         trioHost: strVal('trioHost'),
@@ -390,6 +399,7 @@ function saveAndReturn() {
         compSlot2: intVal('compSlot2'),
         compSlot3: 0
     };
+    console.log("[SETTINGS] Final result object being sent:", result);
     var encoded = encodeURIComponent(JSON.stringify(result));
     window.location.href = 'pebblejs://close#' + encoded;
 }
