@@ -94,7 +94,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
         time_font = FONT_KEY_GOTHIC_28_BOLD;
         age_font  = FONT_KEY_GOTHIC_18_BOLD;
     } else {
-        time_font = FONT_KEY_GOTHIC_32_BOLD;
+        time_font = FONT_KEY_GOTHIC_28_BOLD;
         age_font  = FONT_KEY_GOTHIC_18_BOLD;   // much smaller than time
     }
 
@@ -135,9 +135,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
-    // Dynamic layout: header grows with header_size, graph compresses, glucose area stays stable
-    int hs = config_get()->header_size;
-    int dynamic_header_h = (hs == 0) ? 24 : (hs == 1) ? 28 : 34;   // header row height
+    int dynamic_header_h = (hs == 0) ? 24 : (hs == 1) ? 28 : 34;
     int graph_top = dynamic_header_h + LOOP_HERO_H;
 
     int graph_h = h - graph_top - COMPLICATIONS_BAR_HEIGHT;
