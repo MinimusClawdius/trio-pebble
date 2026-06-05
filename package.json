@@ -155,8 +155,10 @@
       "KEY_CONFIG_CLOCK_24H": 41,
       "KEY_CONFIG_GRAPH_SCALE_MODE": 42,
       "KEY_CONFIG_GRAPH_TIME_RANGE": 43,
-      "KEY_TRIO_LINK": 44,
-      "KEY_SUGGESTED_BOLUS_TENTHS": 45
+      "KEY_CONFIG_GRAPH_SMOOTH": 44,
+      "KEY_CONFIG_HEADER_SIZE": 45,
+      "KEY_TRIO_LINK": 46,
+      "KEY_SUGGESTED_BOLUS_TENTHS": 47
     },
     "capabilities": [
       "configurable",
