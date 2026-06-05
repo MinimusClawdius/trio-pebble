@@ -89,7 +89,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
                       hdr_age);
 
     /* Wider glucose column so "10.2" mmol does not ellipsize */
-    int gw = w * 62 / 100;
+    int gw = w * 68 / 100;
     if (gw > w - 44) {
         gw = w - 44;
     }
@@ -102,7 +102,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     if (chrome) {
         hero_glucose = light ? GColorBlack : GColorWhite;
     }
-    s_glucose = make_text(root, GRect(0, LOOP_HEADER_H, gw, LOOP_HERO_H), glucose_font, GTextAlignmentLeft,
+    s_glucose = make_text(root, GRect(8, LOOP_HEADER_H + 4, gw - 16, LOOP_HERO_H), glucose_font, GTextAlignmentLeft,
                           hero_glucose);
     text_layer_set_text(s_glucose, "--");
 

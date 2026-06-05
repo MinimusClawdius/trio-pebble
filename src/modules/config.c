@@ -8,27 +8,27 @@ static TrioConfig s_config;
 static void set_defaults(void) {
     s_config.face_type = FACE_CLASSIC;
     s_config.data_source = DATA_SOURCE_TRIO;
-    s_config.color_scheme = COLOR_SCHEME_DARK;
+    s_config.color_scheme = COLOR_SCHEME_LIGHT;          // 1
     s_config.high_threshold = 180;
     s_config.low_threshold = 70;
     s_config.urgent_low = 55;
-    s_config.alert_high_enabled = true;
-    s_config.alert_low_enabled = true;
+    s_config.alert_high_enabled = false;
+    s_config.alert_low_enabled = false;
     s_config.alert_snooze_min = 15;
     s_config.show_complications = true;
-    s_config.is_mmol = false;
+    s_config.is_mmol = true;                             // mmol
     s_config.weather_enabled = true;
-    s_config.comp_slot[0] = COMP_SLOT_WATCH_BATTERY;
-    s_config.comp_slot[1] = COMP_SLOT_WEATHER;
-    s_config.comp_slot[2] = COMP_SLOT_IOB;
-    s_config.comp_slot[3] = COMP_SLOT_NONE;
-    s_config.clock_24h = true;
-    s_config.graph_scale_mode = GRAPH_SCALE_AUTO;
-    s_config.graph_time_range = GRAPH_TIME_3H;
-    s_config.graph_smooth = false;
-    s_config.header_size = 0;  /* 0 small */
+    s_config.weather_units_c = true;                     // 'c'
+    s_config.comp_slot[0] = COMP_SLOT_WATCH_BATTERY;     // 1
+    s_config.comp_slot[1] = COMP_SLOT_PHONE_BATTERY;     // 5
+    s_config.comp_slot[2] = COMP_SLOT_STEPS;             // 4
+    s_config.comp_slot[3] = COMP_SLOT_NONE;              // 0
+    s_config.clock_24h = false;
+    s_config.graph_scale_mode = GRAPH_SCALE_AUTO;        // 0
+    s_config.graph_time_range = GRAPH_TIME_3H;           // 1
+    s_config.graph_smooth = true;
+    s_config.header_size = 2;                            // 2 (large)
 #if !TRIO_DISPLAY_COLOR
-    /* Sky/gradient art is color-first; B&W keeps a clean graph. Temp still available if user enables weather. */
     s_config.color_scheme = COLOR_SCHEME_HIGH_CONTRAST;
 #endif
 }

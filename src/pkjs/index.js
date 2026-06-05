@@ -61,26 +61,26 @@ var settings = {
     dexcomPassword: '',
     dexcomServer: 'us',   // 'us' or 'ous' (outside US)
     faceType: 0,
-    colorScheme: 0,
+    colorScheme: 1,
     highThreshold: 180,
     lowThreshold: 70,
     urgentLow: 55,
-    alertHighEnabled: true,
-    alertLowEnabled: true,
+    alertHighEnabled: false,
+    alertLowEnabled: false,
     alertSnoozeMin: 15,
     weatherEnabled: true,
-    weatherUnits: 'f',    // 'f' or 'c'
-    glucoseUnits: 'mgdl',  // 'mgdl' | 'mmol' — watchface display + threshold entry
+    weatherUnits: 'c',    // 'f' or 'c'
+    glucoseUnits: 'mmol',  // 'mgdl' | 'mmol' — watchface display + threshold entry
     /* Bottom bar left→right; values match watch ComplicationSlotKind */
     compSlot0: 1,
     compSlot1: 5,
     compSlot2: 6,
     compSlot3: 0,
-    clock24h: true,
+    clock24h: false,
     graphScaleMode: 0,
     graphTimeRange: 0,
-    graphSmooth: false,
-    headerSize: 0  /* 0 small, 1 medium, 2 large */
+    graphSmooth: true,
+    headerSize: 2  /* 0 small, 1 medium, 2 large */
 };
 
 var GRAPH_SEND_MAX = 48;

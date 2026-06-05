@@ -1,4 +1,4 @@
-# Trio Pebble v2.16.2
+# Trio Pebble v2.16.3
 
 A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**, **Dexcom Share**, and **Nightscout** data sources.
 
@@ -220,3 +220,9 @@ MIT
   ```
 - This updates the version string shown in the settings footer.
 
+
+### v2.16.3
+- Fixed header and footer text size both responding to `headerSize` setting.
+- Increased BG glucose text size and moved it toward center (away from bezel) in Classic face.
+- Fixed vertical centering of complication values in the footer bar (now matches icon centering).
+- Updated all default configuration values (faceType, colorScheme, thresholds, alerts disabled by default, mmol, headerSize=2, etc.) across JS, HTML, and C layers.
