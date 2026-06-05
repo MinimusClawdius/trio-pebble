@@ -85,6 +85,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
 
     // Larger difference between Time and Age as requested
     int hs = config_get()->header_size;
+    int dynamic_header_h = (hs == 0) ? 24 : (hs == 1) ? 28 : 34;
     const char *time_font;
     const char *age_font;
     if (hs == 0) {
