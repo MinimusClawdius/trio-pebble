@@ -48,7 +48,7 @@ void format_glucose_display(char *buf, size_t buflen, int16_t mg_dl, bool is_mmo
     int whole = tenths / 10;
     int frac = tenths % 10;
     APP_LOG(APP_LOG_LEVEL_INFO, "[GLUCOSE] mmol path whole=%d frac=%d", whole, frac);
-    snprintf(buf, buflen, "%d%c%d", whole, 0xB7, frac);
+    snprintf(buf, buflen, "%d.%d", whole, frac);  // plain dot for maximum font compatibility
 }
 
 bool glucose_shows_decimal(bool is_mmol) {
