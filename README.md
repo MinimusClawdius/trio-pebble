@@ -1,6 +1,15 @@
-# Trio Pebble v2.16.0
+# Trio Pebble v2.16.2
 
 A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**, **Dexcom Share**, and **Nightscout** data sources.
+
+## Changelog
+
+### v2.16.2
+- Fixed decimal point rendering for mmol/L glucose values (was showing as [X] missing glyph).
+- Switched glucose display fonts from numbers-only subset fonts to full fonts (`BITHAM_42_BOLD`) that include the decimal point character.
+- Applied across Classic, Compact, Dashboard, Graph Focus, and Retro faces.
+- Resolved build errors caused by invalid font constant and merge artifacts in face_classic.c.
+
 
 ## Features
 

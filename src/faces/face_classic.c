@@ -94,7 +94,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
         gw = w - 44;
     }
 #ifdef PBL_COLOR
-    const char *glucose_font = FONT_KEY_ROBOTO_BOLD_48;
+    const char *glucose_font = FONT_KEY_BITHAM_42_BOLD;
 #else
     const char *glucose_font = FONT_KEY_BITHAM_42_BOLD;
 #endif
@@ -163,7 +163,6 @@ void face_classic_update(AppState *state) {
     format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose, state->config.is_mmol);
     text_layer_set_text(s_glucose, s_glucose_buf);
 
-    }
 
 #ifdef PBL_COLOR
     if (state->cgm.glucose > 0) {
