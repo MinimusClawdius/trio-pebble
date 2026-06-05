@@ -146,11 +146,19 @@ void config_apply_message(DictionaryIterator *iter) {
     t = dict_find(iter, KEY_CONFIG_GRAPH_SMOOTH);
     if (t) s_config.graph_smooth = t->value->int32 != 0;
 
+    t = dict_find(iter, KEY_UNITS);
+    if (t) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_UNITS = %s", t->value->cstring);
+        s_config.is_mmol = strcmp(t->value->cstring, "mmol") == 0;
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] is_mmol set to %d", s_config.is_mmol);
+    }
+
     t = dict_find(iter, KEY_CONFIG_HEADER_SIZE);
     if (t) {
         int32_t v = t->value->int32;
-        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_CONFIG_HEADER_SIZE = %ld", (long)v);
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_CONFIG_HEADER_SIZE = %ld (before clamp)", (long)v);
         s_config.header_size = (v >= 0 && v <= 3) ? (uint8_t)v : 0;
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] header_size after clamp = %u", s_config.header_size);
     }
 
     // sanitize_graph_scale_mode();
