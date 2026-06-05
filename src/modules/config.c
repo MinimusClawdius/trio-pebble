@@ -149,7 +149,7 @@ void config_apply_message(DictionaryIterator *iter) {
     t = dict_find(iter, KEY_UNITS);
     if (t) {
         APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_UNITS = %s", t->value->cstring);
-        s_config.is_mmol = strcmp(t->value->cstring, "mmol") == 0;
+        s_config.is_mmol = (strcmp(t->value->cstring, "mmol") == 0 || strcmp(t->value->cstring, "mmol/L") == 0);
         APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] is_mmol set to %d", s_config.is_mmol);
     }
 
