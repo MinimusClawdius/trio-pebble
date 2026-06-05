@@ -96,5 +96,6 @@ void config_apply_message(DictionaryIterator *iter) {
 }
 
 TrioConfig *config_get(void) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] config_get() called");
     return &s_config;
 }
