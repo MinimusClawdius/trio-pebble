@@ -35,6 +35,12 @@ static void set_defaults(void) {
 
 void config_init(void) {
     set_defaults();
+
+    // One-time migration: clear any old persisted config under previous keys
+    // to recover from double-free caused by struct evolution.
+    persist_delete(0x54726F39u); // v9
+    persist_delete(0x54726F3Au); // v10
+
     config_load();
 }
 
