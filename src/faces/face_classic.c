@@ -168,6 +168,16 @@ void face_classic_update(AppState *state) {
     format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose, state->config.is_mmol);
     text_layer_set_text(s_glucose, s_glucose_buf);
 
+    // Manual decimal dot (4x4 filled rect) for mmol mode - fixes [X]
+    if (state->config.is_mmol && state->cgm.glucose > 0) {
+        // Approximate position: after the whole number digits
+        // This is a minimal implementation. A more precise version would
+        // measure text width. For now we place it roughly in the middle.
+        GRect dot = GRect(gw/2 - 2, header_h + hero_h/2 - 2, 4, 4);
+        graphics_context_set_fill_color(ctx, hero_glucose);
+        graphics_fill_rect(ctx, dot, 0, GCornerNone);
+    }
+
 #ifdef PBL_COLOR
     if (state->cgm.glucose > 0) {
         TrioConfig *cfg = &state->config;
