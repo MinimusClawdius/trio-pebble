@@ -57,27 +57,24 @@ void face_dashboard_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    int top_h = trio_hero_height(bounds);
-    int trend_sz = trio_trend_size(bounds);
-
-    s_glucose = make_text(root, GRect(4, -4, w*40/100, top_h), trio_glucose_font(TRIO_DISPLAY_COLOR), GTextAlignmentLeft, fg);
+    s_glucose = make_text(root, GRect(4, -4, 40, 40), FONT_KEY_BITHAM_42_BOLD, GTextAlignmentLeft, fg);
     text_layer_set_text(s_glucose, "--");
 
-    s_trend_layer = layer_create(GRect(4 + w*40/100, 0, trend_sz, trend_sz));
+    s_trend_layer = layer_create(GRect(42, 0, 30, 38));
     layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
-    s_delta = make_text(root, GRect(4, top_h + 4, w / 2 - 8, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
+    s_delta = make_text(root, GRect(4, 38, w / 2 - 8, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
 
-    s_time = make_text(root, GRect(w / 2, 0, w / 2 - 6, top_h), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentRight, fg);
-    s_date = make_text(root, GRect(w / 2, top_h - 14, w / 2 - 6, 18), FONT_KEY_GOTHIC_14, GTextAlignmentRight, fg2);
+    s_time = make_text(root, GRect(w / 2, 0, w / 2 - 6, 28), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentRight, fg);
+    s_date = make_text(root, GRect(w / 2, 28, w / 2 - 6, 18), FONT_KEY_GOTHIC_14, GTextAlignmentRight, fg2);
 
-    s_divider_layer = layer_create(GRect(0, top_h + 20, w, 1));
+    s_divider_layer = layer_create(GRect(0, 52, w, 1));
     layer_set_update_proc(s_divider_layer, divider_proc);
     layer_add_child(root, s_divider_layer);
 
-    int graph_top = top_h + 20;
+    int graph_top = 54;
     int bottom_stack = 14 + 16 + COMPLICATIONS_BAR_HEIGHT;
     int graph_h = h - graph_top - bottom_stack;
     s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, graph_top, graph_h));

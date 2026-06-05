@@ -11,6 +11,9 @@
 #include "../modules/time_display.h"
 #include "../modules/trend_glyphs.h"
 
+#define LOOP_HEADER_H 24
+#define LOOP_HERO_H 54
+#define LOOP_GRAPH_TOP (LOOP_HEADER_H + LOOP_HERO_H)
 #define CLASSIC_CARD_INSET 2
 #define CLASSIC_CARD_RADIUS 5
 #define CLASSIC_TIME_PAD_LEFT 8
@@ -27,9 +30,8 @@ static void classic_chrome_proc(Layer *layer, GContext *ctx) {
     }
     int w = wb.size.w;
     int h = wb.size.h;
-    int header_h = trio_header_height(wb);
-    int cy = header_h;
-    int ch = h - header_h - COMPLICATIONS_BAR_HEIGHT;
+    int cy = LOOP_HEADER_H;
+    int ch = h - LOOP_HEADER_H - COMPLICATIONS_BAR_HEIGHT;
     GRect card = GRect(CLASSIC_CARD_INSET, cy, w - 2 * CLASSIC_CARD_INSET, ch);
     GCornerMask card_corners =
         (GCornerMask)(GCornerTopLeft | GCornerTopRight | GCornerBottomLeft | GCornerBottomRight);
@@ -81,14 +83,9 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_classic_chrome_layer, classic_chrome_proc);
     layer_add_child(root, s_classic_chrome_layer);
 
-    int header_h = trio_header_height(bounds);
-    const char *hdr_font = FONT_KEY_GOTHIC_14_BOLD;
-    int hs = config_get()->header_size;
-    if (hs == 1) hdr_font = FONT_KEY_GOTHIC_18_BOLD;
-    else if (hs >= 2) hdr_font = FONT_KEY_GOTHIC_24_BOLD;
-    s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, 0, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, header_h),
-                       hdr_font, GTextAlignmentLeft, hdr_time);
-    s_age = make_text(root, GRect(w / 2, 0, w / 2 - 2, header_h), hdr_font, GTextAlignmentRight,
+    s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, 0, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, LOOP_HEADER_H),
+                       FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentLeft, hdr_time);
+    s_age = make_text(root, GRect(w / 2, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentRight,
                       hdr_age);
 
     /* Wider glucose column so "10.2" mmol does not ellipsize */
@@ -96,27 +93,29 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     if (gw > w - 44) {
         gw = w - 44;
     }
-    const char *glucose_font = trio_glucose_font( /*is_color*/ (bool)TRIO_DISPLAY_COLOR );
+#ifdef PBL_COLOR
+    const char *glucose_font = FONT_KEY_ROBOTO_BOLD_48;
+#else
+    const char *glucose_font = FONT_KEY_BITHAM_42_BOLD;
+#endif
     GColor hero_glucose = fg;
     if (chrome) {
         hero_glucose = light ? GColorBlack : GColorWhite;
     }
-    int hero_h = trio_hero_height(bounds);
-    s_glucose = make_text(root, GRect(0, header_h, gw, hero_h), glucose_font, GTextAlignmentLeft,
+    s_glucose = make_text(root, GRect(0, LOOP_HEADER_H, gw, LOOP_HERO_H), glucose_font, GTextAlignmentLeft,
                           hero_glucose);
     text_layer_set_text(s_glucose, "--");
 
-    s_trend_layer = layer_create(GRect(gw, header_h, w - gw, hero_h));
+    s_trend_layer = layer_create(GRect(gw, LOOP_HEADER_H, w - gw, LOOP_HERO_H));
     layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
-    int graph_top = header_h + hero_h;
-    int graph_h = h - graph_top - COMPLICATIONS_BAR_HEIGHT;
+    int graph_h = h - LOOP_GRAPH_TOP - COMPLICATIONS_BAR_HEIGHT;
     if (graph_h < 24) {
         graph_h = 24;
     }
-    s_graph_layer = layer_create(GRect(0, graph_top, w, graph_h));
+    s_graph_layer = layer_create(GRect(0, LOOP_GRAPH_TOP, w, graph_h));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
 

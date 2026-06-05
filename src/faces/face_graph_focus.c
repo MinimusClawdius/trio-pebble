@@ -42,24 +42,18 @@ void face_graph_focus_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
 
-    int top_h = trio_hero_height(bounds);
-    int trend_sz = trio_trend_size(bounds);
-
-    /* Row 0: BG (left) | fat trend glyph | time (right) — adaptive for emery */
-    int glucose_w = w * 55 / 100;
-    if (glucose_w < 60) glucose_w = 60;
-    s_glucose = make_text(root, GRect(2, 0, glucose_w, top_h), trio_glucose_font(TRIO_DISPLAY_COLOR), GTextAlignmentLeft, fg);
+    /* Row 0: BG (left) | fat trend glyph | time (right) — no overlap */
+    s_glucose = make_text(root, GRect(2, 0, 44, 36), FONT_KEY_BITHAM_42_BOLD, GTextAlignmentLeft, fg);
     text_layer_set_text(s_glucose, "--");
 
-    s_trend_layer = layer_create(GRect(glucose_w + 4, 2, trend_sz, trend_sz));
+    s_trend_layer = layer_create(GRect(44, 2, 32, 32));
     layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
-    s_time = make_text(root, GRect(glucose_w + trend_sz + 8, 0, w - (glucose_w + trend_sz + 12), top_h), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentRight, fg);
+    s_time = make_text(root, GRect(74, 0, w - 76, 32), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentRight, fg);
 
-    int delta_y = top_h + 4;
-    s_delta = make_text(root, GRect(4, delta_y, w - 8, 18), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
+    s_delta = make_text(root, GRect(4, 34, w - 8, 18), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
 
     // IOB + COB combined - bottom left
     s_iob_cob = make_text(root, GRect(4, h - 18, w - 4, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);

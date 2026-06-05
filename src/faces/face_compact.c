@@ -37,34 +37,22 @@ void face_compact_load(Window *window, Layer *root, GRect bounds) {
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
 
-    int header_h = trio_header_height(bounds);
-    int hero_h = trio_hero_height(bounds);
-    int trend_sz = trio_trend_size(bounds);
-
-    // Row 1: Glucose + Trend
-    int glucose_w = w - trend_sz - 8;
-    s_glucose = make_text(root, GRect(8, header_h, glucose_w, hero_h), trio_glucose_font(TRIO_DISPLAY_COLOR), GTextAlignmentLeft, fg);
+    s_glucose = make_text(root, GRect(4, -4, 48, 40), FONT_KEY_BITHAM_42_BOLD, GTextAlignmentLeft, fg);
     text_layer_set_text(s_glucose, "--");
 
-    s_trend_layer = layer_create(GRect(w - trend_sz - 4, header_h, trend_sz, trend_sz));
+    s_trend_layer = layer_create(GRect(50, 0, 32, 34));
     layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
-    // Row 2: Delta, Age, Time
-    int row2_y = header_h + hero_h;
-    int row2_h = 24;
-    int time_w = w * 45 / 100;
-    int meta_w = w - time_w - 8;
-    int meta_col1 = meta_w * 50 / 100;
-    int meta_col2 = meta_w - meta_col1;
-
-    s_time = make_text(root, GRect(w - time_w - 4, row2_y, time_w, row2_h), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentRight, fg2);
-    s_delta = make_text(root, GRect(4, row2_y, meta_col1, row2_h), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
-    s_age = make_text(root, GRect(4 + meta_col1, row2_y, meta_col2, row2_h), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+    int col1 = w * 36 / 100;
+    int col2 = w * 34 / 100;
+    s_delta = make_text(root, GRect(0, 40, col1, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+    s_age = make_text(root, GRect(col1, 40, col2, 16), FONT_KEY_GOTHIC_14, GTextAlignmentCenter, fg2);
+    s_time = make_text(root, GRect(col1 + col2, 36, w - col1 - col2, 26), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter, fg2);
 
     // Graph - fill the rest
-    int graph_top = row2_y + row2_h;
+    int graph_top = 60;
     s_graph_layer = layer_create(trio_graph_layer_bounds(bounds, graph_top, h - graph_top - 2));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);

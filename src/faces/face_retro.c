@@ -58,24 +58,21 @@ void face_retro_load(Window *window, Layer *root, GRect bounds) {
     GColor fg2 = trio_secondary_fg(config_get());
 
     int half = w / 2;
-    int top_h = trio_hero_height(bounds);
-    int trend_sz = trio_trend_size(bounds);
-
     s_date = make_text(root, GRect(8, 4, half - 12, 16), FONT_KEY_GOTHIC_14, GTextAlignmentLeft, fg2);
-    s_clock = make_text(root, GRect(half - 4, 0, half + 4, top_h), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentRight, fg);
+    s_clock = make_text(root, GRect(half - 4, 0, half + 4, 32), FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentRight, fg);
 
-    int lcd_y = top_h + 4;
-    int lcd_h = top_h + 10;  // scaled LCD area for emery
+    int lcd_y = 24;
+    int lcd_h = 44;
     s_lcd_frame_layer = layer_create(GRect(4, lcd_y, w - 8, lcd_h));
     layer_set_update_proc(s_lcd_frame_layer, lcd_frame_proc);
     layer_add_child(root, s_lcd_frame_layer);
 
     int inner_pad = 8;
-    s_glucose = make_text(root, GRect(inner_pad, lcd_y + 4, w - trend_sz - 20 - inner_pad, lcd_h - 8), trio_glucose_font(TRIO_DISPLAY_COLOR),
+    s_glucose = make_text(root, GRect(inner_pad, lcd_y + 4, w - 72 - inner_pad, 38), FONT_KEY_BITHAM_42_BOLD,
                           GTextAlignmentLeft, fg);
     text_layer_set_text(s_glucose, "--");
 
-    s_trend_layer = layer_create(GRect(w - trend_sz - 8, lcd_y + 6, trend_sz, trend_sz));
+    s_trend_layer = layer_create(GRect(w - 66, lcd_y + 6, 62, 34));
     layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
