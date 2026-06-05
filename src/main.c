@@ -69,8 +69,11 @@ static void load_active_face(Window *window) {
 }
 
 static void unload_active_face(void) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] unload_active_face() ENTER (active_face=%d)", s_active_face);
     if (s_active_face < FACE_COUNT) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] unload_active_face: calling face[%d].unload()", s_active_face);
         s_faces[s_active_face].unload();
+        APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] unload_active_face: face[%d].unload() returned", s_active_face);
     }
 }
 
@@ -81,29 +84,20 @@ static void update_active_face(void) {
 }
 
 static void reload_face(void) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face() ENTER");
+    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face() ENTER (safer child-layer method)");
     if (!s_main_window) return;
 
     APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: calling unload_active_face()");
     unload_active_face();
 
-    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: removing window from stack");
-    window_stack_remove(s_main_window, false);
+    // Safer approach: destroy child layers instead of the whole window
+    // This avoids the double-free that was happening during window_stack_remove + window_destroy
+    Layer *root = window_get_root_layer(s_main_window);
+    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: removing child layers from root");
+    layer_remove_child_layers(root);
 
-    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: destroying window");
-    window_destroy(s_main_window);
-
-    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: creating new window");
-    s_main_window = window_create();
-    window_set_click_config_provider(s_main_window, click_config);
-    window_set_window_handlers(s_main_window, (WindowHandlers){
-        .load = window_load,
-        .unload = window_unload,
-    });
-
-    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: pushing new window");
-    window_stack_push(s_main_window, false);
-    remote_cmds_set_watchface_window(s_main_window);
+    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: calling window_load to recreate face");
+    window_load(s_main_window);   // recreate the current face on the existing window
 
     APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face() EXIT");
 }
@@ -140,6 +134,7 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
 
     // Live update for header size changes (Classic face)
     if (dict_find(iter, KEY_CONFIG_HEADER_SIZE)) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] header_size changed -> reload_face()");
         reload_face();
         return;
     }
