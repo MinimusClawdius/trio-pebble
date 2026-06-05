@@ -43,6 +43,7 @@ void config_save(void) {
 }
 
 static void sanitize_comp_slots(void) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[SANITIZE] sanitize_comp_slots ENTER");
     for (int i = 0; i < TRIO_COMP_SLOT_COUNT; i++) {
         if (s_config.comp_slot[i] > COMP_SLOT_IOB) {
             s_config.comp_slot[i] = COMP_SLOT_NONE;
@@ -51,12 +52,14 @@ static void sanitize_comp_slots(void) {
 }
 
 static void sanitize_graph_scale_mode(void) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[SANITIZE] sanitize_graph_scale_mode ENTER");
     if (s_config.graph_scale_mode > GRAPH_SCALE_LEGACY) {
         s_config.graph_scale_mode = GRAPH_SCALE_LEGACY;
     }
 }
 
 static void sanitize_graph_time_range(void) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[SANITIZE] sanitize_graph_time_range ENTER");
     if (s_config.graph_time_range > GRAPH_TIME_24H) {
         s_config.graph_time_range = GRAPH_TIME_24H;
     }
@@ -167,6 +170,7 @@ void config_apply_message(DictionaryIterator *iter) {
     if (t) {
         int32_t v = t->value->int32;
         APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_CONFIG_HEADER_SIZE = %ld", (long)v);
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] About to set header_size");
         s_config.header_size = (v >= 0 && v <= 3) ? (uint8_t)v : 0;
         APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] header_size set to %u", s_config.header_size);
     }
