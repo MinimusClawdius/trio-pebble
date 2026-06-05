@@ -74,9 +74,9 @@ static void sanitize_graph_time_range(void) {
 void config_load(void) {
     if (persist_exists(CONFIG_KEY)) {
         persist_read_data(CONFIG_KEY, &s_config, sizeof(TrioConfig));
-        sanitize_comp_slots();
-        sanitize_graph_scale_mode();
-        sanitize_graph_time_range();
+    // sanitize_comp_slots();  // TEMP DEBUG
+    // sanitize_graph_scale_mode();  // TEMP DEBUG
+    // sanitize_graph_time_range();  // TEMP DEBUG
         if (s_config.header_size > 3) s_config.header_size = 3;
     }
 }
@@ -181,8 +181,8 @@ void config_apply_message(DictionaryIterator *iter) {
         APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] header_size set to %u", s_config.header_size);
     }
 
-    sanitize_graph_scale_mode();
-    sanitize_graph_time_range();
+    // sanitize_graph_scale_mode();  // TEMP DEBUG
+    // sanitize_graph_time_range();  // TEMP DEBUG
     if (s_config.header_size > 3) s_config.header_size = 3;
     APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] config_apply_message() EXIT (header_size=%u)", s_config.header_size);
 }
