@@ -1,7 +1,7 @@
 #include "config.h"
 #include "platform_compat.h"
 
-#define CONFIG_KEY 0x54726F3Au  /* v10: graph_smooth, header_size */
+#define CONFIG_KEY 0x54726F3Bu  /* v11: double-free recovery */ 
 
 static TrioConfig s_config;
 
