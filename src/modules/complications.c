@@ -69,9 +69,7 @@ static void slot_icon_text_split(GRect cell, GRect *out_icon, GRect *out_text, b
 /** Vertical center a single-line footer label within a sub-rect. */
 static GRect footer_text_band_vcenter(GRect subcol, int text_h) {
     int pad = (subcol.size.h - text_h) / 2;
-    if (pad < 0) {
-        pad = 0;
-    }
+    if (pad < 0) pad = 0;
     return GRect(subcol.origin.x, subcol.origin.y + pad, subcol.size.w, text_h);
 }
 
