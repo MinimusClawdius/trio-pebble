@@ -140,7 +140,7 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
 
     // Live update for header size changes (Classic face)
     if (dict_find(iter, KEY_CONFIG_HEADER_SIZE)) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] header_size changed -> reload_face()");
+        APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] header_size key present in message -> reload_face()");
         reload_face();
         return;
     }

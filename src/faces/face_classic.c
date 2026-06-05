@@ -84,9 +84,11 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     int header_h = trio_header_height(bounds);
     const char *hdr_font = FONT_KEY_GOTHIC_14_BOLD;
     int hs = config_get()->header_size;
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CLASSIC] header_size from config = %u", hs);
     if (hs == 1) hdr_font = FONT_KEY_GOTHIC_18_BOLD;
     else if (hs == 2) hdr_font = FONT_KEY_GOTHIC_24_BOLD;
     else if (hs >= 3) hdr_font = FONT_KEY_GOTHIC_28_BOLD;
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CLASSIC] selected header font key = %s", hdr_font);
     s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, 0, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, header_h),
                        hdr_font, GTextAlignmentLeft, hdr_time);
     s_age = make_text(root, GRect(w / 2, 0, w / 2 - 2, header_h), hdr_font, GTextAlignmentRight,
