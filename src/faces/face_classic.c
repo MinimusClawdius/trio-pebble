@@ -83,19 +83,19 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_classic_chrome_layer, classic_chrome_proc);
     layer_add_child(root, s_classic_chrome_layer);
 
-    // Respect header_size setting - Time slightly larger than Age (user requested sizes)
+    // Larger difference between Time and Age as requested
     int hs = config_get()->header_size;
     const char *time_font;
     const char *age_font;
     if (hs == 0) {
-        time_font = FONT_KEY_GOTHIC_18_BOLD;
+        time_font = FONT_KEY_GOTHIC_24_BOLD;   // bigger jump
         age_font  = FONT_KEY_GOTHIC_14_BOLD;
     } else if (hs == 1) {
-        time_font = FONT_KEY_GOTHIC_24_BOLD;
+        time_font = FONT_KEY_GOTHIC_28_BOLD;
         age_font  = FONT_KEY_GOTHIC_18_BOLD;
     } else {
-        time_font = FONT_KEY_GOTHIC_32_BOLD;   // 32 as requested
-        age_font  = FONT_KEY_GOTHIC_24_BOLD;
+        time_font = FONT_KEY_GOTHIC_32_BOLD;
+        age_font  = FONT_KEY_GOTHIC_18_BOLD;   // much smaller than time
     }
 
     // Center vertically within the dynamic header area
