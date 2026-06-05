@@ -157,6 +157,8 @@ function saveSettings() {
     msg[K.CONFIG_CLOCK_24H] = settings.clock24h ? 1 : 0;
     msg[K.CONFIG_GRAPH_SCALE_MODE] = settings.graphScaleMode | 0;
     msg[K.CONFIG_GRAPH_TIME_RANGE] = settings.graphTimeRange | 0;
+    msg[K.CONFIG_GRAPH_SMOOTH] = settings.graphSmooth ? 1 : 0;
+    msg[K.CONFIG_HEADER_SIZE] = settings.headerSize | 0;
     msg[K.UNITS] = displayUnitsForWatch();
     Pebble.sendAppMessage(msg);
 }
