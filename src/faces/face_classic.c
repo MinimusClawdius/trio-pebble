@@ -102,7 +102,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     if (chrome) {
         hero_glucose = light ? GColorBlack : GColorWhite;
     }
-    s_glucose = make_text(root, GRect(8, LOOP_HEADER_H + 4, gw - 16, LOOP_HERO_H), glucose_font, GTextAlignmentLeft,
+    s_glucose = make_text(root, GRect(10, LOOP_HEADER_H + 6, gw - 20, LOOP_HERO_H + 12), glucose_font, GTextAlignmentLeft,
                           hero_glucose);
     text_layer_set_text(s_glucose, "--");
 
