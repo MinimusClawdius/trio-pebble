@@ -85,7 +85,12 @@ static GRect footer_text_band_cell_mid(GRect cell, GRect text_col, int text_h) {
 static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, AppState *state, TrioConfig *config,
                           GColor fg) {
     char buf[24];
-    GFont font_footer = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+    int hs = config ? config->header_size : 0;
+    GFont font_footer;
+    if (hs == 0) font_footer = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+    else if (hs == 1) font_footer = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+    else font_footer = fonts_get_system_font(FONT_KEY_GOTHIC_24);
+    APP_LOG(APP_LOG_LEVEL_INFO, "[COMPLICATIONS] footer font size selected for header_size=%d", hs);
 
     graphics_context_set_text_color(ctx, fg);
 
