@@ -122,6 +122,12 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
         APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] About to copy config state");
         s_state.config = *config_get();
         APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] About to reload_face()");
+
+        // Also trigger reload if header_size specifically changed (even in config_changed path)
+        if (dict_find(iter, KEY_CONFIG_HEADER_SIZE)) {
+            APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] header_size changed -> reload_face()");
+        }
+
         reload_face();
         APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face() returned");
         return;
