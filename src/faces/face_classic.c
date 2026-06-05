@@ -99,14 +99,14 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
         age_font  = FONT_KEY_GOTHIC_18_BOLD;   // much smaller than time
     }
 
-    // Center vertically within the dynamic header area
-    int header_h = dynamic_header_h;
-    int time_y = (header_h - 20) / 2;
-    int age_y  = (header_h - 16) / 2;
+    // Better vertical centering within the header band
+    int header_band_h = dynamic_header_h;
+    // Center the text layer inside the header band
+    int time_layer_h = (hs == 2) ? 28 : (hs == 1) ? 24 : 20;
+    int age_layer_h  = (hs == 2) ? 22 : (hs == 1) ? 20 : 16;
 
-    // Give larger fonts enough vertical space
-    int time_h = (hs == 2) ? 26 : 20;
-    int age_h  = (hs == 2) ? 20 : 16;
+    int time_y = (header_band_h - time_layer_h) / 2;
+    int age_y  = (header_band_h - age_layer_h) / 2;
 
     s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, time_y, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, time_h),
                        time_font, GTextAlignmentLeft, hdr_time);
