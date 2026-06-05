@@ -98,10 +98,10 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
         age_font  = FONT_KEY_GOTHIC_24_BOLD;
     }
 
-    // Center vertically within the header area
-    int header_h = LOOP_HEADER_H;
-    int time_y = (header_h - 18) / 2;   // rough vertical center for time
-    int age_y  = (header_h - 14) / 2;
+    // Center vertically within the dynamic header area
+    int header_h = dynamic_header_h;
+    int time_y = (header_h - 20) / 2;
+    int age_y  = (header_h - 16) / 2;
 
     s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, time_y, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, 20),
                        time_font, GTextAlignmentLeft, hdr_time);
@@ -131,11 +131,16 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
-    int graph_h = h - LOOP_GRAPH_TOP - COMPLICATIONS_BAR_HEIGHT;
+    // Dynamic layout: header grows with header_size, graph compresses, glucose area stays stable
+    int hs = config_get()->header_size;
+    int dynamic_header_h = (hs == 0) ? 24 : (hs == 1) ? 28 : 34;   // header row height
+    int graph_top = dynamic_header_h + LOOP_HERO_H;
+
+    int graph_h = h - graph_top - COMPLICATIONS_BAR_HEIGHT;
     if (graph_h < 24) {
         graph_h = 24;
     }
-    s_graph_layer = layer_create(GRect(0, LOOP_GRAPH_TOP, w, graph_h));
+    s_graph_layer = layer_create(GRect(0, graph_top, w, graph_h));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
 
