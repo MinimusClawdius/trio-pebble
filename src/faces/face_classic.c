@@ -83,7 +83,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_classic_chrome_layer, classic_chrome_proc);
     layer_add_child(root, s_classic_chrome_layer);
 
-    // Respect header_size setting - Time slightly larger than Age
+    // Respect header_size setting - Time slightly larger than Age (user requested sizes)
     int hs = config_get()->header_size;
     const char *time_font;
     const char *age_font;
@@ -94,7 +94,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
         time_font = FONT_KEY_GOTHIC_24_BOLD;
         age_font  = FONT_KEY_GOTHIC_18_BOLD;
     } else {
-        time_font = FONT_KEY_GOTHIC_28_BOLD;  // or 32 if available
+        time_font = FONT_KEY_GOTHIC_32_BOLD;   // 32 as requested
         age_font  = FONT_KEY_GOTHIC_24_BOLD;
     }
 
@@ -103,9 +103,13 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     int time_y = (header_h - 20) / 2;
     int age_y  = (header_h - 16) / 2;
 
-    s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, time_y, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, 20),
+    // Give larger fonts enough vertical space
+    int time_h = (hs == 2) ? 26 : 20;
+    int age_h  = (hs == 2) ? 20 : 16;
+
+    s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, time_y, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, time_h),
                        time_font, GTextAlignmentLeft, hdr_time);
-    s_age = make_text(root, GRect(w / 2, age_y, w / 2 - 2, 16), age_font, GTextAlignmentRight,
+    s_age = make_text(root, GRect(w / 2, age_y, w / 2 - 2, age_h), age_font, GTextAlignmentRight,
                       hdr_age);
 
     /* Wider glucose column so "10.2" mmol does not ellipsize */
