@@ -103,8 +103,6 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             int mid_y = cell.origin.y + cell.size.h / 2;
             trio_draw_footer_battery_bar(ctx, ir, mid_y, state->comp.watch_battery, state->comp.watch_charging, fg,
                                          config);
-            // Force vertical centering of value text
-            tr = footer_text_band_cell_mid(cell, tr, 18);
             if (state->comp.watch_charging) {
                 snprintf(buf, sizeof(buf), "%d+", state->comp.watch_battery);
             } else {

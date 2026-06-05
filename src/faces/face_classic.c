@@ -83,9 +83,16 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     layer_set_update_proc(s_classic_chrome_layer, classic_chrome_proc);
     layer_add_child(root, s_classic_chrome_layer);
 
+    // Respect header_size setting for time/age row (same logic as footer)
+    int hs = config_get()->header_size;
+    const char *header_font;
+    if (hs == 0)      header_font = FONT_KEY_GOTHIC_14_BOLD;
+    else if (hs == 1) header_font = FONT_KEY_GOTHIC_18_BOLD;
+    else              header_font = FONT_KEY_GOTHIC_24_BOLD;
+
     s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, 0, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, LOOP_HEADER_H),
-                       FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentLeft, hdr_time);
-    s_age = make_text(root, GRect(w / 2, 0, w / 2 - 2, LOOP_HEADER_H), FONT_KEY_GOTHIC_14_BOLD, GTextAlignmentRight,
+                       header_font, GTextAlignmentLeft, hdr_time);
+    s_age = make_text(root, GRect(w / 2, 0, w / 2 - 2, LOOP_HEADER_H), header_font, GTextAlignmentRight,
                       hdr_age);
 
     /* Wider glucose column so "10.2" mmol does not ellipsize */
@@ -102,7 +109,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     if (chrome) {
         hero_glucose = light ? GColorBlack : GColorWhite;
     }
-    s_glucose = make_text(root, GRect(10, LOOP_HEADER_H + 6, gw - 20, LOOP_HERO_H + 12), glucose_font, GTextAlignmentLeft,
+    s_glucose = make_text(root, GRect(8, LOOP_HEADER_H + 4, gw - 16, LOOP_HERO_H + 22), glucose_font, GTextAlignmentLeft,
                           hero_glucose);
     text_layer_set_text(s_glucose, "--");
 
