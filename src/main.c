@@ -115,9 +115,15 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     Tuple *config_changed = dict_find(iter, KEY_CONFIG_CHANGED);
     if (config_changed) {
         APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] Config changed flag received");
+
+        // NOTE (2026-06-04): We are currently debugging a double-free crash that occurs
+        // immediately after config_apply_message() returns. As a temporary measure,
+        // we have disabled the struct copy and reload_face() call in this path.
+        // The crash was still occurring even with config_save() and sanitizers disabled,
+        // so the trigger appears to be in the state copy or layer recreation.
         config_apply_message(iter);
-        s_state.config = *config_get();
-        reload_face();
+        // s_state.config = *config_get();   // TEMP DISABLED - potential crash source
+        // reload_face();                    // TEMP DISABLED - potential crash source
         return;
     }
 
