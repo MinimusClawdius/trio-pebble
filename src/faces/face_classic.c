@@ -85,7 +85,8 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
 
     // Larger difference between Time and Age as requested
     int hs = config_get()->header_size;
-    int dynamic_header_h = (hs == 0) ? 24 : (hs == 1) ? 28 : 34;
+    // Taller header bands so larger fonts can be properly centered
+    int dynamic_header_h = (hs == 0) ? 26 : (hs == 1) ? 32 : 40;
     const char *time_font;
     const char *age_font;
     if (hs == 0) {
@@ -102,8 +103,8 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     // Better vertical centering within the header band
     int header_band_h = dynamic_header_h;
     // Center the text layer inside the header band
-    int time_layer_h = (hs == 2) ? 28 : (hs == 1) ? 24 : 20;
-    int age_layer_h  = (hs == 2) ? 22 : (hs == 1) ? 20 : 16;
+    int time_layer_h = (hs == 2) ? 26 : (hs == 1) ? 22 : 18;
+    int age_layer_h  = (hs == 2) ? 20 : (hs == 1) ? 18 : 14;
 
     int time_y = (header_band_h - time_layer_h) / 2;
     int age_y  = (header_band_h - age_layer_h) / 2;
