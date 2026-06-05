@@ -83,21 +83,29 @@ static void update_active_face(void) {
 static void reload_face(void) {
     APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face() ENTER");
     if (!s_main_window) return;
+
+    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: calling unload_active_face()");
     unload_active_face();
 
-    // Pebble SDK doesn't expose layer child iteration,
-    // so we destroy and recreate the window to get a clean root layer.
+    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: removing window from stack");
     window_stack_remove(s_main_window, false);
+
+    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: destroying window");
     window_destroy(s_main_window);
 
+    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: creating new window");
     s_main_window = window_create();
     window_set_click_config_provider(s_main_window, click_config);
     window_set_window_handlers(s_main_window, (WindowHandlers){
         .load = window_load,
         .unload = window_unload,
     });
+
+    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face: pushing new window");
     window_stack_push(s_main_window, false);
     remote_cmds_set_watchface_window(s_main_window);
+
+    APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] reload_face() EXIT");
 }
 
 // ---------- AppMessage Handlers ----------
