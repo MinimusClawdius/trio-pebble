@@ -18,7 +18,6 @@ static void set_defaults(void) {
     s_config.show_complications = true;
     s_config.is_mmol = true;                             // mmol
     s_config.weather_enabled = true;
-    s_config.weather_units_c = true;                     // 'c'
     s_config.comp_slot[0] = COMP_SLOT_WATCH_BATTERY;     // 1
     s_config.comp_slot[1] = COMP_SLOT_PHONE_BATTERY;     // 5
     s_config.comp_slot[2] = COMP_SLOT_STEPS;             // 4
