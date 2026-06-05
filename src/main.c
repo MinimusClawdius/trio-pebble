@@ -129,7 +129,7 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
 
     // Apply config keys that might come with data
     config_apply_message(iter);
-    //config_save();
+    config_save();
     s_state.config = *config_get();
 
     // Live update for header size changes (Classic face)
