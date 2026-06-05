@@ -17,6 +17,7 @@
 #define CLASSIC_CARD_INSET 2
 #define CLASSIC_CARD_RADIUS 5
 #define CLASSIC_TIME_PAD_LEFT 8
+#define CLASSIC_TIME_PAD_DOWN 8
 
 static TextLayer *s_time, *s_age, *s_glucose;
 static Layer *s_classic_chrome_layer, *s_graph_layer, *s_comp_layer, *s_trend_layer;
@@ -109,7 +110,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     int time_y = (header_band_h - time_layer_h) / 2;
     int age_y  = (header_band_h - age_layer_h) / 2;
 
-    s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, time_y, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, time_layer_h),
+    s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, CLASSIC_TIME_PAD_DOWN, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, time_layer_h),
                        time_font, GTextAlignmentLeft, hdr_time);
     s_age = make_text(root, GRect(w / 2, age_y, w / 2 - 2, age_layer_h), age_font, GTextAlignmentRight,
                       hdr_age);
