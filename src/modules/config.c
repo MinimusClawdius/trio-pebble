@@ -73,6 +73,7 @@ void config_load(void) {
 }
 
 void config_apply_message(DictionaryIterator *iter) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] config_apply_message() ENTER");
     APP_LOG(APP_LOG_LEVEL_INFO, "config_apply_message() called");
 
     Tuple *t;
@@ -165,12 +166,15 @@ void config_apply_message(DictionaryIterator *iter) {
     t = dict_find(iter, KEY_CONFIG_HEADER_SIZE);
     if (t) {
         int32_t v = t->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] Got KEY_CONFIG_HEADER_SIZE = %ld", (long)v);
         s_config.header_size = (v >= 0 && v <= 3) ? (uint8_t)v : 0;
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] header_size set to %u", s_config.header_size);
     }
 
     sanitize_graph_scale_mode();
     sanitize_graph_time_range();
     if (s_config.header_size > 3) s_config.header_size = 3;
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CONFIG] config_apply_message() EXIT (header_size=%u)", s_config.header_size);
 }
 
 TrioConfig *config_get(void) {

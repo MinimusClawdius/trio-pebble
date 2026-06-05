@@ -114,7 +114,7 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     // Check for config changes first
     Tuple *config_changed = dict_find(iter, KEY_CONFIG_CHANGED);
     if (config_changed) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Config changed flag received");
+        APP_LOG(APP_LOG_LEVEL_INFO, "[MAIN] Config changed flag received");
         config_apply_message(iter);
         s_state.config = *config_get();
         reload_face();
