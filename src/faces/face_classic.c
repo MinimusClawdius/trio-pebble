@@ -104,9 +104,9 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     }
 
     // Use grect_align for proper vertical centering within the header band
-    GRect *header_band = GRect(0, 0, w, dynamic_header_h);
-    GRect *time_frame = GRect(CLASSIC_TIME_PAD_LEFT, 0, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, 22);
-    GRect *age_frame  = GRect(w / 2, 0, w / 2 - 2, 18);
+    GRect header_band = GRect(0, 0, w, dynamic_header_h);
+    GRect time_frame = GRect(CLASSIC_TIME_PAD_LEFT, 0, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, 22);
+    GRect age_frame  = GRect(w / 2, 0, w / 2 - 2, 18);
 
     time_frame = grect_align(time_frame, header_band, GAlignCenter, true);
     age_frame  = grect_align(age_frame, header_band, GAlignCenter, true);
