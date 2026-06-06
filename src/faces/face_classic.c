@@ -121,16 +121,15 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     if (chrome) {
         hero_glucose = light ? GColorBlack : GColorWhite;
     }
-    s_glucose = make_text(root, GRect(8, LOOP_HEADER_H + 4, gw - 16, LOOP_HERO_H + 22), glucose_font, GTextAlignmentLeft,
+    s_glucose = make_text(root, GRect(8, dynamic_header_h + 4, gw - 16, LOOP_HERO_H + 22), glucose_font, GTextAlignmentLeft,
                           hero_glucose);
     text_layer_set_text(s_glucose, "--");
 
-    s_trend_layer = layer_create(GRect(gw, LOOP_HEADER_H, w - gw, LOOP_HERO_H));
+    s_trend_layer = layer_create(GRect(gw, dynamic_header_h, w - gw, LOOP_HERO_H));
     layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
-    dynamic_header_h = (hs == 0) ? 24 : (hs == 1) ? 28 : 34;
     int graph_top = dynamic_header_h + LOOP_HERO_H;
 
     int graph_h = h - graph_top - COMPLICATIONS_BAR_HEIGHT;
