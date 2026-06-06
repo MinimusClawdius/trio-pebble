@@ -31,8 +31,10 @@ static void classic_chrome_proc(Layer *layer, GContext *ctx) {
     }
     int w = wb.size.w;
     int h = wb.size.h;
-    int cy = LOOP_HEADER_H;
-    int ch = h - LOOP_HEADER_H - COMPLICATIONS_BAR_HEIGHT;
+    int hs = cfg ? cfg->header_size : 0;
+    int header_h = (hs == 0) ? 26 : (hs == 1) ? 32 : 40;
+    int cy = header_h;
+    int ch = h - header_h - COMPLICATIONS_BAR_HEIGHT;
     GRect card = GRect(CLASSIC_CARD_INSET, cy, w - 2 * CLASSIC_CARD_INSET, ch);
     GCornerMask card_corners =
         (GCornerMask)(GCornerTopLeft | GCornerTopRight | GCornerBottomLeft | GCornerBottomRight);
