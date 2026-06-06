@@ -87,7 +87,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     // Larger difference between Time and Age as requested
     int hs = config_get()->header_size;
     // Taller header bands so larger fonts can be properly centered
-    int dynamic_header_h = (hs == 0) ? 26 : (hs == 1) ? 32 : 40;
+    int dynamic_header_h = (hs == 0) ? 28 : (hs == 1) ? 32 : 40;
     const char *time_font;
     const char *age_font;
     if (hs == 0) {
@@ -97,14 +97,14 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
         time_font = FONT_KEY_GOTHIC_28_BOLD;
         age_font  = FONT_KEY_GOTHIC_18_BOLD;
     } else {
-        time_font = FONT_KEY_GOTHIC_28_BOLD;
+        time_font = FONT_KEY_GOTHIC_32_BOLD;
         age_font  = FONT_KEY_GOTHIC_18_BOLD;   // much smaller than time
     }
 
     // Use grect_align for proper vertical centering within the header band
-    GRect header_band = GRect(0, 0, w, dynamic_header_h);
-    GRect time_frame = GRect(CLASSIC_TIME_PAD_LEFT, 0, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, 22);
-    GRect age_frame  = GRect(w / 2, 0, w / 2 - 2, 18);
+    GRect *header_band = GRect(0, 0, w, dynamic_header_h);
+    GRect *time_frame = GRect(CLASSIC_TIME_PAD_LEFT, 0, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, 22);
+    GRect *age_frame  = GRect(w / 2, 0, w / 2 - 2, 18);
 
     time_frame = grect_align(time_frame, header_band, GAlignCenter, true);
     age_frame  = grect_align(age_frame, header_band, GAlignCenter, true);
