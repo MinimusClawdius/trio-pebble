@@ -99,7 +99,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
         time_font = FONT_KEY_GOTHIC_28_BOLD;
         age_font  = FONT_KEY_GOTHIC_18_BOLD;
     } else {
-        time_font = FONT_KEY_GOTHIC_32_BOLD;
+        time_font = FONT_KEY_GOTHIC_28_BOLD;
         age_font  = FONT_KEY_GOTHIC_18_BOLD;   // much smaller than time
     }
 
