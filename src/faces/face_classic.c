@@ -101,12 +101,16 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
         age_font  = FONT_KEY_GOTHIC_18_BOLD;   // much smaller than time
     }
 
-    // Center header text using mid_y (same logic as complication icons)
-    int mid_y = dynamic_header_h / 2;
-    s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, mid_y - 11, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, 22),
-                       time_font, GTextAlignmentLeft, hdr_time);
-    s_age = make_text(root, GRect(w / 2, mid_y - 9, w / 2 - 2, 18), age_font, GTextAlignmentRight,
-                      hdr_age);
+    // Use grect_align for proper vertical centering within the header band
+    GRect header_band = GRect(0, 0, w, dynamic_header_h);
+    GRect time_frame = GRect(CLASSIC_TIME_PAD_LEFT, 0, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, 22);
+    GRect age_frame  = GRect(w / 2, 0, w / 2 - 2, 18);
+
+    time_frame = grect_align(time_frame, header_band, GAlignCenter, true);
+    age_frame  = grect_align(age_frame, header_band, GAlignCenter, true);
+
+    s_time = make_text(root, time_frame, time_font, GTextAlignmentLeft, hdr_time);
+    s_age = make_text(root, age_frame, age_font, GTextAlignmentRight, hdr_age);
 
     /* Wider glucose column so "10.2" mmol does not ellipsize */
     int gw = w * 68 / 100;
