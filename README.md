@@ -5,6 +5,16 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ## Changelog
 
 ### v2.16.2
+
+### v2.17.0
+- Added native touch support for Pebble Time 2 (emery) using `touch_service` + `TouchEvent`.
+- Implemented horizontal swipe left/right on the graph area to cycle time range (3H → 6H → 12H → 24H).
+- Added local cycle handler + graph bounds registration.
+- Wired `TAP_ACTION_CYCLE_GRAPH_TIME`.
+- Fixed CloudPebble build errors (handler signature, implicit declarations, includes).
+- Fixed Nightscout properties token bug.
+- Bumped version to 2.17.0.
+
 - Fixed decimal point rendering for mmol/L glucose values (was showing as [X] missing glyph).
 - Switched glucose display fonts from numbers-only subset fonts to full fonts (`BITHAM_42_BOLD`) that include the decimal point character.
 - Applied across Classic, Compact, Dashboard, Graph Focus, and Retro faces.
