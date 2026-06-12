@@ -94,6 +94,8 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     // Dynamic header + aggressive font sizing for emery
     int hs = config_get()->header_size;
     int dynamic_header_h = get_dynamic_header_h();
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CLASSIC] header_size=%d dynamic_header_h=%d emery=%d", hs, dynamic_header_h, trio_large_rect(bounds));
+    int dynamic_header_h = get_dynamic_header_h();
 
     const char *time_font;
     const char *age_font;
@@ -109,9 +111,11 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     }
 
     int mid_y = dynamic_header_h / 2;
-    s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, mid_y - 12, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, 24),
+    int time_h = (hs == 0) ? 24 : 28;
+    int age_h  = (hs == 0) ? 16 : 20;
+    s_time = make_text(root, GRect(CLASSIC_TIME_PAD_LEFT, mid_y - time_h/2, w / 2 - CLASSIC_TIME_PAD_LEFT - 2, time_h),
                        time_font, GTextAlignmentLeft, hdr_time);
-    s_age = make_text(root, GRect(w / 2, mid_y - 10, w / 2 - 2, 20), age_font, GTextAlignmentRight, hdr_age);
+    s_age = make_text(root, GRect(w / 2, mid_y - age_h/2, w / 2 - 2, age_h), age_font, GTextAlignmentRight, hdr_age);
 
     /* Wider glucose column */
     int gw = w * 68 / 100;
