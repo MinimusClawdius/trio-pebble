@@ -36,7 +36,7 @@ static void classic_chrome_proc(Layer *layer, GContext *ctx) {
     }
     int w = wb.size.w;
     int h = wb.size.h;
-    int header_h = get_dynamic_header_h(bounds);
+    int header_h = get_dynamic_header_h(wb);
     int cy = header_h;
     int ch = h - header_h - COMPLICATIONS_BAR_HEIGHT;
     GRect card = GRect(CLASSIC_CARD_INSET, cy, w - 2 * CLASSIC_CARD_INSET, ch);
