@@ -96,6 +96,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     int dynamic_header_h = get_dynamic_header_h();
     APP_LOG(APP_LOG_LEVEL_INFO, "[CLASSIC] header_size=%d dynamic_header_h=%d emery=%d", hs, dynamic_header_h, trio_large_rect(bounds));
     int dynamic_header_h = get_dynamic_header_h();
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CLASSIC] header_size=%d dynamic_header_h=%d emery=%d", hs, dynamic_header_h, trio_large_rect(bounds));
 
     const char *time_font;
     const char *age_font;
