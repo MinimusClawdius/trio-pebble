@@ -15,7 +15,7 @@
 
 static TextLayer *s_time, *s_age, *s_glucose;
 static Layer *s_classic_chrome_layer, *s_graph_layer, *s_comp_layer, *s_trend_layer;
-static char s_time_buf[16], s_age_buf[20];
+static char s_time_buf[16], s_glucose_buf[16], s_age_buf[20];
 
 // Centralized dynamic header height (matches skill recommendation)
 static int get_dynamic_header_h(GRect bounds) {
@@ -168,5 +168,9 @@ void face_classic_update(AppState *state) {
     if (s_age) {
         snprintf(s_age_buf, sizeof(s_age_buf), "now");
         text_layer_set_text(s_age, s_age_buf);
+    }
+    if (s_glucose && state) {
+        format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose, state->config.is_mmol);
+        text_layer_set_text(s_glucose, s_glucose_buf);
     }
 }
