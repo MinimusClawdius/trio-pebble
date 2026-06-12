@@ -14,6 +14,8 @@ static int16_t s_start_y = 0;
 static GRect s_graph_bounds = {{0, 0}, {0, 0}};
 #endif
 
+void tap_framework_cycle_graph_time_range(void);
+
 void tap_framework_init(void) {
     s_zone_count = 0;
     memset(s_zones, 0, sizeof(s_zones));
