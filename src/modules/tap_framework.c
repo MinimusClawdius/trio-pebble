@@ -52,6 +52,11 @@ TapAction tap_framework_resolve(GPoint touch_point) {
 void tap_framework_send_action(TapAction action) {
     if (action == TAP_ACTION_NONE) return;
 
+    if (action == TAP_ACTION_CYCLE_GRAPH_TIME) {
+        tap_framework_cycle_graph_time_range();
+        return;  // local cycle + refresh already triggered
+    }
+
     DictionaryIterator *iter;
     AppMessageResult result = app_message_outbox_begin(&iter);
     if (result == APP_MSG_OK) {
@@ -59,7 +64,6 @@ void tap_framework_send_action(TapAction action) {
         app_message_outbox_send();
     }
 }
-
 #if defined(PBL_TOUCH)
 void tap_framework_set_graph_bounds(GRect bounds) {
     s_graph_bounds = bounds;
@@ -101,5 +105,26 @@ void tap_framework_handle_touch_event(const TouchEvent *event) {
         default:
             break;
     }
+}
+#endif
+
+#if defined(PBL_TOUCH) || 1
+#include "config.h"
+
+void tap_framework_cycle_graph_time_range(void) {
+    TrioConfig *cfg = config_get();
+    if (!cfg) return;
+
+    uint8_t current = cfg->graph_time_range;
+    uint8_t next = (current + 1) % 4;  // 0-3 wraps around
+
+    cfg->graph_time_range = next;
+    config_save();
+
+    // Trigger refresh so phone sends data for the new range
+    tap_framework_send_action(TAP_ACTION_REFRESH);
+
+    // Mark graph dirty if we have access to the layer (faces will handle redraw on next update)
+    APP_LOG(APP_LOG_LEVEL_INFO, "[TAP] Cycled graph time range to %d", next);
 }
 #endif

@@ -337,7 +337,7 @@ function fetchNightscout(callback) {
         if (!sgvData) return callback(null);
         try {
             var entries = JSON.parse(sgvData);
-            httpGet(url + '/api/v1/properties/iob,cob,loop' + tokenParam, function (propData) {
+            httpGet(url + '/api/v1/properties/iob,cob,loop' + tokenQs, function (propData) {
                 var props = {};
                 try { props = JSON.parse(propData || '{}'); } catch (e) { /* ok */ }
                 callback(normalizeNightscout(entries, props));
