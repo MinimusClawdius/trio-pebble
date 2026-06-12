@@ -144,6 +144,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     s_graph_layer = layer_create(GRect(0, graph_top, w, graph_h));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
+    tap_framework_set_graph_bounds(GRect(0, graph_top, w, graph_h));
 
     s_comp_layer = layer_create(GRect(0, h - COMPLICATIONS_BAR_HEIGHT, w, COMPLICATIONS_BAR_HEIGHT));
     layer_set_update_proc(s_comp_layer, comp_proc);
