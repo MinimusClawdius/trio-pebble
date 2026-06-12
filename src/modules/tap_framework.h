@@ -19,5 +19,5 @@ void tap_framework_send_action(TapAction action);
 
 #if defined(PBL_TOUCH)
 void tap_framework_set_graph_bounds(GRect bounds);
-void tap_framework_handle_touch_event(const TouchEvent *event);
+void tap_framework_handle_touch_event(const TouchEvent *event, void *context);
 #endif
