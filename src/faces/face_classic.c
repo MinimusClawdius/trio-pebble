@@ -18,11 +18,11 @@ static Layer *s_classic_chrome_layer, *s_graph_layer, *s_comp_layer, *s_trend_la
 static char s_time_buf[16], s_age_buf[20];
 
 // Centralized dynamic header height (matches skill recommendation)
-static int get_dynamic_header_h(void) {
+static int get_dynamic_header_h(GRect bounds) {
     TrioConfig *cfg = config_get();
     int hs = cfg ? cfg->header_size : 2;
-    // More aggressive heights on emery for larger fonts
-    if (trio_large_rect(layer_get_bounds(s_classic_chrome_layer))) {
+    // Use larger heights on emery (200px wide)
+    if (bounds.size.w >= 180) {
         return (hs == 0) ? 32 : (hs == 1) ? 38 : 46;
     }
     return (hs == 0) ? 28 : (hs == 1) ? 32 : 40;
@@ -36,7 +36,7 @@ static void classic_chrome_proc(Layer *layer, GContext *ctx) {
     }
     int w = wb.size.w;
     int h = wb.size.h;
-    int header_h = get_dynamic_header_h();
+    int header_h = get_dynamic_header_h(bounds);
     int cy = header_h;
     int ch = h - header_h - COMPLICATIONS_BAR_HEIGHT;
     GRect card = GRect(CLASSIC_CARD_INSET, cy, w - 2 * CLASSIC_CARD_INSET, ch);
@@ -94,7 +94,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
 
     // Dynamic header + aggressive font sizing for emery
     int hs = config_get()->header_size;
-    int dynamic_header_h = get_dynamic_header_h();
+    int dynamic_header_h = get_dynamic_header_h(bounds);
     APP_LOG(APP_LOG_LEVEL_INFO, "[CLASSIC] header_size=%d dynamic_header_h=%d emery=%d", hs, dynamic_header_h, trio_large_rect(bounds));
 
     const char *time_font;
