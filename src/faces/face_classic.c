@@ -4,6 +4,7 @@
 // High contrast: no chrome layer (flat legacy layout).
 
 #include "face_classic.h"
+#include "../modules/tap_framework.h"
 #include "../modules/graph.h"
 #include "../modules/complications.h"
 #include "../modules/glucose_format.h"

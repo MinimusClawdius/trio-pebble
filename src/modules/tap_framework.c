@@ -1,4 +1,5 @@
 #include "tap_framework.h"
+#include "config.h"
 #include <string.h>
 
 #define MAX_TAP_ZONES 8
@@ -26,15 +27,11 @@ void tap_framework_register_zone(GRect zone, TapAction action, const char *label
     s_zone_count++;
 }
 
-// Current: uses accelerometer tap as a stand-in for touch
-// Cycles through: refresh -> toggle face on repeated taps
 void tap_framework_handle_tap(AccelAxisType axis, int32_t direction) {
     (void)axis; (void)direction;
-    // For now, a wrist flick triggers a data refresh
     tap_framework_send_action(TAP_ACTION_REFRESH);
 }
 
-// Future: resolves a touch point to an action
 TapZone *tap_framework_find_zone(GPoint point) {
     for (int i = 0; i < s_zone_count; i++) {
         if (grect_contains_point(&s_zones[i].zone, &point)) {
@@ -54,7 +51,7 @@ void tap_framework_send_action(TapAction action) {
 
     if (action == TAP_ACTION_CYCLE_GRAPH_TIME) {
         tap_framework_cycle_graph_time_range();
-        return;  // local cycle + refresh already triggered
+        return;
     }
 
     DictionaryIterator *iter;
@@ -64,12 +61,34 @@ void tap_framework_send_action(TapAction action) {
         app_message_outbox_send();
     }
 }
+
+void tap_framework_cycle_graph_time_range(void) {
+    TrioConfig *cfg = config_get();
+    if (!cfg) return;
+
+    uint8_t current = cfg->graph_time_range;
+    uint8_t next = (current + 1) % 4;
+
+    cfg->graph_time_range = next;
+    config_save();
+
+    APP_LOG(APP_LOG_LEVEL_INFO, "[TAP] Cycled graph time range to %d", next);
+
+    // Trigger a refresh so the phone sends data for the new range
+    DictionaryIterator *iter;
+    if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
+        dict_write_uint8(iter, KEY_TAP_ACTION, TAP_ACTION_REFRESH);
+        app_message_outbox_send();
+    }
+}
+
 #if defined(PBL_TOUCH)
 void tap_framework_set_graph_bounds(GRect bounds) {
     s_graph_bounds = bounds;
 }
 
-void tap_framework_handle_touch_event(const TouchEvent *event) {
+void tap_framework_handle_touch_event(const TouchEvent *event, void *context) {
+    (void)context;
     if (!event) return;
 
     switch (event->type) {
@@ -88,16 +107,13 @@ void tap_framework_handle_touch_event(const TouchEvent *event) {
             int16_t ady = dy < 0 ? -dy : dy;
 
             const int16_t HSWIPE_THRESHOLD = 30;
-            const int16_t TAP_THRESHOLD = 15;
 
             bool in_graph = grect_contains_point(&s_graph_bounds,
                 &(GPoint){ .x = event->x, .y = event->y });
 
             if (adx > HSWIPE_THRESHOLD && adx > ady && in_graph) {
-                // Horizontal swipe on graph area → cycle time range
                 tap_framework_send_action(TAP_ACTION_CYCLE_GRAPH_TIME);
             }
-            // Tap handling can be extended here using existing zone logic
 
             s_tracking = false;
             break;
@@ -105,26 +121,5 @@ void tap_framework_handle_touch_event(const TouchEvent *event) {
         default:
             break;
     }
-}
-#endif
-
-#if defined(PBL_TOUCH) || 1
-#include "config.h"
-
-void tap_framework_cycle_graph_time_range(void) {
-    TrioConfig *cfg = config_get();
-    if (!cfg) return;
-
-    uint8_t current = cfg->graph_time_range;
-    uint8_t next = (current + 1) % 4;  // 0-3 wraps around
-
-    cfg->graph_time_range = next;
-    config_save();
-
-    // Trigger refresh so phone sends data for the new range
-    tap_framework_send_action(TAP_ACTION_REFRESH);
-
-    // Mark graph dirty if we have access to the layer (faces will handle redraw on next update)
-    APP_LOG(APP_LOG_LEVEL_INFO, "[TAP] Cycled graph time range to %d", next);
 }
 #endif
