@@ -7,6 +7,14 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ### v2.16.2
 
 ### v2.17.0
+
+### v2.17.1
+- Fixed header and footer text cutoff on Pebble Time 2 (emery).
+- Implemented fully dynamic header height with centralized helper.
+- Improved text layer heights and vertical centering.
+- Chrome proc now matches load function logic.
+- Version bumped to 2.17.1.
+
 - Added native touch support for Pebble Time 2 (emery) using `touch_service` + `TouchEvent`.
 - Implemented horizontal swipe left/right on the graph area to cycle time range (3H → 6H → 12H → 24H).
 - Added local cycle handler + graph bounds registration.
