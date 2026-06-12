@@ -62,12 +62,19 @@ Configure each slot on the settings page: **Empty**, **Watch battery**, **Phone 
 - **High Contrast** - Maximum visibility for outdoor use
 
 ### Touch/Tap Framework
-Built-in framework for future touch screen support. When Pebble touch capabilities become available:
+Native touch support is now implemented for emery/Pebble Time 2 (firmware >= 5.92) using the `touch_service` + `TouchEvent` API.
+
+**Swipe on Graph:**
+- Swipe left or right on the graph area to cycle the time range (3H → 6H → 12H → 24H).
+- Horizontal swipe threshold: 30px.
+- The framework automatically detects swipes only over the graph layer.
+
+**Other planned actions:**
 - Tap graph area to open carbs entry
 - Tap data area to request bolus
-- Tap and hold for temp basal adjustment
-- Currently uses accelerometer tap for data refresh
+- Accelerometer tap still supported as fallback
 
+See `src/modules/tap_framework.c` and the implementation plan in `docs/plans/2026-06-swipe-graph-time-range.md`.
 ## Quick Start
 
 ### Option A: CloudPebble (Recommended)

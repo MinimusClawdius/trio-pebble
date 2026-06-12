@@ -16,3 +16,8 @@ void tap_framework_register_zone(GRect zone, TapAction action, const char *label
 void tap_framework_handle_tap(AccelAxisType axis, int32_t direction);
 TapAction tap_framework_resolve(GPoint touch_point);
 void tap_framework_send_action(TapAction action);
+
+#if defined(PBL_TOUCH)
+void tap_framework_set_graph_bounds(GRect bounds);
+void tap_framework_handle_touch_event(const TouchEvent *event);
+#endif

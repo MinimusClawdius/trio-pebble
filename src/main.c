@@ -433,6 +433,11 @@ static void init(void) {
     tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
     battery_state_service_subscribe(battery_handler);
     accel_tap_service_subscribe(accel_tap_handler);
+#if defined(PBL_TOUCH)
+    if (touch_service_is_enabled()) {
+        touch_service_subscribe(tap_framework_handle_touch_event, NULL);
+    }
+#endif
 }
 
 static void deinit(void) {
@@ -441,6 +446,9 @@ static void deinit(void) {
     trio_trend_glyphs_deinit();
 
     accel_tap_service_unsubscribe();
+#if defined(PBL_TOUCH)
+    touch_service_unsubscribe();
+#endif
     battery_state_service_unsubscribe();
     tick_timer_service_unsubscribe();
     window_destroy(s_main_window);

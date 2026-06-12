@@ -1,9 +1,17 @@
 #include "tap_framework.h"
+#include <string.h>
 
 #define MAX_TAP_ZONES 8
 
 static TapZone s_zones[MAX_TAP_ZONES];
 static int s_zone_count = 0;
+
+#if defined(PBL_TOUCH)
+static bool s_tracking = false;
+static int16_t s_start_x = 0;
+static int16_t s_start_y = 0;
+static GRect s_graph_bounds = {{0, 0}, {0, 0}};
+#endif
 
 void tap_framework_init(void) {
     s_zone_count = 0;
@@ -51,3 +59,47 @@ void tap_framework_send_action(TapAction action) {
         app_message_outbox_send();
     }
 }
+
+#if defined(PBL_TOUCH)
+void tap_framework_set_graph_bounds(GRect bounds) {
+    s_graph_bounds = bounds;
+}
+
+void tap_framework_handle_touch_event(const TouchEvent *event) {
+    if (!event) return;
+
+    switch (event->type) {
+        case TouchEvent_Touchdown:
+            s_tracking = true;
+            s_start_x = event->x;
+            s_start_y = event->y;
+            break;
+
+        case TouchEvent_Liftoff: {
+            if (!s_tracking) break;
+
+            int16_t dx = event->x - s_start_x;
+            int16_t dy = event->y - s_start_y;
+            int16_t adx = dx < 0 ? -dx : dx;
+            int16_t ady = dy < 0 ? -dy : dy;
+
+            const int16_t HSWIPE_THRESHOLD = 30;
+            const int16_t TAP_THRESHOLD = 15;
+
+            bool in_graph = grect_contains_point(&s_graph_bounds,
+                &(GPoint){ .x = event->x, .y = event->y });
+
+            if (adx > HSWIPE_THRESHOLD && adx > ady && in_graph) {
+                // Horizontal swipe on graph area → cycle time range
+                tap_framework_send_action(TAP_ACTION_CYCLE_GRAPH_TIME);
+            }
+            // Tap handling can be extended here using existing zone logic
+
+            s_tracking = false;
+            break;
+        }
+        default:
+            break;
+    }
+}
+#endif

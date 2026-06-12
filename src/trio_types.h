@@ -132,7 +132,8 @@ typedef enum {
     TAP_ACTION_OPEN_BOLUS,
     TAP_ACTION_OPEN_TEMP_BASAL,
     TAP_ACTION_REFRESH,
-    TAP_ACTION_TOGGLE_FACE
+    TAP_ACTION_TOGGLE_FACE,
+    TAP_ACTION_CYCLE_GRAPH_TIME
 } TapAction;
 
 /** Bottom bar slots (left → right). Values sent via KEY_CONFIG_COMP_SLOT_0..3. */
