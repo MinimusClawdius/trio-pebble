@@ -15,7 +15,7 @@
 
 static TextLayer *s_time, *s_age, *s_glucose;
 static Layer *s_classic_chrome_layer, *s_graph_layer, *s_comp_layer, *s_trend_layer;
-static char s_time_buf[16], s_glucose_buf[16], s_age_buf[20];
+static char s_time_buf[16], s_age_buf[20];
 
 // Centralized dynamic header height (matches skill recommendation)
 static int get_dynamic_header_h(void) {
@@ -157,11 +157,11 @@ void face_classic_unload(void) {
 
 void face_classic_update(AppState *state) {
     if (s_time) {
-        time_display_format_time(s_time_buf, sizeof(s_time_buf));
+        trio_format_clock(s_time_buf, sizeof(s_time_buf), time(NULL), false);
         text_layer_set_text(s_time, s_time_buf);
     }
     if (s_age) {
-        time_display_format_age(s_age_buf, sizeof(s_age_buf));
+        snprintf(s_age_buf, sizeof(s_age_buf), "now");
         text_layer_set_text(s_age, s_age_buf);
     }
 }
