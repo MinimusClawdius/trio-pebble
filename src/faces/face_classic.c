@@ -80,7 +80,7 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     int w = bounds.size.w;
     int h = bounds.size.h;
 
-    bool light = trio_classic_light_scheme(config_get());
+    bool light = true;
     GColor fg = light ? GColorBlack : GColorWhite;
     GColor fg2 = trio_secondary_fg(config_get());
     bool chrome = trio_classic_chrome_active(config_get());
@@ -122,16 +122,16 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     const char *glucose_font = FONT_KEY_BITHAM_42_BOLD;
     GColor hero_glucose = chrome ? (light ? GColorBlack : GColorWhite) : fg;
 
-    s_glucose = make_text(root, GRect(8, dynamic_header_h + 4, gw - 16, LOOP_HERO_H + 22),
+    s_glucose = make_text(root, GRect(8, dynamic_header_h + 4, gw - 16, 54 + 22),
                           glucose_font, GTextAlignmentLeft, hero_glucose);
     text_layer_set_text(s_glucose, "--");
 
-    s_trend_layer = layer_create(GRect(gw, dynamic_header_h, w - gw, LOOP_HERO_H));
+    s_trend_layer = layer_create(GRect(gw, dynamic_header_h, w - gw, 54));
     layer_set_clips(s_trend_layer, true);
     layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
     layer_add_child(root, s_trend_layer);
 
-    int graph_top = dynamic_header_h + LOOP_HERO_H;
+    int graph_top = dynamic_header_h + 54;
     int graph_h = h - graph_top - COMPLICATIONS_BAR_HEIGHT;
     if (graph_h < 24) graph_h = 24;
 
@@ -155,7 +155,7 @@ void face_classic_unload(void) {
     layer_destroy(s_trend_layer);
 }
 
-void face_classic_update(void) {
+void face_classic_update(AppState *state) {
     if (s_time) {
         time_display_format_time(s_time_buf, sizeof(s_time_buf));
         text_layer_set_text(s_time, s_time_buf);
