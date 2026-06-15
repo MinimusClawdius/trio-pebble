@@ -11,6 +11,12 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ### v2.17.1
 
 ### v2.17.2
+
+### v2.17.3
+- Fixed complications bar disappearing (comp_y calculation bug).
+- Reverted to keeping footer at bottom while still using dynamic_header_h for graph sizing.
+- Version 2.17.3
+
 - Fixed complications bar (footer) positioning when using dynamic header with header_size=2 on emery.
 - Made comp_y calculation dynamic based on dynamic_header_h + graph_h.
 - Added detailed logging for s_comp_layer creation and complication cell/text GRects.
