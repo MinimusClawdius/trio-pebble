@@ -125,7 +125,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "P%d%%", state->comp.phone_battery);
             }
-            graphics_draw_text(ctx, buf, font_footer, footer_text_band_cell_mid(cell, cell, 16),
+            graphics_draw_text(ctx, buf, font_footer, footer_text_band_cell_mid(cell, cell, text_h),
                                GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
         case COMP_SLOT_STEPS: {
@@ -135,7 +135,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d", (int)st);
             }
-            graphics_draw_text(ctx, buf, font_footer, footer_text_band_cell_mid(cell, cell, 16),
+            graphics_draw_text(ctx, buf, font_footer, footer_text_band_cell_mid(cell, cell, text_h),
                                GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
         }
@@ -145,7 +145,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d", state->comp.heart_rate);
             }
-            graphics_draw_text(ctx, buf, font_footer, footer_text_band_cell_mid(cell, cell, 16),
+            graphics_draw_text(ctx, buf, font_footer, footer_text_band_cell_mid(cell, cell, text_h),
                                GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
         case COMP_SLOT_WEATHER: {
