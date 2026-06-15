@@ -762,7 +762,7 @@ function sendCommand(type, amount) {
 // WebView shows raw source instead of a UI. Use GitHub Pages (recommended) or any host
 // that serves this file as real HTML.
 // Enable: repo Settings → Pages → Build from branch "main", folder "/ (root)".
-var USE_OFFLINE_CONFIG = true;
+var USE_OFFLINE_CONFIG = true;  // Default: offline mode
 var TRIO_CONFIG_PAGE_URL = USE_OFFLINE_CONFIG
     ? "data:text/html;base64," + (typeof OFFLINE_CONFIG_BASE64 !== "undefined" ? OFFLINE_CONFIG_BASE64 : "")
     : "https://minimusclawdius.github.io/trio-pebble/config/index.html";
