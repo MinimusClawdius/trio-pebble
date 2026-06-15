@@ -8,6 +8,16 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 
 ### v2.17.0
 
+### v2.18.0
+- Debug logging added for configuration URL (to diagnose offline config issues).
+- Version bumped to 2.18.0.
+
+
+### v2.18.0
+- Major version bump.
+- Offline config page enabled by default.
+- Multiple UI and build fixes.
+
 ### v2.17.1
 
 ### v2.17.2
