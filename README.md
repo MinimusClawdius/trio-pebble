@@ -19,6 +19,13 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ### v2.17.5
 
 ### v2.17.6
+
+### v2.17.7
+- Added offline configuration page support using data: URL (no internet required).
+- Created config/offline.html and src/pkjs/config_offline.js.
+- Toggle via USE_OFFLINE_CONFIG in pkjs/index.js.
+- Version 2.17.7
+
 - Added minimum 2px padding to complication text vertical centering when using large fonts (hs=2).
 - Prevents text from touching the bottom boundary of the footer bar.
 - Version 2.17.6
