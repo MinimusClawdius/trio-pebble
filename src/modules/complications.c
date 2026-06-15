@@ -88,6 +88,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
                           GColor fg) {
     char buf[24];
     int hs = config ? config->header_size : 0;
+    int text_h = (hs == 0) ? 14 : (hs == 1) ? 18 : 24;
     APP_LOG(APP_LOG_LEVEL_INFO, "[COMP] draw_one_slot kind=%d cell=(%d,%d %dx%d) hs=%d",
             (int)kind, cell.origin.x, cell.origin.y, cell.size.w, cell.size.h, hs);
     GFont font_footer;
