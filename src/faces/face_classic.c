@@ -136,20 +136,17 @@ void face_classic_load(Window *window, Layer *root, GRect bounds) {
     layer_add_child(root, s_trend_layer);
 
     int graph_top = dynamic_header_h + 54;
-    int graph_h = h - graph_top - COMPLICATIONS_BAR_HEIGHT;
+    int comp_y = h - COMPLICATIONS_BAR_HEIGHT;
+    int graph_h = comp_y - graph_top;
     if (graph_h < 24) graph_h = 24;
+
+    APP_LOG(APP_LOG_LEVEL_INFO, "[CLASSIC] Creating s_comp_layer at y=%d (dynamic_header_h=%d, graph_h=%d, h=%d)",
+            comp_y, dynamic_header_h, graph_h, h);
 
     s_graph_layer = layer_create(GRect(0, graph_top, w, graph_h));
     layer_set_update_proc(s_graph_layer, graph_proc);
     layer_add_child(root, s_graph_layer);
     tap_framework_set_graph_bounds(GRect(0, graph_top, w, graph_h));
-
-    int comp_y = h - COMPLICATIONS_BAR_HEIGHT;
-    int graph_h = comp_y - dynamic_header_h;
-    if (graph_h < 24) graph_h = 24;
-
-    APP_LOG(APP_LOG_LEVEL_INFO, "[CLASSIC] Creating s_comp_layer at y=%d (dynamic_header_h=%d, graph_h=%d, h=%d)",
-            comp_y, dynamic_header_h, graph_h, h);
 
     s_comp_layer = layer_create(GRect(0, comp_y, w, COMPLICATIONS_BAR_HEIGHT));
     layer_set_update_proc(s_comp_layer, comp_proc);
