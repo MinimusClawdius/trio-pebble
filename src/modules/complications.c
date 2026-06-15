@@ -77,13 +77,19 @@ static GRect footer_text_band_vcenter(GRect subcol, int text_h) {
 static GRect footer_text_band_cell_mid(GRect cell, GRect text_col, int text_h) {
     int mid_y = cell.origin.y + cell.size.h / 2;
     int y = mid_y - text_h / 2;
-    return GRect(text_col.origin.x, y, text_col.size.w, text_h);
+    GRect result = GRect(text_col.origin.x, y, text_col.size.w, text_h);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] cell=(%d,%d %dx%d) text_h=%d -> tb=(%d,%d %dx%d)",
+            cell.origin.x, cell.origin.y, cell.size.w, cell.size.h,
+            text_h, result.origin.x, result.origin.y, result.size.w, result.size.h);
+    return result;
 }
 
 static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, AppState *state, TrioConfig *config,
                           GColor fg) {
     char buf[24];
     int hs = config ? config->header_size : 0;
+    APP_LOG(APP_LOG_LEVEL_INFO, "[COMP] draw_one_slot kind=%d cell=(%d,%d %dx%d) hs=%d",
+            (int)kind, cell.origin.x, cell.origin.y, cell.size.w, cell.size.h, hs);
     GFont font_footer;
     if (hs == 0) font_footer = fonts_get_system_font(FONT_KEY_GOTHIC_14);
     else if (hs == 1) font_footer = fonts_get_system_font(FONT_KEY_GOTHIC_18);
