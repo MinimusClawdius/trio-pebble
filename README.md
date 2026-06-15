@@ -15,6 +15,12 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ### v2.17.3
 
 ### v2.17.4
+
+### v2.17.5
+- Fixed all remaining hardcoded text_h=16 in complications.
+- All complication text now uses dynamic height based on header_size.
+- Version 2.17.5
+
 - Made complication text height (text_h) dynamic based on header_size.
 - Improved vertical centering for larger fonts (GOTHIC_24 when hs=2).
 - Version 2.17.4
