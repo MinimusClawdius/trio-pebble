@@ -113,7 +113,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
                 snprintf(buf, sizeof(buf), "%d%%", state->comp.watch_battery);
             }
             {
-                GRect tb = footer_text_band_cell_mid(cell, tr, 16);
+                GRect tb = footer_text_band_cell_mid(cell, tr, text_h);
                 graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentLeft, NULL);
             }
             return;
