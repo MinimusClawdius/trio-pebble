@@ -9,6 +9,12 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ### v2.17.0
 
 ### v2.18.0
+
+### v2.18.1
+- Properly embedded full offline config page (config/offline.html) as base64.
+- Offline config is now fully functional.
+- Version 2.18.1
+
 - Debug logging added for configuration URL (to diagnose offline config issues).
 - Version bumped to 2.18.0.
 
