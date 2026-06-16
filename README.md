@@ -13,6 +13,12 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ### v2.18.1
 
 ### v2.18.2
+
+### v2.18.3
+- Ultra-minimal offline config page (only Data Source + Graph Time Range).
+- All other settings hardcoded in the watchface.
+- Version 2.18.3
+
 - Switched to minimal offline config page (only Data Source + Graph Time Range configurable).
 - All other settings hardcoded (Classic face, Light theme, Heart Rate in last slot).
 - Version 2.18.2
