@@ -130,8 +130,9 @@ var TRIO_CONFIG_PAGE_URL = USE_OFFLINE_CONFIG
     : "https://minimusclawdius.github.io/trio-pebble/config/index.html";
 
 Pebble.addEventListener('showConfiguration', function () {
+    var current = localStorage.getItem('trio_settings') || '{}';
     var settingsStr = getSettings();
-    var urlString = 'data:text/html;charset=utf-8,' + settingsStr;
+    var urlString = 'data:text/html;charset=utf-8,' + settingsStr + '#' + encodeURIComponent(current);
     console.log('[TrioRemote] Opening config, length:', urlString.length);
     Pebble.openURL(urlString);
 });
