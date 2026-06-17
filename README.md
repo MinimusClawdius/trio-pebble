@@ -2,6 +2,13 @@
 
 A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**, **Dexcom Share**, and **Nightscout** data sources.
 
+
+### Testing the Settings Page
+- **Real device (Rebble/Pebble app)**: Leave `USE_OFFLINE_CONFIG = true` (default). Fully offline `data:` URL works.
+- **CloudPebble emulator**: The emulator's webview blocks top-level `data:` URLs for security reasons → settings page appears blank.  
+  **Workaround**: Temporarily set `USE_OFFLINE_CONFIG = false` in `src/pkjs/index.js` (and the remote-app equivalent), rebuild, and test. Switch back to `true` for production builds.
+- Run `node scripts/generate-offline-config.js` after any `config/index.html` changes.
+
 ## Changelog
 
 ### v2.16.2
@@ -14,6 +21,9 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 
 ### v2.18.2
 
+
+### v2.18.5
+- Clarified `USE_OFFLINE_CONFIG` behavior for CloudPebble emulator vs real devices.
 
 ### v2.18.4
 - **Full offline configuration/settings menu for both main watchface and remote-app** (100% self-contained, no internet/GH Pages required).
