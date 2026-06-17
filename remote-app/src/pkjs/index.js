@@ -1,4 +1,4 @@
-var getSettings = require('./js/settings/generated.js');
+var getSettings = require('./settings/generated.js');
 // Trio Remote — minimal PebbleKit JS (must match watchface message key indices)
 var K = {
     GLUCOSE: 0, TREND: 1, DELTA: 2, IOB: 3, COB: 4,

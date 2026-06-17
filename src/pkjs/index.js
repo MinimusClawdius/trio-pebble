@@ -9,7 +9,7 @@
 // `blePushActive` is true — that caused stale UI when native BLE was flaky.
 
 var POLL_INTERVAL_MS = 20000;
-var getSettings = require('./js/settings/generated.js');
+var getSettings = require('./settings/generated.js');
 var POLL_JITTER_MS = 4000;
 var POLL_BACKOFF_CAP_MS = 120000;
 var WEATHER_INTERVAL_MS = 1800000; // 30 min

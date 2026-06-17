@@ -19,13 +19,13 @@ const moduleContent = `module.exports = function() {
 `;
 
 // Main app
-const mainDir = path.join(__dirname, '..', 'src', 'js', 'settings');
+const mainDir = path.join(__dirname, '..', 'src', 'pkjs', 'settings');
 fs.mkdirSync(mainDir, { recursive: true });
 fs.writeFileSync(path.join(mainDir, 'generated.js'), moduleContent);
 console.log('Updated main: src/js/settings/generated.js');
 
 // Remote app
-const remoteDir = path.join(__dirname, '..', 'remote-app', 'src', 'js', 'settings');
+const remoteDir = path.join(__dirname, '..', 'remote-app', 'src', 'pkjs', 'settings');
 fs.mkdirSync(remoteDir, { recursive: true });
 fs.writeFileSync(path.join(remoteDir, 'generated.js'), moduleContent);
 console.log('Updated remote-app: remote-app/src/js/settings/generated.js');
