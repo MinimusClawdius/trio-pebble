@@ -22,6 +22,13 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ### v2.18.2
 
 
+
+### v2.18.6
+- Major refactor of offline configuration system to match timeboxed-watchface pattern.
+- Switched from base64 `data:` URLs to `data:text/html;charset=utf-8,` + `encodeURIComponent()` (more reliable on real devices).
+- Introduced `src/js/settings/generated.js` + generator script (following timeboxed structure).
+- Should now work properly on real phones (previously black screen even on device).
+
 ### v2.18.5
 - Clarified `USE_OFFLINE_CONFIG` behavior for CloudPebble emulator vs real devices.
 
