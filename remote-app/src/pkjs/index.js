@@ -120,7 +120,10 @@ function sendCommand(type, amount) {
     });
 }
 
-var USE_OFFLINE_CONFIG = true;  // Default: offline mode
+// === CONFIGURATION PAGE (OFFLINE vs ONLINE) ===
+// Set USE_OFFLINE_CONFIG = true  → fully offline (data: URL with embedded HTML). Works on real devices.
+// Set USE_OFFLINE_CONFIG = false → uses GitHub Pages hosted version. Required for CloudPebble emulator testing (data: URLs are blocked by the emulator's webview security policy).
+var USE_OFFLINE_CONFIG = true;  // Default: offline mode (change to false for CloudPebble emulator)
 var TRIO_CONFIG_PAGE_URL = USE_OFFLINE_CONFIG
     ? "data:text/html;base64," + (typeof OFFLINE_CONFIG_BASE64 !== "undefined" ? OFFLINE_CONFIG_BASE64 : "")
     : "https://minimusclawdius.github.io/trio-pebble/config/index.html";
