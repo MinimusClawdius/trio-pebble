@@ -1,3 +1,4 @@
+var getSettings = require('./js/settings/generated.js');
 // Trio Remote — minimal PebbleKit JS (must match watchface message key indices)
 var K = {
     GLUCOSE: 0, TREND: 1, DELTA: 2, IOB: 3, COB: 4,
@@ -129,8 +130,12 @@ var TRIO_CONFIG_PAGE_URL = USE_OFFLINE_CONFIG
     : "https://minimusclawdius.github.io/trio-pebble/config/index.html";
 
 Pebble.addEventListener('showConfiguration', function () {
-    var params = encodeURIComponent(JSON.stringify(settings));
-    Pebble.openURL(TRIO_CONFIG_PAGE_URL + '#' + params);
+    var settingsStr = getSettings();
+    var urlString = 'data:text/html;charset=utf-8,' + settingsStr;
+    console.log('[TrioRemote] Opening config, length:', urlString.length);
+    Pebble.openURL(urlString);
+});
+
 });
 
 Pebble.addEventListener('webviewclosed', function (e) {

@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /**
- * Generate offline config base64 for Trio Pebble settings (main watchface + remote-app).
- * Run: node scripts/generate-offline-config.js
- * This keeps both apps in sync with config/index.html
+ * Generate offline config for Trio Pebble (following timeboxed-watchface pattern)
+ * Uses data:text/html;charset=utf-8, + encodeURIComponent (more reliable than base64)
  */
 
 const fs = require('fs');
@@ -10,20 +9,26 @@ const path = require('path');
 
 const htmlPath = path.join(__dirname, '..', 'config', 'index.html');
 const html = fs.readFileSync(htmlPath, 'utf8');
-const b64 = Buffer.from(html, 'utf8').toString('base64');
 
-const jsContent = `var OFFLINE_CONFIG_BASE64 = "${b64}";
+// Use encodeURIComponent (like timeboxed) instead of base64
+const encoded = encodeURIComponent(html);
+
+const moduleContent = `module.exports = function() {
+    return "${encoded}";
+};
 `;
 
-// Main watchface
-const mainOutput = path.join(__dirname, '..', 'src', 'pkjs', 'config_offline.js');
-fs.writeFileSync(mainOutput, jsContent);
-console.log('Updated main:', mainOutput);
+// Main app
+const mainDir = path.join(__dirname, '..', 'src', 'js', 'settings');
+fs.mkdirSync(mainDir, { recursive: true });
+fs.writeFileSync(path.join(mainDir, 'generated.js'), moduleContent);
+console.log('Updated main: src/js/settings/generated.js');
 
 // Remote app
-const remoteOutput = path.join(__dirname, '..', 'remote-app', 'src', 'pkjs', 'config_offline.js');
-fs.writeFileSync(remoteOutput, jsContent);
-console.log('Updated remote-app:', remoteOutput);
+const remoteDir = path.join(__dirname, '..', 'remote-app', 'src', 'js', 'settings');
+fs.mkdirSync(remoteDir, { recursive: true });
+fs.writeFileSync(path.join(remoteDir, 'generated.js'), moduleContent);
+console.log('Updated remote-app: remote-app/src/js/settings/generated.js');
 
-console.log('Base64 length:', b64.length);
-console.log('Done. Rebuild both apps after running this.');
+console.log('Encoded length:', encoded.length);
+console.log('Done. Rebuild both apps.');
