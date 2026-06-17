@@ -1,4 +1,4 @@
-# Trio Pebble v2.16.26
+# Trio Pebble v2.18.4
 
 A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**, **Dexcom Share**, and **Nightscout** data sources.
 
@@ -13,6 +13,15 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ### v2.18.1
 
 ### v2.18.2
+
+
+### v2.18.4
+- **Full offline configuration/settings menu for both main watchface and remote-app** (100% self-contained, no internet/GH Pages required).
+- Embedded complete interactive settings UI (all fields: data sources, creds, thresholds, alerts, complications, weather, graph options, etc.) as base64 `data:` URL.
+- Added `scripts/generate-offline-config.js` (run after editing `config/index.html` to keep both apps in sync).
+- Remote-app now uses identical offline pattern (`remote-app/src/pkjs/config_offline.js` + updated index.js).
+- GH Pages hosted version remains available as fallback.
+- Version bumped to 2.18.4.
 
 ### v2.18.3
 - Ultra-minimal offline config page (only Data Source + Graph Time Range).
