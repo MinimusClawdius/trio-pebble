@@ -771,14 +771,13 @@ var TRIO_CONFIG_PAGE_URL = USE_OFFLINE_CONFIG
     ? "data:text/html;base64," + (typeof OFFLINE_CONFIG_BASE64 !== "undefined" ? OFFLINE_CONFIG_BASE64 : "")
     : "https://minimusclawdius.github.io/trio-pebble/config/index.html";
 
-var getSettings = require('./js/settings/generated.js');
+('./js/settings/generated.js');
 
 Pebble.addEventListener('showConfiguration', function () {
     var settingsStr = getSettings();
     var urlString = 'data:text/html;charset=utf-8,' + settingsStr;
     console.log('[Trio] Opening config, length:', urlString.length);
     Pebble.openURL(urlString);
-});
 
 });
 
