@@ -70,6 +70,9 @@ static void slot_icon_text_split(GRect cell, GRect *out_icon, GRect *out_text, b
 static GRect footer_text_band_vcenter(GRect subcol, int text_h) {
     int pad = (subcol.size.h - text_h) / 2;
     if (pad < 0) pad = 0;
+    // Add extra bottom buffer for readability (pushes text up slightly from bezel)
+    int bottom_bias = 2;
+    if (pad > bottom_bias) pad -= bottom_bias;
     return GRect(subcol.origin.x, subcol.origin.y + pad, subcol.size.w, text_h);
 }
 
@@ -143,15 +146,24 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
                                GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
             return;
         }
-        case COMP_SLOT_HEART_RATE:
+        case COMP_SLOT_HEART_RATE: {
+            GRect ir, tr;
+            slot_icon_text_split_pct(cell, &ir, &tr, true, 35);
+            
+            // Draw heart icon (using unicode heart glyph)
+            const char *heart = "♥";
+            GRect heart_rect = GRect(ir.origin.x, ir.origin.y + 1, ir.size.w, ir.size.h);
+            graphics_draw_text(ctx, heart, font_footer, heart_rect, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+            
             if (state->comp.heart_rate <= 0) {
                 snprintf(buf, sizeof(buf), "--");
             } else {
                 snprintf(buf, sizeof(buf), "%d", state->comp.heart_rate);
             }
-            graphics_draw_text(ctx, buf, font_footer, footer_text_band_cell_mid(cell, cell, text_h),
-                               GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+            GRect tb = footer_text_band_vcenter(tr, 16);
+            graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
             return;
+        }
         case COMP_SLOT_WEATHER: {
             GRect ir, tr;
             slot_icon_text_split(cell, &ir, &tr, true);
@@ -166,9 +178,11 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
                 snprintf(buf, sizeof(buf), "%d°", state->comp.weather_temp);
             }
             {
+                // Slightly inset the text rect to prevent degree symbol cutoff
                 GRect tb = footer_text_band_vcenter(tr, 16);
-                graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
-                                   NULL);
+                tb.size.w -= 4;
+                tb.origin.x += 2;
+                graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
             }
             return;
         }
@@ -182,9 +196,11 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
                 snprintf(buf, sizeof(buf), "%s", state->loop.iob);
             }
             {
+                // Slightly inset the text rect to prevent degree symbol cutoff
                 GRect tb = footer_text_band_vcenter(tr, 16);
-                graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
-                                   NULL);
+                tb.size.w -= 4;
+                tb.origin.x += 2;
+                graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
             }
             return;
         }
