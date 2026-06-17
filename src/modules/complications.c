@@ -70,8 +70,8 @@ static void slot_icon_text_split(GRect cell, GRect *out_icon, GRect *out_text, b
 static GRect footer_text_band_vcenter(GRect subcol, int text_h) {
     int pad = (subcol.size.h - text_h) / 2;
     if (pad < 0) pad = 0;
-    // Add extra bottom buffer for readability (pushes text up slightly from bezel)
-    int bottom_bias = 2;
+    // Gentle bottom bias for readability (1px is usually enough)
+    int bottom_bias = 1;
     if (pad > bottom_bias) pad -= bottom_bias;
     return GRect(subcol.origin.x, subcol.origin.y + pad, subcol.size.w, text_h);
 }
@@ -148,12 +148,11 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
         }
         case COMP_SLOT_HEART_RATE: {
             GRect ir, tr;
-            slot_icon_text_split_pct(cell, &ir, &tr, true, 35);
+            slot_icon_text_split_pct(cell, &ir, &tr, true, 30);
             
-            // Draw heart icon (using unicode heart glyph)
-            const char *heart = "♥";
-            GRect heart_rect = GRect(ir.origin.x, ir.origin.y + 1, ir.size.w, ir.size.h);
-            graphics_draw_text(ctx, heart, font_footer, heart_rect, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+            // Draw custom heart icon
+            GColor heart_color = PBL_IF_COLOR_ELSE(GColorRed, fg);
+            draw_heart_icon(ctx, ir, heart_color);
             
             if (state->comp.heart_rate <= 0) {
                 snprintf(buf, sizeof(buf), "--");
@@ -207,6 +206,29 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
         default:
             return;
     }
+}
+
+
+static void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
+    graphics_context_set_fill_color(ctx, color);
+    
+    // Simple heart using two circles on top + inverted triangle-ish bottom
+    int cx = rect.origin.x + rect.size.w / 2;
+    int cy = rect.origin.y + rect.size.h / 2;
+    int r = rect.size.w / 3;
+    
+    // Left bump
+    graphics_fill_circle(ctx, GPoint(cx - r/2, cy - r/3), r);
+    // Right bump
+    graphics_fill_circle(ctx, GPoint(cx + r/2, cy - r/3), r);
+    
+    // Bottom point (triangle)
+    GPoint points[3] = {
+        {cx - r, cy - r/4},
+        {cx + r, cy - r/4},
+        {cx, cy + r}
+    };
+    graphics_fill_polygon(ctx, 3, points);
 }
 
 void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConfig *config) {
