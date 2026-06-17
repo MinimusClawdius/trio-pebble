@@ -12,6 +12,11 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 ## Changelog
 
 
+### Layout Audit (Emery / header_size)
+- Increased `COMPLICATIONS_BAR_HEIGHT` from 24 → 26px for better text clearance.
+- Improved `footer_text_band_vcenter()` math with more robust centering + bottom bias.
+- This should fix the "shifted off screen" issue when using larger header sizes on Emery (200x228).
+
 ### v2.18.x (latest)
 - Complications bar improvements:
   - Added extra bottom padding buffer for better readability on all footer complications.
