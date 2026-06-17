@@ -16,7 +16,7 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 - Complications bar improvements:
   - Added extra bottom padding buffer for better readability on all footer complications.
   - Fixed weather temperature cutoff (degree symbol no longer clipped).
-  - Added heart icon (♥) next to Heart Rate value.
+  - Added custom drawn heart icon next to Heart Rate (unicode ♥ didn't render reliably).
 
 ### v2.16.2
 
