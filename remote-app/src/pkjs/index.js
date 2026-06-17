@@ -120,8 +120,10 @@ function sendCommand(type, amount) {
     });
 }
 
-var TRIO_CONFIG_PAGE_URL =
-    'https://minimusclawdius.github.io/trio-pebble/config/index.html';
+var USE_OFFLINE_CONFIG = true;  // Default: offline mode
+var TRIO_CONFIG_PAGE_URL = USE_OFFLINE_CONFIG
+    ? "data:text/html;base64," + (typeof OFFLINE_CONFIG_BASE64 !== "undefined" ? OFFLINE_CONFIG_BASE64 : "")
+    : "https://minimusclawdius.github.io/trio-pebble/config/index.html";
 
 Pebble.addEventListener('showConfiguration', function () {
     var params = encodeURIComponent(JSON.stringify(settings));
