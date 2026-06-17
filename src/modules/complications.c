@@ -68,11 +68,15 @@ static void slot_icon_text_split(GRect cell, GRect *out_icon, GRect *out_text, b
 
 /** Vertical center a single-line footer label within a sub-rect. */
 static GRect footer_text_band_vcenter(GRect subcol, int text_h) {
-    int pad = (subcol.size.h - text_h) / 2;
+    // Robust vertical centering with small bottom bias for Emery (200x228)
+    // Ensures text has breathing room from bottom bezel
+    int available = subcol.size.h;
+    int pad = (available - text_h) / 2;
     if (pad < 0) pad = 0;
-    // Gentle bottom bias for readability (1px is usually enough)
-    int bottom_bias = 1;
-    if (pad > bottom_bias) pad -= bottom_bias;
+    
+    // Small consistent bottom bias (pushes text ~1px up from exact center)
+    pad = (pad > 1) ? pad - 1 : 0;
+    
     return GRect(subcol.origin.x, subcol.origin.y + pad, subcol.size.w, text_h);
 }
 
@@ -159,7 +163,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             } else {
                 snprintf(buf, sizeof(buf), "%d", state->comp.heart_rate);
             }
-            GRect tb = footer_text_band_vcenter(tr, 16);
+            GRect tb = footer_text_band_vcenter(tr, 18);
             graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
             return;
         }
@@ -178,7 +182,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             }
             {
                 // Slightly inset the text rect to prevent degree symbol cutoff
-                GRect tb = footer_text_band_vcenter(tr, 16);
+                GRect tb = footer_text_band_vcenter(tr, 18);
                 tb.size.w -= 4;
                 tb.origin.x += 2;
                 graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
@@ -196,7 +200,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             }
             {
                 // Slightly inset the text rect to prevent degree symbol cutoff
-                GRect tb = footer_text_band_vcenter(tr, 16);
+                GRect tb = footer_text_band_vcenter(tr, 18);
                 tb.size.w -= 4;
                 tb.origin.x += 2;
                 graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
