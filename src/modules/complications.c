@@ -199,7 +199,6 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
             }
             return;
         }
-        }
         default:
             return;
     }
@@ -209,25 +208,22 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
 // Heart icon resource ID - uses TRIO_HEART_ICON from package.json
 #define HEART_ICON_RESOURCE_ID RESOURCE_ID_IMAGE_TRIO_HEART_ICON
 
-static void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
+void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon called: rect=(%d,%d %dx%d)",
             rect.origin.x, rect.origin.y, rect.size.w, rect.size.h);
     
-    // Use image resource for heart icon
-    BitmapLayer *layer = bitmap_layer_create(rect);
-    if (layer) {
-        GBitmap *heart_bitmap = resource_load_bitmap_layer(layer, HEART_ICON_RESOURCE_ID);
-        if (heart_bitmap) {
-            APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon: using TRIO_HEART_ICON resource");
-            bitmap_layer_draw(layer);
-            bitmap_layer_destroy(layer);
-            return;
-        }
-        APP_LOG(APP_LOG_LEVEL_WARNING, "[COMP] draw_heart_icon: TRIO_HEART_ICON not found, check package.json");
-        bitmap_layer_destroy(layer);
+    // Try loading the image resource first (preferred)
+    GBitmap *bmp = gbitmap_create_with_resource(HEART_ICON_RESOURCE_ID);
+    if (bmp) {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon: using TRIO_HEART_ICON resource");
+        graphics_draw_bitmap_in_rect(ctx, bmp, rect);
+        gbitmap_destroy(bmp);
+        return;
     }
     
-    // Fallback: draw a simple heart if resource is missing (should not happen with proper build)
+    APP_LOG(APP_LOG_LEVEL_WARNING, "[COMP] draw_heart_icon: TRIO_HEART_ICON not found, using fallback");
+    
+    // Fallback: draw a simple heart using circles + triangle
     graphics_context_set_fill_color(ctx, color);
     
     int cx = rect.origin.x + rect.size.w / 2;
@@ -242,7 +238,7 @@ static void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
         {cx + r, cy - r/4},
         {cx, cy + r}
     };
-    graphics_fill_polygon(ctx, 3, points);
+    graphics_fill_triangle(ctx, points[0], points[1], points[2]);
 }
 
 void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConfig *config) {
