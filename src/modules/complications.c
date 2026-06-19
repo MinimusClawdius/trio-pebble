@@ -75,8 +75,8 @@ static GRect footer_text_band_vcenter(GRect subcol, int text_h) {
     if (pad < 0) pad = 0;
     
     // Small consistent bottom bias (pushes text ~1px up from exact center)
-    if (pad >= 3) pad -= 1; else if (pad == 2) pad = 1;
-    
+    //if (pad >= 3) pad -= 1; else if (pad == 2) pad = 1;
+    pad =0;
     GRect result = GRect(subcol.origin.x, subcol.origin.y + pad, subcol.size.w, text_h);
     
     // ADD LOGGING
@@ -92,10 +92,10 @@ static GRect footer_text_band_cell_mid(GRect cell, GRect text_col, int text_h) {
     int mid_y = cell.origin.y + cell.size.h / 2;
     int y = mid_y - text_h / 2;
     // Add minimum 2px padding when text is large
-    int min_pad = 2;
+    int min_pad = 0;
     if (y < min_pad) y = min_pad;
     if (y + text_h > cell.size.h - min_pad) y = cell.size.h - text_h - min_pad;
-    GRect result = GRect(text_col.origin.x, y, text_col.size.w, text_h);
+    GRect result = GRect(text_col.origin.x, -1, text_col.size.w, text_h);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] footer_text_band_cell_mid: cell=(%d,%d %dx%d) text_h=%d -> result=(%d,%d %dx%d)",
             cell.origin.x, cell.origin.y, cell.size.w, cell.size.h, text_h, 
             result.origin.x, result.origin.y, result.size.w, result.size.h);
