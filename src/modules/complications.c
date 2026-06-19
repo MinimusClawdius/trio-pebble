@@ -206,7 +206,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
 
 
 // Heart icon resource ID - uses TRIO_HEART_ICON from package.json
-#define HEART_ICON_RESOURCE_ID RESOURCE_ID_IMAGE_TRIO_HEART_ICON
+#define HEART_ICON_RESOURCE_ID RESOURCE_ID_TRIO_HEART_ICON
 
 void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon called: rect=(%d,%d %dx%d)",
@@ -233,11 +233,8 @@ void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
     graphics_fill_circle(ctx, GPoint(cx - r/2, cy - r/3), r);
     graphics_fill_circle(ctx, GPoint(cx + r/2, cy - r/3), r);
     
-    GPoint points[3] = {
-        {cx - r, cy - r/4},
-        {cx + r, cy - r/4},
-        {cx, cy + r}
-    };
+    // Fallback heart (two circles)
+}
     graphics_fill_triangle(ctx, points[0], points[1], points[2]);
 }
 
