@@ -234,7 +234,7 @@ void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
     graphics_fill_circle(ctx, GPoint(cx + r/2, cy - r/3), r);
     
     // Fallback heart (two circles)
-}
+
     graphics_fill_triangle(ctx, points[0], points[1], points[2]);
 }
 
