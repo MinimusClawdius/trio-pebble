@@ -219,9 +219,9 @@ void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
         
         // Invert bitmap when drawing on dark background (color == black)
         if (gcolor_equal(color, GColorBlack))     graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
-        else                                      graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
+        //else                                      graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
         
-        graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
+        //graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
         graphics_draw_bitmap_in_rect(ctx, bmp, rect);
         gbitmap_destroy(bmp);
         return;
