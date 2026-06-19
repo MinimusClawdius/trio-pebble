@@ -224,18 +224,18 @@ void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
     APP_LOG(APP_LOG_LEVEL_WARNING, "[COMP] draw_heart_icon: TRIO_HEART_ICON not found, using fallback");
     
     // Fallback: draw a simple heart using circles + triangle
-    graphics_context_set_fill_color(ctx, color);
+    //graphics_context_set_fill_color(ctx, color);
     
-    int cx = rect.origin.x + rect.size.w / 2;
-    int cy = rect.origin.y + rect.size.h / 2;
-    int r = rect.size.w / 3;
+    //int cx = rect.origin.x + rect.size.w / 2;
+    //int cy = rect.origin.y + rect.size.h / 2;
+    //int r = rect.size.w / 3;
     
-    graphics_fill_circle(ctx, GPoint(cx - r/2, cy - r/3), r);
-    graphics_fill_circle(ctx, GPoint(cx + r/2, cy - r/3), r);
+    //graphics_fill_circle(ctx, GPoint(cx - r/2, cy - r/3), r);
+    //graphics_fill_circle(ctx, GPoint(cx + r/2, cy - r/3), r);
     
     // Fallback heart (two circles)
 
-    graphics_fill_triangle(ctx, points[0], points[1], points[2]);
+    //graphics_fill_triangle(ctx, points[0], points[1], points[2]);
 }
 
 void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConfig *config) {
