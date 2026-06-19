@@ -2,7 +2,6 @@
 #include "complication_icons.h"
 #include "platform_compat.h"
 #include <stdio.h>
-#include "misc.h"
 
 void complications_init(void) {
     complications_update_battery();
