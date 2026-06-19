@@ -52,8 +52,8 @@ static void slot_icon_text_split_pct(GRect cell, GRect *out_icon, GRect *out_tex
         return;
     }
     int iw = cell.size.w * icon_pct / 100;
-    if (iw < 18) {
-        iw = 18;
+    if (iw < 25) {
+        iw = 25;
     }
     if (iw > cell.size.w - 14) {
         iw = cell.size.w - 14;
@@ -162,7 +162,7 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
         }
         case COMP_SLOT_HEART_RATE: {
             GRect ir, tr;
-            slot_icon_text_split_pct(cell, &ir, &tr, true, 30);
+            slot_icon_text_split_pct(cell, &ir, &tr, true, 50);
             
             // Draw custom heart icon
             GColor heart_color = PBL_IF_COLOR_ELSE(GColorRed, fg);
@@ -218,12 +218,10 @@ void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
         APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon: using TRIO_HEART_ICON resource");
         
         // Invert bitmap when drawing on dark background (color == black)
-        if (gcolor_equal(color, GColorBlack)) {
-            graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
-        } else {
-            graphics_context_set_compositing_mode(ctx, GCompOpAssign);
-        }
+        if (gcolor_equal(color, GColorBlack))     graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
+        else                                      graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
         
+        graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
         graphics_draw_bitmap_in_rect(ctx, bmp, rect);
         gbitmap_destroy(bmp);
         return;
