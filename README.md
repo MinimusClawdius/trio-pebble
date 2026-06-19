@@ -1,4 +1,4 @@
-# Trio Pebble v2.18.4
+# Trio Pebble v2.18.13
 
 A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**, **Dexcom Share**, and **Nightscout** data sources.
 
@@ -10,6 +10,12 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 - Run `node scripts/generate-offline-config.js` after any `config/index.html` changes.
 
 ## Changelog
+
+### v2.18.13
+- **Heart Rate complication now uses 25px icon from pebble-dev/iconography repository** instead of programmatic drawing.
+- Removed IOB (Insulin on Board) as a configurable complication slot option (Trio app does not reliably provide this data to the watchface).
+- Added improved debug logging for icon resource loading (TRIO_HEART_ICON).
+- Bumped version to 2.18.13.
 
 
 ### Layout Audit (Emery / header_size)

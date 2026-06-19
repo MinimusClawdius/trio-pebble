@@ -13,5 +13,6 @@ void trio_draw_footer_battery_bar(GContext *ctx, GRect icon_area, int align_mid_
 void trio_draw_footer_weather_icon(GContext *ctx, GRect icon_area, const char *weather_icon,
                                    const TrioConfig *config);
 
-/** Simple insulin / drop glyph for IOB column. */
-void trio_draw_footer_iob_icon(GContext *ctx, GRect icon_area, GColor ink);
+
+/** Heart rate icon for HR complication. Uses TRIO_HEART_ICON image resource. */
+void draw_heart_icon(GContext *ctx, GRect rect, GColor color);

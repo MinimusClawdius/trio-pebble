@@ -43,6 +43,7 @@ static void classic_chrome_proc(Layer *layer, GContext *ctx) {
     GCornerMask card_corners =
         (GCornerMask)(GCornerTopLeft | GCornerTopRight | GCornerBottomLeft | GCornerBottomRight);
 
+        APP_LOG(APP_LOG_LEVEL_INFO, "[CLASSIC] classic_chrome_proc card w=%d h=%d header_h=%d cy=%d ch=%d", w, h, header_h, cy, ch);
     if (trio_classic_light_pills(cfg)) {
         graphics_context_set_fill_color(ctx, GColorBlack);
         graphics_fill_rect(ctx, wb, 0, GCornerNone);

@@ -149,11 +149,3 @@ void trio_draw_footer_weather_icon(GContext *ctx, GRect icon_area, const char *w
 #endif
 }
 
-void trio_draw_footer_iob_icon(GContext *ctx, GRect icon_area, GColor ink) {
-    int cx = icon_area.origin.x + icon_area.size.w / 2;
-    int cy = icon_area.origin.y + icon_area.size.h / 2;
-    graphics_context_set_fill_color(ctx, ink);
-    graphics_fill_circle(ctx, GPoint(cx, cy - 1), 4);
-    graphics_fill_rect(ctx, GRect(cx - 2, cy + 2, 4, 6), 0, GCornerNone);
-    graphics_fill_circle(ctx, GPoint(cx, cy + 9), 3);
-}

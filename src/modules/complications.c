@@ -2,6 +2,7 @@
 #include "complication_icons.h"
 #include "platform_compat.h"
 #include <stdio.h>
+#include "misc.h"
 
 void complications_init(void) {
     complications_update_battery();
@@ -77,7 +78,14 @@ static GRect footer_text_band_vcenter(GRect subcol, int text_h) {
     // Small consistent bottom bias (pushes text ~1px up from exact center)
     pad = (pad > 1) ? pad - 1 : 0;
     
-    return GRect(subcol.origin.x, subcol.origin.y + pad, subcol.size.w, text_h);
+    GRect result = GRect(subcol.origin.x, subcol.origin.y + pad, subcol.size.w, text_h);
+    
+    // ADD LOGGING
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] footer_text_band_vcenter: subcol=(%d,%d %dx%d) text_h=%d -> result=(%d,%d %dx%d)",
+            subcol.origin.x, subcol.origin.y, subcol.size.w, subcol.size.h,
+            text_h, result.origin.x, result.origin.y, result.size.w, result.size.h);
+    
+    return result;
 }
 
 /** Match icon + text vertical center using full slot height (battery + %, etc.). */
@@ -89,9 +97,9 @@ static GRect footer_text_band_cell_mid(GRect cell, GRect text_col, int text_h) {
     if (y < min_pad) y = min_pad;
     if (y + text_h > cell.size.h - min_pad) y = cell.size.h - text_h - min_pad;
     GRect result = GRect(text_col.origin.x, y, text_col.size.w, text_h);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] cell=(%d,%d %dx%d) text_h=%d -> tb=(%d,%d %dx%d)",
-            cell.origin.x, cell.origin.y, cell.size.w, cell.size.h,
-            text_h, result.origin.x, result.origin.y, result.size.w, result.size.h);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] footer_text_band_cell_mid: cell=(%d,%d %dx%d) text_h=%d -> result=(%d,%d %dx%d)",
+            cell.origin.x, cell.origin.y, cell.size.w, cell.size.h, text_h, 
+            result.origin.x, result.origin.y, result.size.w, result.size.h);
     return result;
 }
 
@@ -109,6 +117,9 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
     APP_LOG(APP_LOG_LEVEL_INFO, "[COMPLICATIONS] footer font size selected for header_size=%d", hs);
 
     graphics_context_set_text_color(ctx, fg);
+    
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_one_slot FINAL cell=(%d,%d %dx%d) kind=%d",
+            cell.origin.x, cell.origin.y, cell.size.w, cell.size.h, (int)kind);
 
     switch (kind) {
         case COMP_SLOT_NONE:
@@ -184,28 +195,11 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
                 // Slightly inset the text rect to prevent degree symbol cutoff
                 GRect tb = footer_text_band_vcenter(tr, 18);
                 tb.size.w -= 4;
-                tb.origin.x += 2;
+                tb.origin.x -= 2;
                 graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
             }
             return;
         }
-        case COMP_SLOT_IOB: {
-            GRect ir, tr;
-            slot_icon_text_split(cell, &ir, &tr, true);
-            trio_draw_footer_iob_icon(ctx, ir, fg);
-            if (state->loop.iob[0] == '\0') {
-                snprintf(buf, sizeof(buf), "--");
-            } else {
-                snprintf(buf, sizeof(buf), "%s", state->loop.iob);
-            }
-            {
-                // Slightly inset the text rect to prevent degree symbol cutoff
-                GRect tb = footer_text_band_vcenter(tr, 18);
-                tb.size.w -= 4;
-                tb.origin.x += 2;
-                graphics_draw_text(ctx, buf, font_footer, tb, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-            }
-            return;
         }
         default:
             return;
@@ -213,20 +207,37 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
 }
 
 
+// Heart icon resource ID - uses TRIO_HEART_ICON from package.json
+#define HEART_ICON_RESOURCE_ID RESOURCE_ID_IMAGE_TRIO_HEART_ICON
+
 static void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon called: rect=(%d,%d %dx%d)",
+            rect.origin.x, rect.origin.y, rect.size.w, rect.size.h);
+    
+    // Use image resource for heart icon
+    BitmapLayer *layer = bitmap_layer_create(rect);
+    if (layer) {
+        GBitmap *heart_bitmap = resource_load_bitmap_layer(layer, HEART_ICON_RESOURCE_ID);
+        if (heart_bitmap) {
+            APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon: using TRIO_HEART_ICON resource");
+            bitmap_layer_draw(layer);
+            bitmap_layer_destroy(layer);
+            return;
+        }
+        APP_LOG(APP_LOG_LEVEL_WARNING, "[COMP] draw_heart_icon: TRIO_HEART_ICON not found, check package.json");
+        bitmap_layer_destroy(layer);
+    }
+    
+    // Fallback: draw a simple heart if resource is missing (should not happen with proper build)
     graphics_context_set_fill_color(ctx, color);
     
-    // Simple heart using two circles on top + inverted triangle-ish bottom
     int cx = rect.origin.x + rect.size.w / 2;
     int cy = rect.origin.y + rect.size.h / 2;
     int r = rect.size.w / 3;
     
-    // Left bump
     graphics_fill_circle(ctx, GPoint(cx - r/2, cy - r/3), r);
-    // Right bump
     graphics_fill_circle(ctx, GPoint(cx + r/2, cy - r/3), r);
     
-    // Bottom point (triangle)
     GPoint points[3] = {
         {cx - r, cy - r/4},
         {cx + r, cy - r/4},
@@ -267,7 +278,7 @@ void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConf
 
     for (int i = 0; i < TRIO_COMP_BAR_COLUMNS; i++) {
         ComplicationSlotKind k = (ComplicationSlotKind)config->comp_slot[i];
-        if (k > COMP_SLOT_IOB) {
+        if (k > COMP_SLOT_WEATHER) {
             k = COMP_SLOT_NONE;
         }
         GRect cell = GRect(x + i * slot_w, y, slot_w, row_h);

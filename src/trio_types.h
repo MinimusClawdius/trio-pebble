@@ -143,9 +143,7 @@ typedef enum {
     COMP_SLOT_PHONE_BATTERY,
     COMP_SLOT_STEPS,
     COMP_SLOT_HEART_RATE,
-    COMP_SLOT_WEATHER,
-    /** Loop / pump IOB string (e.g. 45u) — footer matches LOOP watchface spec */
-    COMP_SLOT_IOB = 6
+    COMP_SLOT_WEATHER
 } ComplicationSlotKind;
 
 #define TRIO_COMP_SLOT_COUNT 4

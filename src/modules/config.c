@@ -50,7 +50,7 @@ void config_save(void) {
 static void sanitize_comp_slots(void) {
     APP_LOG(APP_LOG_LEVEL_INFO, "[SANITIZE] sanitize_comp_slots ENTER");
     for (int i = 0; i < TRIO_COMP_SLOT_COUNT; i++) {
-        if (s_config.comp_slot[i] > COMP_SLOT_IOB) {
+        if (s_config.comp_slot[i] > COMP_SLOT_WEATHER) {
             s_config.comp_slot[i] = COMP_SLOT_NONE;
         }
     }
