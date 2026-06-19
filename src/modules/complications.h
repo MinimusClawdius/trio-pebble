@@ -2,7 +2,7 @@
 #include "../trio_types.h"
 
 /** Height of the bottom complications strip (battery bar + icons + text). */
-#define COMPLICATIONS_BAR_HEIGHT 26   // Increased for better text clearance on Emery
+#define COMPLICATIONS_BAR_HEIGHT 28   // Increased for better text clearance on Emery
 
 void complications_init(void);
 void complications_update_battery(void);
