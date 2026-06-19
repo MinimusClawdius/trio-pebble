@@ -75,7 +75,7 @@ static GRect footer_text_band_vcenter(GRect subcol, int text_h) {
     if (pad < 0) pad = 0;
     
     // Small consistent bottom bias (pushes text ~1px up from exact center)
-    pad = (pad > 1) ? pad - 1 : 0;
+    if (pad >= 3) pad -= 1; else if (pad == 2) pad = 1;
     
     GRect result = GRect(subcol.origin.x, subcol.origin.y + pad, subcol.size.w, text_h);
     
@@ -216,6 +216,14 @@ void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
     GBitmap *bmp = gbitmap_create_with_resource(HEART_ICON_RESOURCE_ID);
     if (bmp) {
         APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon: using TRIO_HEART_ICON resource");
+        
+        // Invert bitmap when drawing on dark background (color == black)
+        if (gcolor_equal(color, GColorBlack)) {
+            graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
+        } else {
+            graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+        }
+        
         graphics_draw_bitmap_in_rect(ctx, bmp, rect);
         gbitmap_destroy(bmp);
         return;
