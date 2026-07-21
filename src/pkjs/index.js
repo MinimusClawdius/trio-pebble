@@ -168,8 +168,14 @@ function saveSettings() {
 
 // ---------- Data Source: Trio Local API ----------
 function fetchTrio(callback) {
-    httpGet(settings.trioHost + '/api/all', function (data) {
-        if (!data) return callback(null);
+    var url = settings.trioHost + '/api/all';
+    console.log('[TrioHTTP] fetchTrio GET ' + url);
+    httpGet(url, function (data, meta) {
+        if (!data) {
+            console.log('[TrioHTTP] fetchTrio FAIL ' + summarizeHttpMeta(meta));
+            return callback(null);
+        }
+        console.log('[TrioHTTP] fetchTrio OK bytes=' + data.length + ' ' + summarizeHttpMeta(meta));
         try {
             var parsed = JSON.parse(data);
             var wasActive = blePushActive;
@@ -180,9 +186,14 @@ function fetchTrio(callback) {
             if (parsed.stateRevision !== undefined) {
                 console.log('Trio: stateRevision=' + parsed.stateRevision + ' proto=' + (parsed.pebbleProtocolVersion || 0));
             }
-            callback(normalizeTrio(parsed));
+            var norm = normalizeTrio(parsed);
+            console.log('[TrioHTTP] normalize glucose_mgdl=' + norm.glucose +
+                ' stale=' + !!norm.isStale + ' hist=' + (norm.history ? norm.history.length : 0) +
+                ' cgmRaw=' + JSON.stringify((parsed.cgm && parsed.cgm.glucose) != null ? parsed.cgm.glucose : null) +
+                ' units=' + ((parsed.cgm && parsed.cgm.units) || '?'));
+            callback(norm);
         } catch (e) {
-            console.log('Trio: parse error: ' + e);
+            console.log('Trio: parse error: ' + e + ' head=' + String(data).substring(0, 120));
             callback(null);
         }
     });
@@ -496,6 +507,8 @@ function sendTrioLinkHint(text) {
 /** `done` optional — called after fetch attempt finishes (success or failure). */
 function fetchData(done) {
     var finish = typeof done === 'function' ? done : function () {};
+    var srcName = ({ 0: 'trio', 1: 'dexcom', 2: 'nightscout', 3: 'trio-health' })[settings.dataSource | 0] || ('src' + settings.dataSource);
+    console.log('[TrioHTTP] fetchData begin source=' + srcName + ' host=' + settings.trioHost + ' failStreak=' + failStreak);
     var fetcher;
     switch (settings.dataSource) {
         case 1:  fetcher = fetchDexcom; break;
@@ -508,13 +521,17 @@ function fetchData(done) {
         if (data) {
             lastTrioOkAt = Date.now();
             failStreak = 0;
+            console.log('[TrioHTTP] fetchData SUCCESS glucose_mgdl=' + data.glucose);
             sendToWatch(data);
             finish();
             return;
         }
         if (isTrioDataSource()) {
             failStreak++;
-            httpPing(settings.trioHost + '/api/pebble/v1/ping', function (pingOk) {
+            var pingUrl = settings.trioHost + '/api/pebble/v1/ping';
+            console.log('[TrioHTTP] fetchData FAIL streak=' + failStreak + ' ping ' + pingUrl);
+            httpPing(pingUrl, function (pingOk, pingMeta) {
+                console.log('[TrioHTTP] ping ' + (pingOk ? 'OK' : 'FAIL') + ' ' + summarizeHttpMeta(pingMeta));
                 if (failStreak >= 2) {
                     var hint = '';
                     if (!pingOk) {
@@ -526,12 +543,14 @@ function fetchData(done) {
                         hint = 'Trio?';
                     }
                     if (hint.length > 15) hint = hint.substring(0, 15);
+                    console.log('[TrioHTTP] link hint -> watch: ' + hint);
                     sendTrioLinkHint(hint);
                 }
                 finish();
             });
             return;
         }
+        console.log('[TrioHTTP] fetchData FAIL (non-Trio source)');
         finish();
     });
 }
@@ -618,9 +637,12 @@ function sendToWatch(data) {
         msg[K.GRAPH_COUNT] = count;
     }
 
+    console.log('[TrioHTTP] sendToWatch glucose=' + (msg[K.GLUCOSE] != null ? msg[K.GLUCOSE] : 'omit') +
+        ' units=' + (msg[K.UNITS] || '') + ' stale=' + msg[K.GLUCOSE_STALE] +
+        ' graph=' + (msg[K.GRAPH_COUNT] || 0));
     Pebble.sendAppMessage(msg,
-        function () { /* success */ },
-        function (e) { console.log('Trio: send failed: ' + JSON.stringify(e)); }
+        function () { console.log('[TrioHTTP] sendToWatch AppMessage OK'); },
+        function (e) { console.log('[TrioHTTP] sendToWatch AppMessage FAIL: ' + JSON.stringify(e)); }
     );
 }
 
@@ -825,8 +847,12 @@ Pebble.addEventListener('appmessage', function (e) {
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble pkjs v2.16 (direct delivery + carb bolus hint) ready');
+    console.log('Trio Pebble pkjs v2.17 (http diagnostics) ready');
     loadSettings();
+    console.log('[TrioHTTP] settings dataSource=' + settings.dataSource +
+        ' trioHost=' + settings.trioHost +
+        ' units=' + settings.glucoseUnits +
+        ' faceType=' + settings.faceType);
 
     var msg = {};
     msg[K.CONFIG_FACE_TYPE] = settings.faceType;
@@ -865,39 +891,106 @@ Pebble.addEventListener('ready', function () {
 });
 
 // ---------- HTTP Helpers ----------
+/** meta: { ok, status, reason, ms, bytes } — reason: load|error|timeout */
+function summarizeHttpMeta(meta) {
+    if (!meta) return 'meta=?';
+    return 'reason=' + (meta.reason || '?') +
+        ' status=' + (meta.status != null ? meta.status : 'n/a') +
+        ' ms=' + (meta.ms != null ? meta.ms : '?') +
+        ' bytes=' + (meta.bytes != null ? meta.bytes : 0);
+}
+
 function httpPing(url, callback) {
+    var started = Date.now();
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.timeout = 4000;
     xhr.onload = function () {
-        callback(xhr.status === 200);
+        callback(xhr.status === 200, {
+            ok: xhr.status === 200,
+            status: xhr.status,
+            reason: 'load',
+            ms: Date.now() - started,
+            bytes: (xhr.responseText && xhr.responseText.length) || 0
+        });
     };
-    xhr.onerror = function () { callback(false); };
-    xhr.ontimeout = function () { callback(false); };
-    xhr.send();
+    xhr.onerror = function () {
+        callback(false, { ok: false, status: xhr.status || 0, reason: 'error', ms: Date.now() - started, bytes: 0 });
+    };
+    xhr.ontimeout = function () {
+        callback(false, { ok: false, status: 0, reason: 'timeout', ms: Date.now() - started, bytes: 0 });
+    };
+    try {
+        xhr.send();
+    } catch (e) {
+        console.log('[TrioHTTP] httpPing throw: ' + e);
+        callback(false, { ok: false, status: 0, reason: 'throw', ms: Date.now() - started, bytes: 0 });
+    }
 }
 
+/**
+ * GET helper. callback(bodyOrNull, meta).
+ * Older call sites ignore the second arg.
+ */
 function httpGet(url, callback) {
+    var started = Date.now();
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.timeout = 15000;
     xhr.onload = function () {
-        callback(xhr.status === 200 ? xhr.responseText : null);
+        var body = xhr.status === 200 ? xhr.responseText : null;
+        var meta = {
+            ok: !!body,
+            status: xhr.status,
+            reason: 'load',
+            ms: Date.now() - started,
+            bytes: (xhr.responseText && xhr.responseText.length) || 0
+        };
+        if (xhr.status !== 200) {
+            console.log('[TrioHTTP] GET non-200 ' + url + ' ' + summarizeHttpMeta(meta));
+        }
+        callback(body, meta);
     };
-    xhr.onerror = function () { callback(null); };
-    xhr.ontimeout = function () { callback(null); };
-    xhr.send();
+    xhr.onerror = function () {
+        var meta = { ok: false, status: xhr.status || 0, reason: 'error', ms: Date.now() - started, bytes: 0 };
+        console.log('[TrioHTTP] GET error ' + url + ' ' + summarizeHttpMeta(meta));
+        callback(null, meta);
+    };
+    xhr.ontimeout = function () {
+        var meta = { ok: false, status: 0, reason: 'timeout', ms: Date.now() - started, bytes: 0 };
+        console.log('[TrioHTTP] GET timeout ' + url + ' ' + summarizeHttpMeta(meta));
+        callback(null, meta);
+    };
+    try {
+        xhr.send();
+    } catch (e) {
+        console.log('[TrioHTTP] GET throw ' + url + ' err=' + e);
+        callback(null, { ok: false, status: 0, reason: 'throw', ms: Date.now() - started, bytes: 0 });
+    }
 }
 
 function httpPost(url, body, callback) {
+    var started = Date.now();
     var xhr = new XMLHttpRequest();
     xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.timeout = 15000;
     xhr.onload = function () {
+        console.log('[TrioHTTP] POST load ' + url + ' status=' + xhr.status + ' ms=' + (Date.now() - started));
         callback(xhr.responseText);
     };
-    xhr.onerror = function () { callback(null); };
-    xhr.ontimeout = function () { callback(null); };
-    xhr.send(body);
+    xhr.onerror = function () {
+        console.log('[TrioHTTP] POST error ' + url + ' ms=' + (Date.now() - started));
+        callback(null);
+    };
+    xhr.ontimeout = function () {
+        console.log('[TrioHTTP] POST timeout ' + url + ' ms=' + (Date.now() - started));
+        callback(null);
+    };
+    try {
+        xhr.send(body);
+    } catch (e) {
+        console.log('[TrioHTTP] POST throw ' + url + ' err=' + e);
+        callback(null);
+    }
 }
