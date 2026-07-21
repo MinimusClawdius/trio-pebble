@@ -123,8 +123,8 @@
     <label>Trio API Host</label>
     <input type="text" id="trioHost" placeholder="http://127.0.0.1:8080">
     <p class="data-source-note" style="margin-bottom:10px"><strong>Remote bolus / carbs from the watch:</strong> On the watchface, <strong>press and hold Up, Down, or Select for about half a second</strong> &rarr; Remote bolus / Remote carbs &rarr; Up/Down to adjust &rarr; Select to send. <strong>Pebble Time 2 / Quick Launch:</strong> long Select often opens system quick-launch — use <strong>long Up</strong> or <strong>long Down</strong>, or disable Quick Launch on the middle button in watch <strong>Settings</strong>. If nothing happens with Trio source, reinstall after updating the watchface (older builds could ignore the gesture). <strong>Two buzzes</strong> means the data source is not Trio or &ldquo;Apple Health via Trio&rdquo; (remote entry is disabled). Rebble sends the request to the URL above; <strong>Trio must be running</strong>.</p>
-    <p class="data-source-note" id="trioNoteDefault">Turn on Pebble in Trio &rarr; Watch. Open Trio before Rebble polls; iOS may suspend Trio in the background.</p>
-    <p class="data-source-note" id="trioNoteHealth" style="display:none">Same API as Trio local HTTP. Use when CGM data reaches Trio (Dexcom, Health, etc.). Keep Trio running when possible so Rebble can reach 127.0.0.1.</p>
+    <p class="data-source-note" id="trioNoteDefault">Turn on Pebble in Trio &rarr; Services / Watch. Host must be <code>http://127.0.0.1:8080</code> (or your custom port) — leave blank and Save to restore the default. Keep Trio open or recently used; iOS can suspend the local API in the background.</p>
+    <p class="data-source-note" id="trioNoteHealth" style="display:none">Same API as Trio local HTTP. Use when CGM data reaches Trio (Dexcom, Health, etc.). Host defaults to <code>http://127.0.0.1:8080</code>. Keep Trio running when possible so Rebble can reach loopback.</p>
   </div>
 
   <div id="dexcomFields" style="display:none">
@@ -228,7 +228,7 @@
 
 <button class="btn btn-save" onclick="saveAndReturn()">Save Settings</button>
 
-<div class="version">Trio Pebble config v2.16.0 &middot; MinimusClawdius</div>
+<div class="version">Trio Pebble config v2.18.13 &middot; MinimusClawdius</div>
 
 <script>
 var COMP_SLOT_OPTIONS = [
@@ -335,7 +335,7 @@ function populateForm() {
     console.log("[SETTINGS] Setting headerSize to", s.headerSize);
     setValue('headerSize', s.headerSize !== undefined ? s.headerSize : 0);
     setValue('dataSource', s.dataSource !== undefined ? s.dataSource : 0);
-    setValue('trioHost', s.trioHost);
+    setValue('trioHost', (s.trioHost && String(s.trioHost).replace(/^\s+|\s+$/g, '')) || 'http://127.0.0.1:8080');
     setValue('nightscoutUrl', s.nightscoutUrl);
     setValue('nightscoutToken', s.nightscoutToken);
     setValue('dexcomUsername', s.dexcomUsername);
@@ -379,7 +379,12 @@ function saveAndReturn() {
         graphSmooth: boolVal('graphSmooth'),
         headerSize: intVal('headerSize'),
         dataSource: intVal('dataSource'),
-        trioHost: strVal('trioHost'),
+        trioHost: (function () {
+            var h = strVal('trioHost').replace(/^\s+|\s+$/g, '');
+            if (!h) h = 'http://127.0.0.1:8080';
+            if (h.indexOf('://') < 0) h = 'http://' + h;
+            return h.replace(/\/+$/, '');
+        })(),
         nightscoutUrl: strVal('nightscoutUrl'),
         nightscoutToken: strVal('nightscoutToken'),
         dexcomUsername: strVal('dexcomUsername'),

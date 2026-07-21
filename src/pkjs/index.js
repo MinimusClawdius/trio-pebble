@@ -110,6 +110,43 @@ function downsampleGraphHistory(arr, targetLen) {
     return out;
 }
 
+/** Default Trio loopback base URL (no trailing slash). */
+var DEFAULT_TRIO_HOST = 'http://127.0.0.1:8080';
+
+/**
+ * Ensure settings.trioHost is a usable absolute http(s) base URL.
+ * Empty / relative values were saved from Settings and produced
+ * GET "/api/all" (status=0 in ~40ms) with host= in logs.
+ */
+function normalizeTrioHost() {
+    var h = (settings.trioHost == null) ? '' : String(settings.trioHost).replace(/^\s+|\s+$/g, '');
+    if (!h) {
+        h = DEFAULT_TRIO_HOST;
+    } else {
+        // Allow host:port without scheme
+        if (h.indexOf('://') < 0) {
+            h = 'http://' + h;
+        }
+        // Strip trailing slashes so host + '/api/all' is correct
+        h = h.replace(/\/+$/, '');
+        // Relative paths like "/api" or bare "api" are invalid for XHR from the phone
+        if (h.charAt(0) === '/' || h.indexOf('http://') !== 0 && h.indexOf('https://') !== 0) {
+            console.log('[TrioHTTP] invalid trioHost="' + settings.trioHost + '" → default');
+            h = DEFAULT_TRIO_HOST;
+        }
+    }
+    if (h !== settings.trioHost) {
+        console.log('[TrioHTTP] trioHost normalized: "' + settings.trioHost + '" → "' + h + '"');
+        settings.trioHost = h;
+        try {
+            localStorage.setItem('trio_settings', JSON.stringify(settings));
+        } catch (eSave) { /* ignore */ }
+    } else {
+        settings.trioHost = h;
+    }
+    return settings.trioHost;
+}
+
 function loadSettings() {
     try {
         var saved = localStorage.getItem('trio_settings');
@@ -131,8 +168,10 @@ function loadSettings() {
             settings.graphTimeRange = 0;
         }
         settings.compSlot3 = 0;
+        normalizeTrioHost();
     } catch (e) {
         console.log('Trio: settings load error: ' + e);
+        normalizeTrioHost();
     }
 }
 
@@ -786,20 +825,25 @@ function sendCommand(type, amount) {
 // that serves this file as real HTML.
 // Enable: repo Settings → Pages → Build from branch "main", folder "/ (root)".
 // === CONFIGURATION PAGE (OFFLINE vs ONLINE) ===
-// Set USE_OFFLINE_CONFIG = true  → fully offline (data: URL with embedded HTML). Works on real devices.
-// Set USE_OFFLINE_CONFIG = false → uses GitHub Pages hosted version. Required for CloudPebble emulator testing (data: URLs are blocked by the emulator's webview security policy).
-var USE_OFFLINE_CONFIG = true;  // Default: offline mode (change to false for CloudPebble emulator)
-var TRIO_CONFIG_PAGE_URL = USE_OFFLINE_CONFIG
-    ? "data:text/html;base64," + (typeof OFFLINE_CONFIG_BASE64 !== "undefined" ? OFFLINE_CONFIG_BASE64 : "")
-    : "https://minimusclawdius.github.io/trio-pebble/config/index.html";
-
-('./js/settings/generated.js');
+// Offline: require('./settings/generated.js') embeds config/index.html as encodeURIComponent payload.
+// Online fallback (CloudPebble emulator): GitHub Pages HTML.
+var USE_OFFLINE_CONFIG = true;
+var TRIO_CONFIG_PAGE_URL = 'https://minimusclawdius.github.io/trio-pebble/config/index.html';
 
 Pebble.addEventListener('showConfiguration', function () {
-    var current = localStorage.getItem('trio_settings') || '{}';
-    var settingsStr = getSettings();
-    var urlString = 'data:text/html;charset=utf-8,' + settingsStr + '#' + encodeURIComponent(current);
-    console.log('[Trio] Opening config, length:', urlString.length);
+    loadSettings();
+    var current = JSON.stringify(settings);
+    try {
+        localStorage.setItem('trio_settings', current);
+    } catch (eCur) { /* ignore */ }
+    var urlString;
+    if (USE_OFFLINE_CONFIG) {
+        var settingsStr = getSettings();
+        urlString = 'data:text/html;charset=utf-8,' + settingsStr + '#' + encodeURIComponent(current);
+    } else {
+        urlString = TRIO_CONFIG_PAGE_URL + '#' + encodeURIComponent(current);
+    }
+    console.log('[Trio] Opening config, length:', urlString.length, 'host=', settings.trioHost);
     Pebble.openURL(urlString);
 });
 
@@ -810,7 +854,8 @@ Pebble.addEventListener('webviewclosed', function (e) {
             for (var key in newSettings) {
                 if (newSettings.hasOwnProperty(key)) settings[key] = newSettings[key];
             }
-            console.log('[TrioPeble] webviewclosed received, calling saveSettings()');
+            normalizeTrioHost();
+            console.log('[TrioPeble] webviewclosed received, calling saveSettings() host=' + settings.trioHost);
             saveSettings();
             dexcomSessionId = null;
 
@@ -847,7 +892,7 @@ Pebble.addEventListener('appmessage', function (e) {
 
 // ---------- Ready ----------
 Pebble.addEventListener('ready', function () {
-    console.log('Trio Pebble pkjs v2.17 (http diagnostics) ready');
+    console.log('Trio Pebble pkjs v2.18 (host normalize + http diagnostics) ready');
     loadSettings();
     console.log('[TrioHTTP] settings dataSource=' + settings.dataSource +
         ' trioHost=' + settings.trioHost +

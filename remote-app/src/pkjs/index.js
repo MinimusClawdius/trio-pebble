@@ -46,6 +46,18 @@ var settings = {
     graphTimeRange: 0
 };
 
+function normalizeTrioHost() {
+    var h = (settings.trioHost == null) ? '' : String(settings.trioHost).replace(/^\s+|\s+$/g, '');
+    if (!h) h = 'http://127.0.0.1:8080';
+    else {
+        if (h.indexOf('://') < 0) h = 'http://' + h;
+        h = h.replace(/\/+$/, '');
+        if (h.indexOf('http://') !== 0 && h.indexOf('https://') !== 0) h = 'http://127.0.0.1:8080';
+    }
+    settings.trioHost = h;
+    return h;
+}
+
 function loadSettings() {
     try {
         var saved = localStorage.getItem('trio_settings');
@@ -55,8 +67,10 @@ function loadSettings() {
                 if (parsed.hasOwnProperty(key)) settings[key] = parsed[key];
             }
         }
+        normalizeTrioHost();
     } catch (e) {
         console.log('Trio Remote: settings load error ' + e);
+        normalizeTrioHost();
     }
 }
 
@@ -130,13 +144,12 @@ var TRIO_CONFIG_PAGE_URL = USE_OFFLINE_CONFIG
     : "https://minimusclawdius.github.io/trio-pebble/config/index.html";
 
 Pebble.addEventListener('showConfiguration', function () {
-    var current = localStorage.getItem('trio_settings') || '{}';
+    loadSettings();
+    var current = JSON.stringify(settings);
     var settingsStr = getSettings();
     var urlString = 'data:text/html;charset=utf-8,' + settingsStr + '#' + encodeURIComponent(current);
-    console.log('[TrioRemote] Opening config, length:', urlString.length);
+    console.log('[TrioRemote] Opening config, length:', urlString.length, 'host=', settings.trioHost);
     Pebble.openURL(urlString);
-});
-
 });
 
 Pebble.addEventListener('webviewclosed', function (e) {
@@ -146,6 +159,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
             for (var key in newSettings) {
                 if (newSettings.hasOwnProperty(key)) settings[key] = newSettings[key];
             }
+            normalizeTrioHost();
             saveSettings();
         } catch (ex) {
             console.log('Trio Remote: config parse error: ' + ex);

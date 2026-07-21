@@ -54,10 +54,36 @@ This document describes how data flows from Trio’s loopback API to the watch, 
 | Wrong after switching face | **Graph buffer cleared** without restore from `s_state.graph`; fixed by `graph_restore_from_state` in `window_load`. |
 | “OK at first then bad” | **Stale `s_state.config`** for alerts, or **key-0 tick** + race; fixed by config sync + TAP refresh ping. |
 
-## 5. Verify after install
+## 5. Empty `trioHost` / relative `/api/all` (v2.18+)
 
-1. Build PBW from this repo (**v2.2.5+**).
-2. Open Trio → confirm `/api/all` shows expected `cgm.glucose` / `units`.
-3. On watch: main BG should match (within rounding) **either** mmol one-decimal **or** mg/dL integer per settings.
-4. Change faces (Classic ↔ Compact); graph and BG should stay coherent.
-5. Optional: Rebble logs / `console.log` in pkjs (if available) after `normalizeTrio` (temporary) to print `glucoseMgdl`.
+**Symptom (Rebble log):**
+```
+[TrioHTTP] fetchData begin source=trio host= failStreak=N
+[TrioHTTP] GET error /api/all reason=error status=0 ms=~40 bytes=0
+```
+
+**Cause:** Settings saved `trioHost` as `""`. XHR then used a relative URL (`/api/all`) instead of `http://127.0.0.1:8080/api/all`.
+
+**Fix (watchface pkjs):**
+- `normalizeTrioHost()` on load / after Settings / before fetch paths that need it
+- Default `http://127.0.0.1:8080`; strip trailing `/`; prepend `http://` if scheme missing
+- Config page refuses empty host on Save
+
+## 6. iOS background suspension of the loopback server
+
+**Symptom:** Safari or Rebble can hit `127.0.0.1:8080` while Trio is foreground; after backgrounding, nothing answers until Pebble service is toggled or Trio is opened.
+
+**Mitigations in Trio (`PebbleLocalAPIServer`):**
+1. Short background task on each accepted connection (~25s)
+2. Rolling keep-alive `beginBackgroundTask` while Pebble integration is enabled
+3. Auto-restart accept loop if the socket dies; `ensureListening()` on foreground / active / each `WatchState` push
+
+**Limits:** iOS can still fully suspend the process. There is no true “stay forever alive” without a system-approved background mode that keeps the app running (Bluetooth central helps when the radio is active). User should open Trio periodically or after phone restarts.
+
+## 7. Verify after install
+
+1. Build PBW (**v2.18+**) via CloudPebble; install on watch.
+2. Rebble Developer Connection logs should show `pkjs v2.18` and `trioHost=http://127.0.0.1:8080` (not empty).
+3. Open Trio → Services / Watch → Pebble on. Confirm Safari can open `http://127.0.0.1:8080/api/all` on the phone.
+4. On watch: BG should update within one poll interval (~1 min). If still empty, check `[TrioHTTP] GET` lines for status/timeout vs empty host.
+5. Background Trio briefly; open again if polls fail — server should auto-restart on wake without manual service toggle when using updated Trio build.
