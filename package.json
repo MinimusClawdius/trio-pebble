@@ -1,6 +1,6 @@
 {
   "name": "Trio",
-  "version": "2.18.13",
+  "version": "2.18.14",
   "description": "Premium CGM watchface for Trio / Loop. Multiple layouts (Classic, Dashboard, Compact, Graph Focus, Minimal, Retro), real-time graphs, weather backgrounds, and remote bolus/carb commands.",
   "author": "MinimusClawdius",
   "license": "MIT",

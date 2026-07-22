@@ -34,8 +34,9 @@ void alerts_check(AppState *state) {
     time_t now = time(NULL);
     TrioConfig *cfg = &state->config;
 
-    /* Urgent low: own cooldown so frequent HTTP polls do not re-vibrate every 30s */
-    if (glucose <= cfg->urgent_low && glucose > 0) {
+    /* Urgent low: only when low alerts are enabled (same master toggle as low threshold).
+     * Own cooldown so frequent HTTP polls do not re-vibrate every 30s. */
+    if (cfg->alert_low_enabled && glucose <= cfg->urgent_low && glucose > 0) {
         if (now - state->alerts.last_urgent_alert_time >= URGENT_REPEAT_MIN_SEC) {
             state->alerts.urgent_low_active = true;
             state->alerts.last_urgent_alert_time = now;
