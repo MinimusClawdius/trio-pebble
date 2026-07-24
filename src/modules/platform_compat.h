@@ -87,23 +87,23 @@ static inline bool trio_large_rect(GRect bounds) {
 
 /** Hero area height (glucose + trend) for classic/retro style. */
 static inline int trio_hero_height(GRect bounds) {
-    return trio_large_rect(bounds) ? 66 : 54;
+    return trio_large_rect(bounds) ? 80 : 54;
 }
 
 /** Header strip height (time/age row). */
 static inline int trio_header_height(GRect bounds) {
-    return trio_large_rect(bounds) ? 28 : 24;
+    return trio_large_rect(bounds) ? 48 : 28;
 }
 
 /** Square size for trend glyph layer (larger on big screens so arrows don't look tiny). */
 static inline int trio_trend_size(GRect bounds) {
     if (trio_large_rect(bounds)) {
-        return 52;
+        return 64;
     }
-    return 34;
+    return 36;
 }
 
-/** Glucose number font. On color we use the bold subset; could pick larger variant if SDK provides. */
+/** Glucose number font — prefer largest bold subset on color hardware. */
 static inline const char *trio_glucose_font(bool is_color) {
     if (is_color) {
         return FONT_KEY_ROBOTO_BOLD_SUBSET_49;
@@ -113,5 +113,5 @@ static inline const char *trio_glucose_font(bool is_color) {
 
 /** Scale factor hint for manual NN trend bitmap (bigger preferred size on large screens). */
 static inline int trio_trend_scale_numer(void) {
-    return 17;  /* 17/10 = 1.7x base; caller can override for large */
+    return 20; /* 2.0x base */
 }
