@@ -137,27 +137,19 @@ void face_minimal_update(AppState *state) {
         else
             gc = GColorGreen;
         text_layer_set_text_color(s_glucose, gc);
-        trend_ink = gc;
     } else {
         text_layer_set_text_color(s_glucose, fg);
-        trend_ink = fg;
     }
 #else
     text_layer_set_text_color(s_glucose, fg);
-    trend_ink = fg;
 #endif
 
     trio_trend_layer_set(state->cgm.trend_str, trend_ink,
                          trio_trend_light_background_assets(&state->config));
+
     if (s_trend_layer) {
         layer_mark_dirty(s_trend_layer);
     }
-
-    if (s_delta) {
-        text_layer_set_text(s_delta, state->cgm.delta_str[0] ? state->cgm.delta_str : "--");
-        text_layer_set_text_color(s_delta, fg2);
-    }
-
     if (s_sparkline_layer) {
         layer_mark_dirty(s_sparkline_layer);
     }

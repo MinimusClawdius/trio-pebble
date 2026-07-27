@@ -204,33 +204,7 @@ void face_classic_update(AppState *state) {
         format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose,
                                state->config.is_mmol);
         text_layer_set_text(s_glucose, s_glucose_buf);
-#ifdef PBL_COLOR
-        if (state->cgm.glucose > 0 && !trio_classic_chrome_active(&state->config)) {
-            TrioConfig *cfg = &state->config;
-            GColor gc;
-            if (state->cgm.glucose <= cfg->low_threshold)
-                gc = GColorRed;
-            else if (state->cgm.glucose >= cfg->high_threshold)
-                gc = GColorOrange;
-            else
-                gc = GColorGreen;
-            text_layer_set_text_color(s_glucose, gc);
-            trend_ink = gc;
-        } else if (state->cgm.glucose > 0 && trio_classic_chrome_active(&state->config)) {
-            /* On chrome card keep high-contrast black/white number; color the arrow. */
-            bool light_pills = trio_classic_light_pills(&state->config);
-            text_layer_set_text_color(s_glucose, light_pills ? GColorBlack : GColorWhite);
-            TrioConfig *cfg = &state->config;
-            if (state->cgm.glucose <= cfg->low_threshold)
-                trend_ink = GColorRed;
-            else if (state->cgm.glucose >= cfg->high_threshold)
-                trend_ink = GColorOrange;
-            else
-                trend_ink = GColorGreen;
-        }
-#else
-        (void)fg;
-#endif
+        text_layer_set_text_color(s_glucose, fg);
     }
 
     /* Critical: without this the trend layer never receives arrow data. */

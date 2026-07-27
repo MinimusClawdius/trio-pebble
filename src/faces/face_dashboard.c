@@ -131,17 +131,7 @@ void face_dashboard_update(AppState *state) {
                            state->config.is_mmol);
     text_layer_set_text(s_glucose, s_glucose_buf);
 
-#ifdef PBL_COLOR
-    if (state->cgm.glucose > 0) {
-        TrioConfig *cfg = &state->config;
-        GColor gc;
-        if (state->cgm.glucose <= cfg->low_threshold) gc = GColorRed;
-        else if (state->cgm.glucose >= cfg->high_threshold) gc = GColorOrange;
-        else gc = GColorGreen;
-        text_layer_set_text_color(s_glucose, gc);
-        trend_ink = gc;
-    }
-#endif
+   text_layer_set_text_color(s_glucose, fg);
 
     trio_trend_layer_set(state->cgm.trend_str, trend_ink, state->config.color_scheme == COLOR_SCHEME_LIGHT);
     layer_mark_dirty(s_trend_layer);
