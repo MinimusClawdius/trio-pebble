@@ -55,7 +55,8 @@ void face_minimal_load(Window *window, Layer *root, GRect bounds) {
     int spark_y = h - spark_h - pad;
 
     int y = pad;
-    s_time = make_text(root, GRect(pad, y, w - 2 * pad, clock_h), FONT_KEY_GOTHIC_32_BOLD,
+    s_time = make_text(root, GRect(pad, y, w - 2 * pad, clock_h),
+                       large ? FONT_KEY_BITHAM_42_BOLD : FONT_KEY_GOTHIC_28_BOLD,
                        GTextAlignmentCenter, fg);
     y += clock_h + (large ? 4 : 2);
 
@@ -110,39 +111,21 @@ void face_minimal_unload(void) {
 }
 
 void face_minimal_update(AppState *state) {
-    if (!state) return;
+   if (!state) return;
 
-    time_t now = time(NULL);
-    bool light = state->config.color_scheme == COLOR_SCHEME_LIGHT;
-    GColor fg = light ? GColorBlack : GColorWhite;
-    GColor fg2 = light ? GColorDarkGray : GColorLightGray;
-    GColor trend_ink = fg;
+   time_t now = time(NULL);
+   bool light = state->config.color_scheme == COLOR_SCHEME_LIGHT;
+   GColor fg = light ? GColorBlack : GColorWhite;
+   GColor trend_ink = fg;
 
     trio_format_clock(s_time_buf, sizeof(s_time_buf), now, state->config.clock_24h);
     text_layer_set_text(s_time, s_time_buf);
     text_layer_set_text_color(s_time, fg);
 
     format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose,
-                           state->config.is_mmol);
-    text_layer_set_text(s_glucose, s_glucose_buf);
-
-#ifdef PBL_COLOR
-    if (state->cgm.glucose > 0) {
-        TrioConfig *cfg = &state->config;
-        GColor gc;
-        if (state->cgm.glucose <= cfg->low_threshold)
-            gc = GColorRed;
-        else if (state->cgm.glucose >= cfg->high_threshold)
-            gc = GColorOrange;
-        else
-            gc = GColorGreen;
-        text_layer_set_text_color(s_glucose, gc);
-    } else {
-        text_layer_set_text_color(s_glucose, fg);
-    }
-#else
-    text_layer_set_text_color(s_glucose, fg);
-#endif
+                            state->config.is_mmol);
+      text_layer_set_text(s_glucose, s_glucose_buf);
+      text_layer_set_text_color(s_glucose, fg);
 
     trio_trend_layer_set(state->cgm.trend_str, trend_ink,
                          trio_trend_light_background_assets(&state->config));
