@@ -103,10 +103,11 @@ static inline int trio_trend_size(GRect bounds) {
     return 36;
 }
 
-/** Glucose number font — prefer largest bold subset on color hardware. */
+/** Glucose number font — use fonts that support decimal point. */
 static inline const char *trio_glucose_font(bool is_color) {
     if (is_color) {
-        return FONT_KEY_ROBOTO_BOLD_SUBSET_49;
+        /* Roboto subset doesn't include decimal point; use Bitham which does */
+        return FONT_KEY_BITHAM_48_BOLD;
     }
     return FONT_KEY_BITHAM_42_BOLD;
 }
