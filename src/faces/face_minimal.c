@@ -45,23 +45,24 @@ void face_minimal_load(Window *window, Layer *root, GRect bounds) {
      *  [trend + delta]
      *  [sparkline]
      */
-    int pad = large ? 8 : 4;
-    int clock_h = large ? 36 : 30;
-    int glucose_h = large ? 72 : 54;
+    int pad = large ? 6 : 4;
+    int clock_h = large ? 42 : 32;
+    int glucose_h = large ? 42 : 32;
     int trend_sz = trio_trend_size(bounds);
+    if (trend_sz > 32) trend_sz = 32;
     int mid_row_h = trend_sz + 4;
     int spark_h = large ? 36 : 28;
     int spark_y = h - spark_h - pad;
 
     int y = pad;
-    s_time = make_text(root, GRect(pad, y, w - 2 * pad, clock_h), FONT_KEY_GOTHIC_28_BOLD,
+    s_time = make_text(root, GRect(pad, y, w - 2 * pad, clock_h), FONT_KEY_GOTHIC_32_BOLD,
                        GTextAlignmentCenter, fg);
-    y += clock_h + (large ? 6 : 4);
+    y += clock_h + (large ? 4 : 2);
 
     s_glucose = make_text(root, GRect(pad, y, w - 2 * pad, glucose_h),
                           trio_glucose_font(TRIO_DISPLAY_COLOR), GTextAlignmentCenter, fg);
     text_layer_set_text(s_glucose, "--");
-    y += glucose_h + (large ? 4 : 2);
+    y += glucose_h + (large ? 2 : 2);
 
     /* Trend centered; delta to its right (or under if narrow). */
     int trend_x = (w - trend_sz) / 2 - (large ? 18 : 10);
