@@ -10,6 +10,11 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 - Run `node scripts/generate-offline-config.js` after any `config/index.html` changes.
 
 ## Changelog
+### 2.19.3
+- Minimal: massive custom fonts (Liberation Bold 68px time, 90px BG) full-width
+- Restore trend arrow between time and BG
+- Subsetted TTFs (~2KB each) via characterRegex + pyftsubset
+
 ### 2.19.2
 - Minimal face: time + BG only, max system fonts (Bitham 42 clock, Roboto 49 mg/dL)
 - Drop trend/delta/sparkline from Minimal for true large-type layout

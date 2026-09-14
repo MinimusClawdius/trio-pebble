@@ -1,47 +1,39 @@
 // Face: Minimal
-// Two-hero layout only: very large TIME + very large BG.
-// No trend, delta, sparkline, or complications chrome on this face.
+// Massive full-width TIME + BG with trend arrow between them.
+// Uses custom fonts (Liberation Sans Bold @ 68 / 90 px).
 
 #include "face_minimal.h"
 #include "../modules/glucose_format.h"
 #include "../modules/platform_compat.h"
 #include "../modules/time_display.h"
+#include "../modules/trend_glyphs.h"
 #include <stdio.h>
 
 static TextLayer *s_time, *s_glucose;
+static Layer *s_trend_layer;
+static GFont s_font_time, s_font_glucose;
 static char s_time_buf[16], s_glucose_buf[16];
 
-static TextLayer *make_text(Layer *root, GRect frame, const char *font_key, GTextAlignment align,
-                             GColor fg) {
+static TextLayer *make_text(Layer *root, GRect frame, GFont font, GTextAlignment align, GColor fg) {
     TextLayer *tl = text_layer_create(frame);
     text_layer_set_background_color(tl, GColorClear);
     text_layer_set_text_color(tl, fg);
-    text_layer_set_font(tl, fonts_get_system_font(font_key));
+    text_layer_set_font(tl, font);
     text_layer_set_text_alignment(tl, align);
-    /* Fill mode: allow large glyphs; avoid ellipsis on 3-digit BG / HH:MM */
     text_layer_set_overflow_mode(tl, GTextOverflowModeFill);
     layer_add_child(root, text_layer_get_layer(tl));
     return tl;
 }
 
-/** Largest practical clock font (includes ':' ). */
-static const char *minimal_time_font(GRect bounds) {
-    (void)bounds;
-    /* Bitham 42 is the largest system face with colon support. */
-    return FONT_KEY_BITHAM_42_BOLD;
-}
-
-/**
- * Largest practical glucose font.
- * ROBOTO_BOLD_SUBSET_49 is ~49px numbers-only (great for mg/dL).
- * mmol needs '.' so fall back to Bitham 42.
- */
-static const char *minimal_glucose_font(bool is_mmol, GRect bounds) {
-    (void)bounds;
-    if (is_mmol) {
-        return FONT_KEY_BITHAM_42_BOLD;
+static GFont load_custom_or_system(uint32_t resource_id, const char *fallback_key) {
+    ResHandle rh = resource_get_handle(resource_id);
+    GFont f = fonts_load_custom_font(rh);
+    if (f) {
+        return f;
     }
-    return FONT_KEY_ROBOTO_BOLD_SUBSET_49;
+    APP_LOG(APP_LOG_LEVEL_ERROR, "[MINIMAL] custom font id=%lu failed — system fallback",
+            (unsigned long)resource_id);
+    return fonts_get_system_font(fallback_key);
 }
 
 void face_minimal_load(Window *window, Layer *root, GRect bounds) {
@@ -51,66 +43,80 @@ void face_minimal_load(Window *window, Layer *root, GRect bounds) {
     bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
     GColor fg = light ? GColorBlack : GColorWhite;
     bool large = trio_large_rect(bounds);
-    bool is_mmol = config_get()->is_mmol;
 
     /*
-     * Emery 200x228 example (approx):
+     * Full-bleed hero layout (Emery 200x228 target):
      *
-     *   y=0  ─────────────────────────
-     *        TIME band  (~48% of height)
-     *        Bitham 42 clock centered
-     *   mid  ─────────────────────────
-     *        BG band    (~52% of height)
-     *        Roboto 49 / Bitham 42 BG
-     *   y=h  ─────────────────────────
+     *   ┌──────────────────────────┐
+     *   │         12:34            │  ~68px custom, nearly full width
+     *   │           ▲              │  trend glyph
+     *   │          142             │  ~90px custom, nearly full width
+     *   └──────────────────────────┘
      *
-     * No other chrome — maximizes glyph room.
+     * Band math leaves max vertical room for the two numbers while keeping
+     * the trend readable between them.
      */
-    int pad_x = large ? 4 : 2;
-    int gap = large ? 4 : 2;
+    int pad_x = large ? 2 : 1;
+    int pad_y = large ? 2 : 1;
 
-    /* Split: time gets slightly less than half; BG gets the rest (numbers read larger). */
-    int time_band_h = (h * 48) / 100;
-    int bg_band_y = time_band_h + gap;
-    int bg_band_h = h - bg_band_y - (large ? 4 : 2);
-    if (bg_band_h < 48) {
-        bg_band_h = 48;
-        bg_band_y = h - bg_band_h - 2;
-        time_band_h = bg_band_y - gap;
+    int trend_sz = large ? 40 : 28;
+    int gap = large ? 2 : 1;
+
+    /* Prefer giving BG a bit more height than time (glucose is the hero). */
+    int reserved_mid = trend_sz + 2 * gap;
+    int usable = h - 2 * pad_y - reserved_mid;
+    if (usable < 80) {
+        usable = h - 2 * pad_y;
+        trend_sz = large ? 28 : 22;
+        reserved_mid = trend_sz + 2 * gap;
+        usable = h - 2 * pad_y - reserved_mid;
     }
 
-    /* Font metrics (approx): Bitham42 ~44–48px tall, Roboto49 ~52–56px.
-     * Vertical-center each label inside its band so they don't hug bezels. */
-    int time_font_h = large ? 52 : 46;
-    int bg_font_h = is_mmol ? (large ? 52 : 46) : (large ? 58 : 52);
+    int time_band_h = (usable * 42) / 100; /* ~42% of remaining for clock */
+    int bg_band_h = usable - time_band_h;  /* rest for BG */
 
-    if (time_font_h > time_band_h - 4) {
-        time_font_h = time_band_h - 4;
-    }
-    if (bg_font_h > bg_band_h - 4) {
-        bg_font_h = bg_band_h - 4;
-    }
+    /* Font frame heights: leave a couple px so glyphs aren't clipped. */
+    int time_font_h = time_band_h - 2;
+    int bg_font_h = bg_band_h - 2;
+    if (time_font_h < 36) time_font_h = 36;
+    if (bg_font_h < 42) bg_font_h = 42;
 
-    int time_y = (time_band_h - time_font_h) / 2;
-    if (time_y < 2) time_y = 2;
-
+    int time_y = pad_y + (time_band_h - time_font_h) / 2;
+    int trend_y = pad_y + time_band_h + gap;
+    int bg_band_y = trend_y + trend_sz + gap;
     int bg_y = bg_band_y + (bg_band_h - bg_font_h) / 2;
-    if (bg_y < bg_band_y) bg_y = bg_band_y;
+
+    /* Clamp if math drifts past bottom bezel */
+    if (bg_y + bg_font_h > h - pad_y) {
+        bg_y = h - pad_y - bg_font_h;
+        if (bg_y < bg_band_y) bg_y = bg_band_y;
+    }
 
     APP_LOG(APP_LOG_LEVEL_INFO,
-            "[MINIMAL] bounds=%dx%d time_band_h=%d bg_y=%d bg_h=%d time_font_h=%d bg_font_h=%d mmol=%d",
-            w, h, time_band_h, bg_y, bg_band_h, time_font_h, bg_font_h, (int)is_mmol);
+            "[MINIMAL] %dx%d time_y=%d th=%d trend_y=%d ts=%d bg_y=%d bh=%d",
+            w, h, time_y, time_font_h, trend_y, trend_sz, bg_y, bg_font_h);
+
+    /* Custom massive fonts (subsetted in package.json via characterRegex). */
+    s_font_time = load_custom_or_system(RESOURCE_ID_FONT_MINIMAL_TIME_68,
+                                        FONT_KEY_BITHAM_42_BOLD);
+    s_font_glucose = load_custom_or_system(RESOURCE_ID_FONT_MINIMAL_GLUCOSE_90,
+                                           FONT_KEY_ROBOTO_BOLD_SUBSET_49);
 
     s_time = make_text(root,
-                       GRect(pad_x, time_y, w - 2 * pad_x, time_font_h),
-                       minimal_time_font(bounds),
-                       GTextAlignmentCenter, fg);
+                       GRect(pad_x, time_y, w - 2 * pad_x, time_font_h + 4),
+                       s_font_time, GTextAlignmentCenter, fg);
     text_layer_set_text(s_time, "12:00");
 
+    /* Trend centered under the clock */
+    int trend_x = (w - trend_sz) / 2;
+    s_trend_layer = layer_create(GRect(trend_x, trend_y, trend_sz, trend_sz));
+    layer_set_clips(s_trend_layer, true);
+    layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
+    layer_add_child(root, s_trend_layer);
+
     s_glucose = make_text(root,
-                          GRect(pad_x, bg_y, w - 2 * pad_x, bg_font_h),
-                          minimal_glucose_font(is_mmol, bounds),
-                          GTextAlignmentCenter, fg);
+                          GRect(pad_x, bg_y, w - 2 * pad_x, bg_font_h + 6),
+                          s_font_glucose, GTextAlignmentCenter, fg);
     text_layer_set_text(s_glucose, "--");
 }
 
@@ -123,6 +129,26 @@ void face_minimal_unload(void) {
         text_layer_destroy(s_glucose);
         s_glucose = NULL;
     }
+    if (s_trend_layer) {
+        layer_destroy(s_trend_layer);
+        s_trend_layer = NULL;
+    }
+    /* Only unload if they were custom loads (system fonts must not be unloaded).
+     * fonts_load_custom_font failure returns system font — unloading those is unsafe.
+     * Track via resource attempt: always try unload; SDK no-ops invalid handles poorly,
+     * so we only unload when resource handles resolved (non-null custom).
+     * Safer approach: compare against system fonts. */
+    GFont sys42 = fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
+    GFont sys49 = fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49);
+    if (s_font_time && s_font_time != sys42) {
+        fonts_unload_custom_font(s_font_time);
+    }
+    if (s_font_glucose && s_font_glucose != sys49) {
+        fonts_unload_custom_font(s_font_glucose);
+    }
+    s_font_time = NULL;
+    s_font_glucose = NULL;
+    trio_trend_glyphs_deinit();
 }
 
 void face_minimal_update(AppState *state) {
@@ -142,15 +168,9 @@ void face_minimal_update(AppState *state) {
     text_layer_set_text(s_glucose, s_glucose_buf);
     text_layer_set_text_color(s_glucose, fg);
 
-    /* If units changed at runtime, swap glucose font (mmol needs decimal glyph). */
-    static bool s_last_mmol = false;
-    static bool s_init = false;
-    if (!s_init || s_last_mmol != state->config.is_mmol) {
-        Layer *gl = text_layer_get_layer(s_glucose);
-        GRect frame = layer_get_frame(gl);
-        text_layer_set_font(s_glucose,
-                            fonts_get_system_font(minimal_glucose_font(state->config.is_mmol, frame)));
-        s_last_mmol = state->config.is_mmol;
-        s_init = true;
+    trio_trend_layer_set(state->cgm.trend_str, fg,
+                         trio_trend_light_background_assets(&state->config));
+    if (s_trend_layer) {
+        layer_mark_dirty(s_trend_layer);
     }
 }
