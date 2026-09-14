@@ -10,6 +10,11 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 - Run `node scripts/generate-offline-config.js` after any `config/index.html` changes.
 
 ## Changelog
+### 2.19.1
+- Replace heart complication art with clean 25px pixel heart (`heart_icon_25px.png`)
+- Center heart bitmap in slot (no stretch); restore geometric fallback
+- Add `TRIO_HEART_ICON_BLACK` resource
+
 
 ### v2.18.13
 - **Heart Rate complication now uses 25px icon from pebble-dev/iconography repository** instead of programmatic drawing.

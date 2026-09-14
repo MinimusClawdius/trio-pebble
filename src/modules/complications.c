@@ -208,40 +208,66 @@ static void draw_one_slot(GContext *ctx, GRect cell, ComplicationSlotKind kind, 
 // Heart icon resource ID - uses TRIO_HEART_ICON from package.json
 #define HEART_ICON_RESOURCE_ID RESOURCE_ID_TRIO_HEART_ICON
 
+/** Draw heart icon centered in rect (image preferred; geometric fallback). */
 void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon called: rect=(%d,%d %dx%d)",
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon: rect=(%d,%d %dx%d)",
             rect.origin.x, rect.origin.y, rect.size.w, rect.size.h);
-    
-    // Try loading the image resource first (preferred)
+
     GBitmap *bmp = gbitmap_create_with_resource(HEART_ICON_RESOURCE_ID);
     if (bmp) {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] draw_heart_icon: using TRIO_HEART_ICON resource");
-        
-        // Invert bitmap when drawing on dark background (color == black)
-        if (gcolor_equal(color, GColorBlack))     graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
-        //else                                      graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
-        
-        //graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
-        graphics_draw_bitmap_in_rect(ctx, bmp, rect);
+        GRect bi = gbitmap_get_bounds(bmp);
+        int bw = bi.size.w;
+        int bh = bi.size.h;
+        /* Center native size — do not stretch (avoids blur/tile artifacts). */
+        int max_w = rect.size.w > 2 ? rect.size.w - 2 : rect.size.w;
+        int max_h = rect.size.h > 2 ? rect.size.h - 2 : rect.size.h;
+        if (bw > max_w || bh > max_h) {
+            /* Scale down proportionally if slot is smaller than asset */
+            int scale_w = (bw > 0) ? (max_w * 100 / bw) : 100;
+            int scale_h = (bh > 0) ? (max_h * 100 / bh) : 100;
+            int scale = scale_w < scale_h ? scale_w : scale_h;
+            if (scale < 1) scale = 1;
+            bw = bw * scale / 100;
+            bh = bh * scale / 100;
+            if (bw < 1) bw = 1;
+            if (bh < 1) bh = 1;
+        }
+        int dx = rect.origin.x + (rect.size.w - bw) / 2;
+        int dy = rect.origin.y + (rect.size.h - bh) / 2;
+        GRect dest = GRect(dx, dy, bw, bh);
+
+        /* Color assets: Set preserves transparency. B&W invert if ink is black. */
+#if defined(PBL_COLOR)
+        graphics_context_set_compositing_mode(ctx, GCompOpSet);
+#else
+        if (gcolor_equal(color, GColorBlack)) {
+            graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
+        } else {
+            graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+        }
+#endif
+        graphics_draw_bitmap_in_rect(ctx, bmp, dest);
+        graphics_context_set_compositing_mode(ctx, GCompOpAssign);
         gbitmap_destroy(bmp);
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "[COMP] heart image dest=(%d,%d %dx%d)",
+                dest.origin.x, dest.origin.y, dest.size.w, dest.size.h);
         return;
     }
-    
-    APP_LOG(APP_LOG_LEVEL_WARNING, "[COMP] draw_heart_icon: TRIO_HEART_ICON not found, using fallback");
-    
-    // Fallback: draw a simple heart using circles + triangle
-    //graphics_context_set_fill_color(ctx, color);
-    
-    //int cx = rect.origin.x + rect.size.w / 2;
-    //int cy = rect.origin.y + rect.size.h / 2;
-    //int r = rect.size.w / 3;
-    
-    //graphics_fill_circle(ctx, GPoint(cx - r/2, cy - r/3), r);
-    //graphics_fill_circle(ctx, GPoint(cx + r/2, cy - r/3), r);
-    
-    // Fallback heart (two circles)
 
-    //graphics_fill_triangle(ctx, points[0], points[1], points[2]);
+    APP_LOG(APP_LOG_LEVEL_WARNING, "[COMP] TRIO_HEART_ICON missing — geometric fallback");
+
+    /* Geometric fallback: two lobes + triangle point */
+    graphics_context_set_fill_color(ctx, color);
+    int cx = rect.origin.x + rect.size.w / 2;
+    int cy = rect.origin.y + rect.size.h / 2 - 1;
+    int r = rect.size.w < rect.size.h ? rect.size.w / 4 : rect.size.h / 4;
+    if (r < 3) r = 3;
+    graphics_fill_circle(ctx, GPoint(cx - r, cy - r / 2), r);
+    graphics_fill_circle(ctx, GPoint(cx + r, cy - r / 2), r);
+    graphics_fill_triangle(ctx,
+                           GPoint(cx - 2 * r, cy - r / 4),
+                           GPoint(cx + 2 * r, cy - r / 4),
+                           GPoint(cx, cy + 2 * r));
 }
 
 void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConfig *config) {
