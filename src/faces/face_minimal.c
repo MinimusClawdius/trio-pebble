@@ -1,22 +1,15 @@
 // Face: Minimal
-// Clean everyday layout: large clock, large glucose, trend + delta, sparkline.
-// Stacked (no overlap) with Emery-sized type.
+// Two-hero layout only: very large TIME + very large BG.
+// No trend, delta, sparkline, or complications chrome on this face.
 
 #include "face_minimal.h"
-#include "../modules/graph.h"
 #include "../modules/glucose_format.h"
 #include "../modules/platform_compat.h"
 #include "../modules/time_display.h"
-#include "../modules/trend_glyphs.h"
 #include <stdio.h>
 
-static TextLayer *s_time, *s_glucose, *s_delta;
-static Layer *s_sparkline_layer, *s_trend_layer;
+static TextLayer *s_time, *s_glucose;
 static char s_time_buf[16], s_glucose_buf[16];
-
-static void sparkline_proc(Layer *layer, GContext *ctx) {
-    graph_draw(layer, ctx, config_get());
-}
 
 static TextLayer *make_text(Layer *root, GRect frame, const char *font_key, GTextAlignment align,
                              GColor fg) {
@@ -25,9 +18,30 @@ static TextLayer *make_text(Layer *root, GRect frame, const char *font_key, GTex
     text_layer_set_text_color(tl, fg);
     text_layer_set_font(tl, fonts_get_system_font(font_key));
     text_layer_set_text_alignment(tl, align);
-    text_layer_set_overflow_mode(tl, GTextOverflowModeTrailingEllipsis);
+    /* Fill mode: allow large glyphs; avoid ellipsis on 3-digit BG / HH:MM */
+    text_layer_set_overflow_mode(tl, GTextOverflowModeFill);
     layer_add_child(root, text_layer_get_layer(tl));
     return tl;
+}
+
+/** Largest practical clock font (includes ':' ). */
+static const char *minimal_time_font(GRect bounds) {
+    (void)bounds;
+    /* Bitham 42 is the largest system face with colon support. */
+    return FONT_KEY_BITHAM_42_BOLD;
+}
+
+/**
+ * Largest practical glucose font.
+ * ROBOTO_BOLD_SUBSET_49 is ~49px numbers-only (great for mg/dL).
+ * mmol needs '.' so fall back to Bitham 42.
+ */
+static const char *minimal_glucose_font(bool is_mmol, GRect bounds) {
+    (void)bounds;
+    if (is_mmol) {
+        return FONT_KEY_BITHAM_42_BOLD;
+    }
+    return FONT_KEY_ROBOTO_BOLD_SUBSET_49;
 }
 
 void face_minimal_load(Window *window, Layer *root, GRect bounds) {
@@ -36,104 +50,107 @@ void face_minimal_load(Window *window, Layer *root, GRect bounds) {
     int h = bounds.size.h;
     bool light = config_get()->color_scheme == COLOR_SCHEME_LIGHT;
     GColor fg = light ? GColorBlack : GColorWhite;
-    GColor fg2 = light ? GColorDarkGray : GColorLightGray;
     bool large = trio_large_rect(bounds);
+    bool is_mmol = config_get()->is_mmol;
 
-    /* Vertical stack (no overlapping centers):
-     *  [clock]
-     *  [glucose hero]
-     *  [trend + delta]
-     *  [sparkline]
+    /*
+     * Emery 200x228 example (approx):
+     *
+     *   y=0  ─────────────────────────
+     *        TIME band  (~48% of height)
+     *        Bitham 42 clock centered
+     *   mid  ─────────────────────────
+     *        BG band    (~52% of height)
+     *        Roboto 49 / Bitham 42 BG
+     *   y=h  ─────────────────────────
+     *
+     * No other chrome — maximizes glyph room.
      */
-    int pad = large ? 6 : 4;
-    int clock_h = large ? 42 : 32;
-    int glucose_h = large ? 42 : 32;
-    int trend_sz = trio_trend_size(bounds);
-    if (trend_sz > 32) trend_sz = 32;
-    int mid_row_h = trend_sz + 4;
-    int spark_h = large ? 36 : 28;
-    int spark_y = h - spark_h - pad;
+    int pad_x = large ? 4 : 2;
+    int gap = large ? 4 : 2;
 
-    int y = pad;
-    s_time = make_text(root, GRect(pad, y, w - 2 * pad, clock_h),
-                       large ? FONT_KEY_BITHAM_42_BOLD : FONT_KEY_GOTHIC_28_BOLD,
+    /* Split: time gets slightly less than half; BG gets the rest (numbers read larger). */
+    int time_band_h = (h * 48) / 100;
+    int bg_band_y = time_band_h + gap;
+    int bg_band_h = h - bg_band_y - (large ? 4 : 2);
+    if (bg_band_h < 48) {
+        bg_band_h = 48;
+        bg_band_y = h - bg_band_h - 2;
+        time_band_h = bg_band_y - gap;
+    }
+
+    /* Font metrics (approx): Bitham42 ~44–48px tall, Roboto49 ~52–56px.
+     * Vertical-center each label inside its band so they don't hug bezels. */
+    int time_font_h = large ? 52 : 46;
+    int bg_font_h = is_mmol ? (large ? 52 : 46) : (large ? 58 : 52);
+
+    if (time_font_h > time_band_h - 4) {
+        time_font_h = time_band_h - 4;
+    }
+    if (bg_font_h > bg_band_h - 4) {
+        bg_font_h = bg_band_h - 4;
+    }
+
+    int time_y = (time_band_h - time_font_h) / 2;
+    if (time_y < 2) time_y = 2;
+
+    int bg_y = bg_band_y + (bg_band_h - bg_font_h) / 2;
+    if (bg_y < bg_band_y) bg_y = bg_band_y;
+
+    APP_LOG(APP_LOG_LEVEL_INFO,
+            "[MINIMAL] bounds=%dx%d time_band_h=%d bg_y=%d bg_h=%d time_font_h=%d bg_font_h=%d mmol=%d",
+            w, h, time_band_h, bg_y, bg_band_h, time_font_h, bg_font_h, (int)is_mmol);
+
+    s_time = make_text(root,
+                       GRect(pad_x, time_y, w - 2 * pad_x, time_font_h),
+                       minimal_time_font(bounds),
                        GTextAlignmentCenter, fg);
-    y += clock_h + (large ? 4 : 2);
+    text_layer_set_text(s_time, "12:00");
 
-    s_glucose = make_text(root, GRect(pad, y, w - 2 * pad, glucose_h),
-                          trio_glucose_font(TRIO_DISPLAY_COLOR), GTextAlignmentCenter, fg);
+    s_glucose = make_text(root,
+                          GRect(pad_x, bg_y, w - 2 * pad_x, bg_font_h),
+                          minimal_glucose_font(is_mmol, bounds),
+                          GTextAlignmentCenter, fg);
     text_layer_set_text(s_glucose, "--");
-    y += glucose_h + (large ? 2 : 2);
-
-    /* Trend centered; delta to its right (or under if narrow). */
-    int trend_x = (w - trend_sz) / 2 - (large ? 18 : 10);
-    if (trend_x < pad) trend_x = pad;
-    s_trend_layer = layer_create(GRect(trend_x, y, trend_sz, trend_sz));
-    layer_set_clips(s_trend_layer, true);
-    layer_set_update_proc(s_trend_layer, trio_trend_layer_update_proc);
-    layer_add_child(root, s_trend_layer);
-
-    int delta_x = trend_x + trend_sz + 6;
-    int delta_w = w - delta_x - pad;
-    if (delta_w < 40) {
-        /* fallback: delta under trend */
-        delta_x = pad;
-        delta_w = w - 2 * pad;
-        s_delta = make_text(root, GRect(delta_x, y + trend_sz + 2, delta_w, 24),
-                            FONT_KEY_GOTHIC_24_BOLD, GTextAlignmentCenter, fg2);
-        y += mid_row_h + 26;
-    } else {
-        s_delta = make_text(root, GRect(delta_x, y + (trend_sz - 28) / 2, delta_w, 28),
-                            FONT_KEY_GOTHIC_24_BOLD, GTextAlignmentLeft, fg2);
-        y += mid_row_h + 4;
-    }
-
-    /* Keep sparkline from eating mid content */
-    if (y > spark_y - 4) {
-        spark_y = y + 2;
-        spark_h = h - spark_y - pad;
-        if (spark_h < 20) spark_h = 20;
-    }
-
-    s_sparkline_layer = layer_create(trio_graph_layer_bounds(bounds, spark_y, spark_h));
-    layer_set_update_proc(s_sparkline_layer, sparkline_proc);
-    layer_add_child(root, s_sparkline_layer);
 }
 
 void face_minimal_unload(void) {
-    text_layer_destroy(s_time);
-    text_layer_destroy(s_glucose);
-    text_layer_destroy(s_delta);
-    layer_destroy(s_trend_layer);
-    layer_destroy(s_sparkline_layer);
-    s_time = s_glucose = s_delta = NULL;
-    s_trend_layer = s_sparkline_layer = NULL;
+    if (s_time) {
+        text_layer_destroy(s_time);
+        s_time = NULL;
+    }
+    if (s_glucose) {
+        text_layer_destroy(s_glucose);
+        s_glucose = NULL;
+    }
 }
 
 void face_minimal_update(AppState *state) {
-   if (!state) return;
+    if (!state) return;
+    if (!s_time || !s_glucose) return;
 
-   time_t now = time(NULL);
-   bool light = state->config.color_scheme == COLOR_SCHEME_LIGHT;
-   GColor fg = light ? GColorBlack : GColorWhite;
-   GColor trend_ink = fg;
+    time_t now = time(NULL);
+    bool light = state->config.color_scheme == COLOR_SCHEME_LIGHT;
+    GColor fg = light ? GColorBlack : GColorWhite;
 
     trio_format_clock(s_time_buf, sizeof(s_time_buf), now, state->config.clock_24h);
     text_layer_set_text(s_time, s_time_buf);
     text_layer_set_text_color(s_time, fg);
 
     format_glucose_display(s_glucose_buf, sizeof(s_glucose_buf), state->cgm.glucose,
-                            state->config.is_mmol);
-      text_layer_set_text(s_glucose, s_glucose_buf);
-      text_layer_set_text_color(s_glucose, fg);
+                           state->config.is_mmol);
+    text_layer_set_text(s_glucose, s_glucose_buf);
+    text_layer_set_text_color(s_glucose, fg);
 
-    trio_trend_layer_set(state->cgm.trend_str, trend_ink,
-                         trio_trend_light_background_assets(&state->config));
-
-    if (s_trend_layer) {
-        layer_mark_dirty(s_trend_layer);
-    }
-    if (s_sparkline_layer) {
-        layer_mark_dirty(s_sparkline_layer);
+    /* If units changed at runtime, swap glucose font (mmol needs decimal glyph). */
+    static bool s_last_mmol = false;
+    static bool s_init = false;
+    if (!s_init || s_last_mmol != state->config.is_mmol) {
+        Layer *gl = text_layer_get_layer(s_glucose);
+        GRect frame = layer_get_frame(gl);
+        text_layer_set_font(s_glucose,
+                            fonts_get_system_font(minimal_glucose_font(state->config.is_mmol, frame)));
+        s_last_mmol = state->config.is_mmol;
+        s_init = true;
     }
 }

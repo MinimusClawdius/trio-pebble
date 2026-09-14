@@ -105,10 +105,11 @@ static inline int trio_trend_size(GRect bounds) {
 
 /** Glucose number font — use fonts that support decimal point. */
 static inline const char *trio_glucose_font(bool is_color) {
-    if (is_color) {
-        /* Roboto subset doesn't include decimal point; use Bitham which does */
-        return FONT_KEY_BITHAM_48_BOLD;
-    }
+    (void)is_color;
+    /* Largest system fonts that exist in the Pebble SDK:
+     * ROBOTO_BOLD_SUBSET_49 ≈ 49px numbers (no decimal/colon).
+     * BITHAM_42_BOLD has ':' and '.' — safer default for shared helper.
+     * Minimal face picks Roboto 49 itself for mg/dL. */
     return FONT_KEY_BITHAM_42_BOLD;
 }
 

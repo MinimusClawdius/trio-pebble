@@ -10,6 +10,11 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 - Run `node scripts/generate-offline-config.js` after any `config/index.html` changes.
 
 ## Changelog
+### 2.19.2
+- Minimal face: time + BG only, max system fonts (Bitham 42 clock, Roboto 49 mg/dL)
+- Drop trend/delta/sparkline from Minimal for true large-type layout
+- Fix invalid FONT_KEY_BITHAM_48_BOLD in trio_glucose_font
+
 ### 2.19.1
 - Replace heart complication art with clean 25px pixel heart (`heart_icon_25px.png`)
 - Center heart bitmap in slot (no stretch); restore geometric fallback
