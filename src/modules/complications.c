@@ -256,7 +256,8 @@ void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
 
     APP_LOG(APP_LOG_LEVEL_WARNING, "[COMP] TRIO_HEART_ICON missing — geometric fallback");
 
-    /* Geometric fallback: two lobes + triangle point */
+    /* Geometric fallback: two lobes + tapering tip.
+     * Note: Pebble SDK has no graphics_fill_triangle — use scanline fill. */
     graphics_context_set_fill_color(ctx, color);
     int cx = rect.origin.x + rect.size.w / 2;
     int cy = rect.origin.y + rect.size.h / 2 - 1;
@@ -264,10 +265,14 @@ void draw_heart_icon(GContext *ctx, GRect rect, GColor color) {
     if (r < 3) r = 3;
     graphics_fill_circle(ctx, GPoint(cx - r, cy - r / 2), r);
     graphics_fill_circle(ctx, GPoint(cx + r, cy - r / 2), r);
-    graphics_fill_triangle(ctx,
-                           GPoint(cx - 2 * r, cy - r / 4),
-                           GPoint(cx + 2 * r, cy - r / 4),
-                           GPoint(cx, cy + 2 * r));
+    /* Inverted-V tip under the lobes */
+    int tip_top = cy - r / 4;
+    int tip_h = 2 * r + 2;
+    for (int i = 0; i < tip_h; i++) {
+        int half = (2 * r * (tip_h - i)) / tip_h;
+        if (half < 1) half = 1;
+        graphics_fill_rect(ctx, GRect(cx - half, tip_top + i, half * 2, 1), 0, GCornerNone);
+    }
 }
 
 void complications_draw_bar(GContext *ctx, GRect area, AppState *state, TrioConfig *config) {

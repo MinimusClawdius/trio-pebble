@@ -10,6 +10,9 @@ A premium, configurable CGM watchface for Pebble smartwatches. Supports **Trio**
 - Run `node scripts/generate-offline-config.js` after any `config/index.html` changes.
 
 ## Changelog
+### 2.19.4
+- Fix CloudPebble build: replace non-existent graphics_fill_triangle in heart fallback
+
 ### 2.19.3
 - Minimal: massive custom fonts (Liberation Bold 68px time, 90px BG) full-width
 - Restore trend arrow between time and BG
